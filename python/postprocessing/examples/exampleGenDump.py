@@ -113,7 +113,8 @@ class LHEDumper(Module):
   
 
 # PROCESS NANOAOD
-url = "root://cms-xrd-global.cern.ch/"
+#url = "root://cms-xrd-global.cern.ch/"
+url = 'root://cmsxrootd.fnal.gov/'
 from argparse import ArgumentParser
 parser = ArgumentParser()
 parser.add_argument('-i', '--infiles', nargs='+')
@@ -121,8 +122,9 @@ parser.add_argument('-o', '--outdir', default='.')
 parser.add_argument('-n', '--maxevts', type=int, default=20)
 args = parser.parse_args()
 infiles = args.infiles or [
-  url+'/store/mc/RunIISummer20UL18NanoAODv9/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/280000/525CD279-3344-6043-98B9-2EA8A96623E4.root',
+  #url+'/store/mc/RunIISummer20UL18NanoAODv9/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/280000/525CD279-3344-6043-98B9-2EA8A96623E4.root',
   #url+'/store/mc/RunIISummer20UL18NanoAODv9/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/130000/44187D37-0301-3942-A6F7-C723E9F4813D.root',
+  url + '/store/user/bbarton/TaustarToTauTauZ/SignalMC/taustarToTauTauZ_m3000_2018.root'
 ]
 processor = PostProcessor(args.outdir,infiles,noOut=True,modules=[LHEDumper()],maxEntries=args.maxevts)
 processor.run()
