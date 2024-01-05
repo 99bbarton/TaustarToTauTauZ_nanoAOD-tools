@@ -5,67 +5,12 @@ from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import Pos
 from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection
 import PhysicsTools.NanoAODTools.postprocessing.framework.datamodel as datamodel
+from PhysicsTools.NanoAODTools.postprocessing.framework.GenTools import getDecayChain, getProdChain, prodChainContains
 
 
 # -----------------------------------------------------------------------------------------------------------------------------
 
-#Build a list of tuples of the form (idx, pdgId) recording the production chain in genParts
-# idx : the idx to GenPart of the particle to find the chain of (will be last entry in returned list
-# genParts : the GenPart collection object
-def getProdChain(idx, genParts):
-
-    part = genParts[idx]
-    chain = [(idx, part.pdgId)] 
-    mothIdx = part.genPartIdxMother
-    while mothIdx >= 0:
-        moth = genParts[mothIdx]
-        chain.insert(0, (mothIdx, moth.pdgId))
-        mothIdx = moth.genPartIdxMother
-
-    return chain
-
-# -----------------------------------------------------------------------------------------------------------------------------
-
-def getDecayChain(idx, genParts):
-    chain = []
-    for dauIdx in range(idx + 1, genParts._len):
-        dauPart = genParts[dauIdx]
-        if dauPart.genPartIdxMother == idx:
-            chain.append(dauIdx)
-    return chain
-
-
-# -----------------------------------------------------------------------------------------------------------------------------
-
-# Check whether the production chain contains a particle matching idx and/xor pdgID
-# prodChain : The production chain list as returned by getProdChain()
-# idx : the idx to GenPart to try to match. If not specified, will not try to match indices
-# pdgID : the pdgID to try to match. If not specified, will not try to match
-# Returns a boolean specifying if a match was found
-def prodChainContains(prodChain, idx = None, pdgID = None ):
-
-    if idx == None and pdgID == None:
-        print("ERROR: idx and pdgID are both None when trying to check production chain for matches")
-        exit(1)
-
-    found = False
-
-    for step in prodChain:
-        if idx != None and pdgID == None:
-            found = found or (step[0] == idx)
-        elif idx == None and pdgID != None:
-            found = found or (abs(step[1]) == abs(pdgID))
-        else:
-            found = found or ( (step[0] == idx) and (abs(step[1]) == abs(pdgID)) )
-
-        if found:
-            return True
-
-    return found
-
-# -----------------------------------------------------------------------------------------------------------------------------
-
-class GenProducer(Module):
+class GenProducerZTau(Module):
 
     def __init__(self):
         pass
@@ -78,17 +23,17 @@ class GenProducer(Module):
 
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.out = wrappedOutputTree
-        self.out.branch("Gen_tsIdx", "I") #Idx to last copy of taustar in GenPart
-        self.out.branch("Gen_tsTauIdx", "I") #Idx to the last copy of the tau decay product of the taustar in GenPart
-        self.out.branch("Gen_tauIdx", "I") #Idx to the last copy of the tau produced alongside the taustar in GenPart
-        self.out.branch("Gen_zIdx", "I") #Idx to the last copy of the Z from the taustar decay in GenPart
-        self.out.branch("Gen_zDau1Idx", "I") #Idx to the first daughter of the Z at zIdx in GenPart
-        self.out.branch("Gen_zDau2Idx", "I") #Idx to the second daughter of the Z at zIdx in GenPart
-        self.out.branch("Gen_zDM","I") #0 = hadronic, 1=electrons, 2=muons, 3=taus
-        self.out.branch("Gen_dr_tsTauTau", "F") #DeltaR between tsTau and Tau
-        self.out.branch("Gen_dr_tsTauZ", "F") # DeltaR between tsTau and Z
-        self.out.branch("Gen_dr_tauZ", "F") #DeltaR between tau and Z
-        self.out.branch("Gen_dr_zDaus", "F") #DeltaR between the two Z daughters
+        self.out.branch("Gen_tsIdx", "I") #"Idx to last copy of taustar in GenPart"
+        self.out.branch("Gen_tsTauIdx", "I") #"Idx to the last copy of the tau decay product of the taustar in GenPart"
+        self.out.branch("Gen_tauIdx", "I") #"Idx to the last copy of the tau produced alongside the taustar in GenPart"
+        self.out.branch("Gen_zIdx", "I") #"Idx to the last copy of the Z from the taustar decay in GenPart"
+        self.out.branch("Gen_zDau1Idx", "I") #"Idx to the first daughter of the Z at zIdx in GenPart"
+        self.out.branch("Gen_zDau2Idx", "I") #"Idx to the second daughter of the Z at zIdx in GenPart"
+        self.out.branch("Gen_zDM","I") #"0 = hadronic, 1=electrons, 2=muons, 3=taus"
+        self.out.branch("Gen_dr_tsTauTau", "F") #"DeltaR between tsTau and Tau"
+        self.out.branch("Gen_dr_tsTauZ", "F") #"DeltaR between tsTau and Z"
+        self.out.branch("Gen_dr_tauZ", "F") #"DeltaR between tau and Z"
+        self.out.branch("Gen_dr_zDaus", "F") #"DeltaR between the two Z daughters"
 
         #self.out.branch("Gen_ch","I") #1 = ETau, 2=MuTau, 3=TauTau
 
@@ -182,9 +127,9 @@ class GenProducer(Module):
                     
 # -----------------------------------------------------------------------------------------------------------------------------            
             
-genProducerConstr = lambda: GenProducer()
+genProducerZTauConstr = lambda: GenProducerZTau()
 
 
 files = ["root://cmsxrootd.fnal.gov//store/user/bbarton/TaustarToTauTauZ/SignalMC/taustarToTauZ_m3000_2018.root"]
-p = PostProcessor(".", files, cut="1>0", branchsel=None, modules=[genProducerConstr()] )
+p = PostProcessor(".", files, cut="1>0", branchsel=None, modules=[genProducerZTauConstr()] )
 p.run()
