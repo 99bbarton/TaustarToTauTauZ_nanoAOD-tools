@@ -22,8 +22,9 @@ class ZProducer(Module):
         self.out.branch("Z_mumu", "O") #"True if a mumu pair is found, false otherwise"
         self.out.branch("Z_d1Idx", "I") #"Idx to first daughter of Z in either Muons or Electrons collection (depending on if Z_ee or Z_mumu are true). -1 default"
         self.out.branch("Z_d2Idx", "I") #"Idx to second daughter of Z in either Muons or Electrons collection (depending on if Z_ee or Z_mumu are true). -1 default"
-        self.out.branch("Z_pairMass", "F") #"Mass of ee or mumu pair"
-        self.out.branch("Z_pairPt", "F") #"Pt of ee or mumu pair"
+        self.out.branch("Z_pairMass", "F") #"Mass of ee or mumu pair if either Z_ee or Z_mumu are true. 0 default"
+        self.out.branch("Z_pairPt", "F") #"Pt of ee or mumu pair. 0 default"
+        self.out.branch("Z_dauDR", "F") #"DeltaR(zDau1, zDau2). 0 default"
 
     def endFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         pass
@@ -35,6 +36,7 @@ class ZProducer(Module):
         Z_d2Idx = -1
         Z_pairMass = 0
         Z_pairPt = 0
+        Z_dauDR = 0
 
         electrons = Collection(event, "Electron")
         for e1Idx, e1 in enumerate(electrons):
@@ -54,7 +56,8 @@ class ZProducer(Module):
                             Z_ee = True
                             Z_d1Idx = e1Idx if e1.pt >= e2.pt else e2Idx  #daughter 1 is higher pT e
                             Z_d2Idx = e2Idx if e1.pt >= e2.pt else e1Idx 
-
+                            Z_dauDR = e1.DeltaR(e2)
+                            
         muons = Collection(event, "Muon")
         for mu1Idx, mu1 in enumerate(muons):
             for mu2Idx, mu2 in enumerate(muons):
@@ -68,18 +71,24 @@ class ZProducer(Module):
                                 Z_mumu = True
                                 Z_d1Idx = mu1Idx if mu1.pt >= mu2.pt else mu2Idx  #daughter 1 is higher pT e
                                 Z_d2Idx = mu2Idx if mu1.pt >= mu2.pt else mu1Idx
-        
+                                Z_dauDR = mu1.DeltaR(mu2)
+
+
         self.out.fillBranch("Z_ee", Z_ee)
         self.out.fillBranch("Z_mumu", Z_mumu)
         self.out.fillBranch("Z_d1Idx", Z_d1Idx)
         self.out.fillBranch("Z_d2Idx", Z_d2Idx)
         self.out.fillBranch("Z_pairMass", Z_pairMass)
         self.out.fillBranch("Z_pairPt", Z_pairPt)
+        self.out.fillBranch("Z_dauDR", Z_dauDR)
 
         return True
     
     # -----------------------------------------------------------------------------------------------------------------------------
 
-    zProducerConstr = lambda: ZProducer()
+zProducerConstr = lambda: ZProducer()
     
 
+files = ["root://cmsxrootd.fnal.gov//store/user/bbarton/TaustarToTauTauZ/SignalMC/taustarToTauZ_m3000_2018.root"]
+p = PostProcessor(".", files, cut="1>0", branchsel=None, modules=[zProducerConstr()] )
+p.run()
