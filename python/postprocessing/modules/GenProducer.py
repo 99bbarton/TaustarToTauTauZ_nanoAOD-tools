@@ -137,13 +137,13 @@ class GenProducer(Module):
                     else:
                         zDau1Idx = decayChain[0]
                         zDau2Idx = decayChain[1]
-                        if abs(event.GenPart_pdgid[zDau1Idx]) <= 6:
+                        if abs(event.GenPart_pdgId[zDau1Idx]) <= 6:
                             zDM = 0
-                        elif abs(event.GenPart_pdgid[zDau1Idx]) == 11:
+                        elif abs(event.GenPart_pdgId[zDau1Idx]) == 11:
                             zDM = 1
-                        elif abs(event.GenPart_pdgid[zDau1Idx]) == 13:
+                        elif abs(event.GenPart_pdgId[zDau1Idx]) == 13:
                             zDM = 2
-                        elif abs(event.GenPart_pdgid[zDau1Idx]) == 15:
+                        elif abs(event.GenPart_pdgId[zDau1Idx]) == 15:
                             zDM = 3
             foundAll = (tsTauIdx >= 0) and (tauIdx >= 0) and (zIdx >= 0) and (zDau1Idx >=0) and (zDau2Idx >= 0)
             if foundAll:
@@ -185,6 +185,6 @@ class GenProducer(Module):
 genProducerConstr = lambda: GenProducer()
 
 
-files = ["root://cmsxrootd.fnal.gov//store/user/bbarton/TaustarToTauTauZ/SignalMC/taustarToTauZ_m3000_2018.root"]
+files = ["root://cmsxrootd.fnal.gov//store/user/bbarton/TaustarToTauTauZ/SignalMC/taustarToTauZ_m500_2018.root"]
 p = PostProcessor(".", files, cut="1>0", branchsel=None, modules=[genProducerConstr()] )
 p.run()
