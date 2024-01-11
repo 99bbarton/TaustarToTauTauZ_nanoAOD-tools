@@ -18,25 +18,27 @@ class ZProducer(Module):
 
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.out = wrappedOutputTree
-        self.out.branch("Z_ee", "O") #"True if a ee pair is found, false otherwise"
-        self.out.branch("Z_mumu", "O") #"True if a mumu pair is found, false otherwise"
-        self.out.branch("Z_d1Idx", "I") #"Idx to first daughter of Z in either Muons or Electrons collection (depending on if Z_ee or Z_mumu are true). -1 default"
-        self.out.branch("Z_d2Idx", "I") #"Idx to second daughter of Z in either Muons or Electrons collection (depending on if Z_ee or Z_mumu are true). -1 default"
-        self.out.branch("Z_pairMass", "F") #"Mass of ee or mumu pair if either Z_ee or Z_mumu are true. 0 default"
-        self.out.branch("Z_pairPt", "F") #"Pt of ee or mumu pair. 0 default"
+        self.out.branch("Z_dm", "I") #"0 = hadronic, 1=electrons, 2=muons, 3=taus. -1 by default"
+        self.out.branch("Z_d1Idx", "I") #"Idx to first daughter of Z in either Muons or Electrons collection (if Z_dm == 1 or Z_dm == 2). -1 default"
+        self.out.branch("Z_d2Idx", "I") #"Idx to second daughter of Z in either Muons or Electrons collection (depending on if Z_dm == 1 or Z_dm == 2). -1 default"
         self.out.branch("Z_dauDR", "F") #"DeltaR(zDau1, zDau2). 0 default"
+        self.out.branch("Z_mass", "F") #"Mass of ee or mumu pair if either Z_dm == 1 or Z_dm == 2 or jet if Z_dm =0. 0 default"
+        self.out.branch("Z_pt", "F") #"Pt of ee or mumu pair or jet. 0 default"
+        self.out.branch("Z_jetIdxDT", "I") #"Idx to FatJet collection of the most Z-like jet determined using deepTag score. if Z_dm=0"
+        self.out.branch("Z_jetIdxPN", "I") #"Idx to FatJet collection of the most Z-like jet determined using particle net score. if Z_dm=0"
 
     def endFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         pass
 
     def analyze(self, event):
-        Z_ee = False
-        Z_mumu = False
+        Z_dm = -1
         Z_d1Idx = -1
         Z_d2Idx = -1
-        Z_pairMass = 0
-        Z_pairPt = 0
+        Z_mass = 0
+        Z_pt = 0
         Z_dauDR = 0
+        Z_jetIdxDT = -1
+        Z_jetIdxPN = -1
 
         electrons = Collection(event, "Electron")
         for e1Idx, e1 in enumerate(electrons):
@@ -49,46 +51,73 @@ class ZProducer(Module):
 
                 if cuts:
                     tempPt = (e1.p4() + e2.p4()).Pt()
-                    if tempPt > Z_pairPt:
-                        Z_pairMass = (e1.p4()+e2.p4()).M()
-                        Z_pairPt = (e1.p4()+e2.p4()).Pt()
-                        if Z_pairMass >= 50.0 and Z_pairMass < 140.0: 
-                            Z_ee = True
+                    if tempPt > Z_pt:
+                        Z_mass = (e1.p4()+e2.p4()).M()
+                        Z_pt = (e1.p4()+e2.p4()).Pt()
+                        if Z_mass >= 60.0 and Z_mass < 130.0: 
+                            Z_dm = 1
                             Z_d1Idx = e1Idx if e1.pt >= e2.pt else e2Idx  #daughter 1 is higher pT e
                             Z_d2Idx = e2Idx if e1.pt >= e2.pt else e1Idx 
                             Z_dauDR = e1.DeltaR(e2)
-                            
-        muons = Collection(event, "Muon")
-        for mu1Idx, mu1 in enumerate(muons):
-            for mu2Idx, mu2 in enumerate(muons):
-                if (mu1.charge * mu2.charge < 0): #Opposite charge
-                    if (mu1.pt >= 15.0 and abs(mu1.eta) < 2.4 and mu1.looseId) and (mu2.pt >= 15.0 and abs(mu2.eta) < 2.4 and mu2.looseId): #ID
-                        tempPt = (mu1.p4() + mu2.p4()).Pt()
-                        if tempPt > Z_pairPt:
-                            Z_pairMass = (mu1.p4()+mu2.p4()).M()
-                            Z_pairPt = (mu1.p4()+mu2.p4()).Pt()
-                            if Z_pairMass >= 50.0 and Z_pairMass < 140.0: 
-                                Z_mumu = True
-                                Z_d1Idx = mu1Idx if mu1.pt >= mu2.pt else mu2Idx  #daughter 1 is higher pT e
-                                Z_d2Idx = mu2Idx if mu1.pt >= mu2.pt else mu1Idx
-                                Z_dauDR = mu1.DeltaR(mu2)
+        
+        if Z_dm < 0:
+            muons = Collection(event, "Muon")
+            for mu1Idx, mu1 in enumerate(muons):
+                for mu2Idx, mu2 in enumerate(muons):
+                    if (mu1.charge * mu2.charge < 0): #Opposite charge
+                        if (mu1.pt >= 15.0 and abs(mu1.eta) < 2.4 and mu1.looseId) and (mu2.pt >= 15.0 and abs(mu2.eta) < 2.4 and mu2.looseId): #ID
+                            tempPt = (mu1.p4() + mu2.p4()).Pt()
+                            if tempPt > Z_pt:
+                                Z_mass = (mu1.p4()+mu2.p4()).M()
+                                Z_pt = (mu1.p4()+mu2.p4()).Pt()
+                                if Z_mass >= 60.0 and Z_mass < 130.0: 
+                                    Z_dm = 2
+                                    Z_d1Idx = mu1Idx if mu1.pt >= mu2.pt else mu2Idx  #daughter 1 is higher pT mu
+                                    Z_d2Idx = mu2Idx if mu1.pt >= mu2.pt else mu1Idx
+                                    Z_dauDR = mu1.DeltaR(mu2)
 
+                        
+        #TODO Add Z-tautau
 
-        self.out.fillBranch("Z_ee", Z_ee)
-        self.out.fillBranch("Z_mumu", Z_mumu)
+        
+        if Z_dm < 0:
+            fatJets = Collection(event, "FatJet")
+            score_dt = 0 #Best DeepBoostedJet tagger score
+            score_pn = 0 #Best ParticleNet tagger score
+            for jetIdx, jet in enumerate(fatJets):
+                if jet.mass >= 40 and jet.mass <= 150:
+                    if jet.deepTag_ZvsQCD > 0.7 and jet.deepTag_ZvsQCD > score_dt:
+                        score_dt = jet.deepTag_ZvsQCD
+                        Z_jetIdxDT = jetIdx
+                    if jet.particleNet_ZvsQCD > 0.7 and jet.particleNet_ZvsQCD > score_pn:
+                        score_pn = jet.particleNet_ZvsQCD
+                        Z_jetIdxPN = jetIdx
+
+            if score_dt > score_pn and score_dt > 0.7: #Use the most confident score for now until 
+                Z_mass = fatJets[Z_jetIdxDT].mass
+                Z_pt = fatJets[Z_jetIdxDT].pt
+            elif score_pn > 0.7:
+                Z_mass = fatJets[Z_jetIdxPN].mass
+                Z_pt = fatJets[Z_jetIdxPN].pt
+
+        
+        self.out.fillBranch("Z_dm", Z_dm)
         self.out.fillBranch("Z_d1Idx", Z_d1Idx)
         self.out.fillBranch("Z_d2Idx", Z_d2Idx)
-        self.out.fillBranch("Z_pairMass", Z_pairMass)
-        self.out.fillBranch("Z_pairPt", Z_pairPt)
+        self.out.fillBranch("Z_mass", Z_mass)
+        self.out.fillBranch("Z_pt", Z_pt)
         self.out.fillBranch("Z_dauDR", Z_dauDR)
+        self.out.fillBranch("Z_jetIdxDT", Z_jetIdxDT)
+        self.out.fillBranch("Z_jetIdxPN", Z_jetIdxPN)
 
         return True
     
     # -----------------------------------------------------------------------------------------------------------------------------
 
 zProducerConstr = lambda: ZProducer()
-    
+
+from GenProducerZTau import genProducerZTauConstr
 
 files = ["root://cmsxrootd.fnal.gov//store/user/bbarton/TaustarToTauTauZ/SignalMC/taustarToTauZ_m3000_2018.root"]
-p = PostProcessor(".", files, cut="1>0", branchsel=None, modules=[zProducerConstr()] )
+p = PostProcessor(".", files, cut="1>0", branchsel=None, modules=[genProducerZTauConstr(), zProducerConstr()] )
 p.run()

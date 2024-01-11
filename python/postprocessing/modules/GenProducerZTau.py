@@ -34,6 +34,7 @@ class GenProducerZTau(Module):
         self.out.branch("Gen_dr_tsTauZ", "F") #"DeltaR between tsTau and Z"
         self.out.branch("Gen_dr_tauZ", "F") #"DeltaR between tau and Z"
         self.out.branch("Gen_dr_zDaus", "F") #"DeltaR between the two Z daughters"
+        self.out.branch("Gen_zGenAK8Idx", "I") #"Idx to GenJetAK8 collection jet matching the Z from taustar if zDM == 0"
 
         #self.out.branch("Gen_ch","I") #1 = ETau, 2=MuTau, 3=TauTau
 
@@ -51,6 +52,7 @@ class GenProducerZTau(Module):
         zDau1Idx = -1
         zDau2Idx = -1
         zDM = -1
+        zGenAK8Idx = -1
         dr_tsTauTau = -999
         dr_tsTauZ = -999
         dr_tauZ = -999
@@ -80,8 +82,8 @@ class GenProducerZTau(Module):
                     if len(decayChain) != 2:
                         print("WARNING: Number of Z decay chain particles is != 2. Will write -1 indices for this event")
                     else:
-                        zDau1Idx = decayChain[0]
-                        zDau2Idx = decayChain[1]
+                        zDau1Idx = decayChain[0] if event.GenPart_pt[decayChain[0]] > event.GenPart_pt[decayChain[1]] else decayChain[1]
+                        zDau2Idx = decayChain[1] if event.GenPart_pt[decayChain[1]] > event.GenPart_pt[decayChain[0]] else decayChain[0]
                         if abs(event.GenPart_pdgId[zDau1Idx]) <= 6:
                             zDM = 0
                         elif abs(event.GenPart_pdgId[zDau1Idx]) == 11:
@@ -90,6 +92,15 @@ class GenProducerZTau(Module):
                             zDM = 2
                         elif abs(event.GenPart_pdgId[zDau1Idx]) == 15:
                             zDM = 3
+
+                        if zDM == 0: #If the Z decayed hadronically, find the matching Gen AK8 jet
+                            theZ = genParts[zIdx]
+                            genJetAK8s = Collection(event, "GenJetAK8")
+                            for jetIdx, jet in enumerate(genJetAK8s):
+                                if jet.DeltaR(theZ) < 0.1 and abs(jet.pt - theZ.pt) <= 0.1*theZ.pt:
+                                    zGenAK8Idx = jetIdx
+                                    break
+                            
             foundAll = (tsTauIdx >= 0) and (tauIdx >= 0) and (zIdx >= 0) and (zDau1Idx >=0) and (zDau2Idx >= 0)
             if foundAll:
                 break
@@ -118,6 +129,7 @@ class GenProducerZTau(Module):
         self.out.fillBranch("Gen_zDau1Idx",zDau1Idx)
         self.out.fillBranch("Gen_zDau2Idx",zDau2Idx)
         self.out.fillBranch("Gen_zDM", zDM)
+        self.out.fillBranch("Gen_zGenAK8Idx", zGenAK8Idx)
         self.out.fillBranch("Gen_dr_tsTauTau", dr_tsTauTau)
         self.out.fillBranch("Gen_dr_tsTauZ", dr_tsTauZ)
         self.out.fillBranch("Gen_dr_tauZ", dr_tauZ)
