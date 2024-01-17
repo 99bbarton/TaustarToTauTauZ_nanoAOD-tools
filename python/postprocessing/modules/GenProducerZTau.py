@@ -82,8 +82,13 @@ class GenProducerZTau(Module):
                     if len(decayChain) != 2:
                         print("WARNING: Number of Z decay chain particles is != 2. Will write -1 indices for this event")
                     else:
-                        zDau1Idx = decayChain[0] if event.GenPart_pt[decayChain[0]] > event.GenPart_pt[decayChain[1]] else decayChain[1]
-                        zDau2Idx = decayChain[1] if event.GenPart_pt[decayChain[1]] > event.GenPart_pt[decayChain[0]] else decayChain[0]
+                        if event.GenPart_pt[decayChain[0]] > event.GenPart_pt[decayChain[1]]: #Hightest pt daughter gets idx 1 label
+                            zDau1Idx = decayChain[0]
+                            zDau2Idx = decayChain[1]
+                        else:
+                            zDau1Idx = decayChain[1]
+                            zDau2Idx = decayChain[0]
+
                         if abs(event.GenPart_pdgId[zDau1Idx]) <= 6:
                             zDM = 0
                         elif abs(event.GenPart_pdgId[zDau1Idx]) == 11:

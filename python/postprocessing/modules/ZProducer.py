@@ -96,10 +96,11 @@ class ZProducer(Module):
             if score_dt > score_pn and score_dt > 0.7: #Use the most confident score for now until 
                 Z_mass = fatJets[Z_jetIdxDT].mass
                 Z_pt = fatJets[Z_jetIdxDT].pt
+                Z_dm = 0
             elif score_pn > 0.7:
                 Z_mass = fatJets[Z_jetIdxPN].mass
                 Z_pt = fatJets[Z_jetIdxPN].pt
-
+                Z_dm = 0
         
         self.out.fillBranch("Z_dm", Z_dm)
         self.out.fillBranch("Z_d1Idx", Z_d1Idx)
