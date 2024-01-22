@@ -68,7 +68,7 @@ class GenProducerWNu(Module):
                     if len(decayChain) != 2:
                         print("WARNING: Number of W decay chain particles is != 2. Will write -1 indices for this event")
                     else:
-                        if abs(event.GenPart_pdgId[wDau1Idx]) <= 6: #Hadronic
+                        if abs(event.GenPart_pdgId[decayChain[0]]) <= 6: #Hadronic
                             wDM = 0
                             if event.GenPart_pt[decayChain[0]] > event.GenPart_pt[decayChain[1]]: #Hightest pt daughter gets idx 1 label
                                 wDau1Idx = decayChain[0]
@@ -83,30 +83,30 @@ class GenProducerWNu(Module):
                                 if jet.DeltaR(theW) < 0.1 and abs(jet.pt - theW.pt) <= 0.1 * theW.pt:
                                     wGenAK8Idx = jetIdx
                                     break
-                        elif abs(event.GenPart_pdgId[wDau1Idx]) == 11: #el
+                        elif abs(event.GenPart_pdgId[decayChain[0]]) == 11: #el
+                            wDM = 1
+                            wDau1Idx = decayChain[0]
+                            wDau2Idx = decayChain[1]
+                        elif abs(event.GenPart_pdgId[decayChain[0]]) == 12: 
                             wDM = 1
                             wDau1Idx = decayChain[1]
-                            wDau2Idx = decayChain[2]
-                        elif abs(event.GenPart_pdgId[wDau1Idx]) == 12: 
-                            wDM = 1
-                            wDau1Idx = decayChain[2]
+                            wDau2Idx = decayChain[0]
+                        elif abs(event.GenPart_pdgId[decayChain[0]]) == 13: #mu
+                            wDM = 2
+                            wDau1Idx = decayChain[0]
                             wDau2Idx = decayChain[1]
-                        elif abs(event.GenPart_pdgId[wDau1Idx]) == 13: #mu
+                        elif abs(event.GenPart_pdgId[decayChain[0]]) == 14: 
                             wDM = 2
                             wDau1Idx = decayChain[1]
-                            wDau2Idx = decayChain[2]
-                        elif abs(event.GenPart_pdgId[wDau1Idx]) == 14: 
-                            wDM = 2
-                            wDau1Idx = decayChain[2]
+                            wDau2Idx = decayChain[0]
+                        elif abs(event.GenPart_pdgId[decayChain[0]]) == 15: #tau
+                            wDM = 3
+                            wDau1Idx = decayChain[0]
                             wDau2Idx = decayChain[1]
-                        elif abs(event.GenPart_pdgId[wDau1Idx]) == 15: #tau
+                        elif abs(event.GenPart_pdgId[decayChain[0]]) == 16: 
                             wDM = 3
                             wDau1Idx = decayChain[1]
-                            wDau2Idx = decayChain[2]
-                        elif abs(event.GenPart_pdgId[wDau1Idx]) == 16: 
-                            wDM = 3
-                            wDau1Idx = decayChain[2]
-                            wDau2Idx = decayChain[1]
+                            wDau2Idx = decayChain[0]
             #End W
 
         #DeltaR calculations
