@@ -123,7 +123,13 @@ class GenProducerWNu(Module):
         self.out.fillBranch("GenW_wGenAK8Idx", wGenAK8Idx)
         self.out.fillBranch("GenW_dr_tauW", dr_tauW)
 
+        return True
 
 # -----------------------------------------------------------------------------------------------------------------------------            
 
 genProducerWNuConstr = lambda: GenProducerWNu()
+
+
+files = ["root://cmsxrootd.fnal.gov//store/user/bbarton/TaustarToTauTauZ/SignalMC/WNu/taustarToWNu_m1000_2018.root"]
+p = PostProcessor(".", files, cut="1>0", branchsel=None, modules=[genProducerWNuConstr()] )
+p.run()

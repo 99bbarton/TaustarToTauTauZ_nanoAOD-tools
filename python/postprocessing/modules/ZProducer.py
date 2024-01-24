@@ -46,8 +46,8 @@ class ZProducer(Module):
                 cuts = True and (e1.charge * e2.charge < 0) #Opposite charge
                 cuts = cuts and (abs(e1.eta + e1.deltaEtaSC) >= 1.566 or abs( e1.eta + e1.deltaEtaSC) < 1.444) #Fiducial
                 cuts = cuts and (abs(e2.eta + e2.deltaEtaSC) >= 1.566 or abs(e2.eta + e2.deltaEtaSC) < 1.444)
-                cuts = cuts and (e1.pt >= 20.0 and abs(e1.eta) < 2.5 and e1.mvaFall17V2noIso_WPL) #ID (basic)
-                cuts = cuts and (e2.pt >= 20.0 and abs(e2.eta) < 2.5 and e2.mvaFall17V2noIso_WPL) #ID (basic)
+                cuts = cuts and (e1.pt >= 20.0 and abs(e1.eta + e1.deltaEtaSC) < 2.5 and e1.mvaFall17V2noIso_WPL) #ID (basic)
+                cuts = cuts and (e2.pt >= 20.0 and abs(e2.eta + e2.deltaEtaSC) < 2.5 and e2.mvaFall17V2noIso_WPL) #ID (basic)
 
                 if cuts:
                     tempPt = (e1.p4() + e2.p4()).Pt()
@@ -119,6 +119,6 @@ zProducerConstr = lambda: ZProducer()
 
 from GenProducerZTau import genProducerZTauConstr
 
-files = ["root://cmsxrootd.fnal.gov//store/user/bbarton/TaustarToTauTauZ/SignalMC/taustarToTauZ_m3000_2018.root"]
-p = PostProcessor(".", files, cut="1>0", branchsel=None, modules=[genProducerZTauConstr(), zProducerConstr()] )
+files = ["root://cmsxrootd.fnal.gov//store/user/bbarton/TaustarToTauTauZ/SignalMC/TauZ/taustarToTauZ_m500_2018.root"]
+p = PostProcessor(".", files, cut="1>0", branchsel=None, postfix="", modules=[genProducerZTauConstr(), zProducerConstr()] )
 p.run()
