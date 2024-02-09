@@ -183,20 +183,22 @@ class GenProducerZTau(Module):
                     for inPrtIdx, invisPart in enumerate(invisbleParticles):
                         if inPrtIdx == 0:
                             continue
-                        met = met.p4() + invisPart.p4()
+                        met = met + invisPart.p4()
                     tausMET_eta = met.Eta()
                     tausMET_phi = met.Phi()
                     tausMET_pt = met.Pt()
                 
                 #Z->tautau and Z->invisible also contribute to MET from interesting particles in the event
-                totMet = met.p4()
+                totMet = met
                 if zDM == 3: #Z->tautau we need the daughters of the two taus
-                    for zTauDauIdx in getDecayChain(zDau1Idx, genParts).extend(getDecayChain(zDau2Idx, genParts)):
+                    tauDaus = getDecayChain(zDau1Idx, genParts)
+                    tauDaus.extend(getDecayChain(zDau2Idx, genParts))
+                    for zTauDauIdx in tauDaus:
                         if abs(genParts[zTauDauIdx].pdgId) == 12 or abs(genParts[zTauDauIdx].pdgId) == 14 or abs(genParts[zTauDauIdx].pdgId) == 16:
-                            met = met.p4() + genParts[zTauDauIdx].p4()
+                            totMet = totMet + genParts[zTauDauIdx].p4()
                 elif zDM == 4:#Z->invisible we just need zDaughters 
-                    totMet = totMet.p4() + genParts[zDau1Idx].p4()
-                    totMet = totMet.p4() + genParts[zDau2Idx].p4()
+                    totMet = totMet + genParts[zDau1Idx].p4()
+                    totMet = totMet + genParts[zDau2Idx].p4()
                 
                 totMET_eta = totMet.Eta()
                 totMET_phi = totMet.Phi()
