@@ -108,13 +108,13 @@ class GenProducerZTau(Module):
                     decayChain = getDecayChain(tsTauIdx, genParts)
                     for partIdx in decayChain: #Check for electron/muon or their neutrinos in decay chain
                         if abs(genParts[partIdx].pdgId) == 11 or abs(genParts[partIdx].pdgId) == 12:
-                            tsTauDM == 1
+                            tsTauDM = 1
                             break
                         elif abs(genParts[partIdx].pdgId) == 13 or abs(genParts[partIdx].pdgId) == 14:
-                            tsTauDM == 2
+                            tsTauDM = 2
                             break
                     if tsTauDM < 0: #If we didnt find an e/mu or nu_e/nu_mu must be a hadronic decay
-                        tsTauDM == 0
+                        tsTauDM = 0
                 elif prodChainContains(prodChain, idx = 0): # If this was the tau produced in the CI with the taustar (always idx 0 in GenParts)
                     tauIdx = idx
                     decayChain = getDecayChain(tauIdx, genParts)
@@ -168,7 +168,7 @@ class GenProducerZTau(Module):
 
                 #Calculate the total MET coming from the decay of the two taus
                 decayChain_tsTau = getDecayChain(tsTauIdx, genParts)
-                decayChain_tau = getDecayChain(tsTauIdx, genParts)
+                decayChain_tau = getDecayChain(tauIdx, genParts)
                 invisbleParticles = []
                 for partIdx in decayChain_tsTau:
                     if abs(genParts[partIdx].pdgId) == 12 or abs(genParts[partIdx].pdgId) == 14 or abs(genParts[partIdx].pdgId) == 16:

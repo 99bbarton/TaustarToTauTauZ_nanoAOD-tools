@@ -22,14 +22,29 @@ class GenProducerWNu(Module):
 
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.out = wrappedOutputTree
-        self.out.branch("GenW_tsIdx", "I") #"Idx to last copy of taustar in GenPart"
-        self.out.branch("GenW_tauIdx", "I") #"Idx to the last copy of the tau produced alongside the taustar in GenPart"
-        self.out.branch("GenW_wIdx", "I") #"Idx to the last copy of the W from the taustar decay in GenPart"
-        self.out.branch("GenW_wDM", "I") #"Decay mode of W. 0 = hadronic, 1=electron, 2=muon, 3=tau. -1 default"
-        self.out.branch("GenW_wDau1Idx", "I") #"Idx to GenPart of the higher pT daughter of the W if wDM==0 or the charged lepton if wDM>0. -1 default"
-        self.out.branch("GenW_wDau2Idx", "I") #"Idx to GenPart of the lower pT daughter of the W if wDM!=0 or the nu if wDM>0. -1 default"
-        self.out.branch("GenW_wGenAK8Idx", "I") #"Idx to GenJetAK8 collection jet matching the W from taustar if wDM == 0"
-        self.out.branch("GenW_dr_tauW", "F") #"DeltaR between tau and W"
+        self.out.branch("Gen_tsIdx", "I") #"Idx to last copy of taustar in GenPart"
+        self.out.branch("Gen_tauIdx", "I") #"Idx to the last copy of the tau produced alongside the taustar in GenPart"
+        self.out.branch("Gen_tauDM", "I") #"Decay mode of the spectator tau:  0=had, 1=e, 2=muon"
+        self.out.branch("Gen_wIdx", "I") #"Idx to the last copy of the W from the taustar decay in GenPart"
+        self.out.branch("Gen_wDM", "I") #"Decay mode of W. 0 = hadronic, 1=electron, 2=muon, 3=tau. -1 default"
+        self.out.branch("Gen_wDau1Idx", "I") #"Idx to GenPart of the higher pT daughter of the W if wDM==0 or the charged lepton if wDM>0. -1 default"
+        self.out.branch("Gen_wDau2Idx", "I") #"Idx to GenPart of the lower pT daughter of the W if wDM!=0 or the nu if wDM>0. -1 default"
+        self.out.branch("Gen_wGenAK8Idx", "I") #"Idx to GenJetAK8 collection jet matching the W from taustar if wDM == 0"
+        self.out.branch("Gen_nuIdx", "I") #"Idx to the last instance of the Nu in GenPart"
+        self.out.branch("Gen_tauNuMET_pt", "F") #"MET from spectator tau and nu decays"
+        self.out.branch("Gen_tauNuMET_eta", "F") #"MET from spectator tau and nu decays"
+        self.out.branch("Gen_tauNuMET_phi", "F") #"MET from spectator tau and nu decays"
+        self.out.branch("Gen_wMET_pt", "F") #"MET from W decay"
+        self.out.branch("Gen_wMET_eta", "F") #"MET from W decay"
+        self.out.branch("Gen_wMET_phi", "F") #"MET from W decay"
+        self.out.branch("Gen_totMET_pt", "F") #"MET from W decay, spectator tau decay, and nu"
+        self.out.branch("Gen_totMET_eta", "F") #"MET from W decay, spectator tau decay, and nu"
+        self.out.branch("Gen_totMET_phi", "F") #"MET from W decay, spectator tau decay, and nu"
+        self.out.branch("Gen_dr_tauW", "F") #"DeltaR between tau and W"
+        self.out.branch("Gen_dr_tauTotMET", "F") #"DeltaR between the spectator tau and the total MET"
+        self.out.branch("Gen_dr_wTotMET", "F") #"DeltaR between the the W and the total MET"
+        self.out.bbarton("Gen_dr_tauNuMETTotMET", "F") #"DeltaR between the MET from the spectator tau + nu and the total MET"
+
 
     def endFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         pass
@@ -39,12 +54,26 @@ class GenProducerWNu(Module):
         #Indices default to -1
         tsIdx = -1
         tauIdx = -1
+        tauDM = -1
         wIdx = -1
+        nuIdx - -1
         wDau1Idx = -1
         wDau2Idx = -1
         wDM = -1
-        dr_tauW = -999
         wGenAK8Idx = -1
+        tauNuMET_pt = -999
+        tauNuMET_eta = -999
+        tauNuMET_phi = -999
+        wMET_pt = -999
+        wMET_eta = -999
+        wMET_phi = -999
+        totMET_pt = -999
+        totMET_eta = -999
+        totMET_phi = -999
+        dr_tauW = -999
+        dr_tauTotMET = -999
+        dr_wTotMET = -999
+        dr_tauNuMETTotMET = -999
 
         genParts = Collection(event, "GenPart")
 
@@ -59,6 +88,21 @@ class GenProducerWNu(Module):
                 prodChain = getProdChain(idx, genParts)
                 if prodChainContains(prodChain, idx = 0): # If this was the tau produced in the CI with the taustar
                     tauIdx = idx
+                    decayChain = getDecayChain(tauIdx, genParts)
+                    for partIdx in decayChain: #Check for electron/muon or their neutrinos in decay chain
+                        if abs(genParts[partIdx].pdgId) == 11 or abs(genParts[partIdx].pdgId) == 12:
+                            tauDM = 1
+                            break
+                        elif abs(genParts[partIdx].pdgId) == 13 or abs(genParts[partIdx].pdgId) == 14:
+                            tauDM = 2
+                            break
+                    if tauDM < 0: #If we didnt find an e/mu or nu_e/nu_mu must be a hadronic decay
+                        tauDM = 0
+                
+            elif abs(genPart.pdgId) == 12 or abs(genPart.pdgId) == 14 or abs(genPart.pdgId) == 16: #Neutrino
+                prodChain = getProdChain(idx, genParts)
+                if prodChainContains(prodChain, idx=tsIdx): # If this was the neutrino from the taustar decay
+                    nuIdx = idx
             elif abs(genPart.pdgId) == 24: #Found a W
                 prodChain = getProdChain(idx, genParts)
                 if prodChainContains(prodChain, pdgID = 4000015): #If this W is the taustar decay product
@@ -108,20 +152,80 @@ class GenProducerWNu(Module):
                             wDau1Idx = decayChain[1]
                             wDau2Idx = decayChain[0]
             #End W
+            if tsIdx >= 0 and tauIdx >=0 and wIdx>= 0 and nuIdx >= 0: #Found the interesting particles, do calculations now
 
-        #DeltaR calculations
-        tau = genParts[tauIdx]
-        w = genParts[wIdx]
-        dr_tauW = tau.DeltaR(w)
+                #MET calculations
+                decayChain_tau = getDecayChain(tauIdx, genParts)
+                invisbleParticles = []
+                #First calculate total spectator tau + neutrino MET
+                invisbleParticles.append(genParts[nuIdx])
+                for partIdx in decayChain_tau: 
+                    if abs(genParts[partIdx].pdgId) == 12 or abs(genParts[partIdx].pdgId) == 14 or abs(genParts[partIdx].pdgId) == 16:
+                        invisbleParticles.append(genParts[partIdx]) 
 
-        self.out.fillBranch("GenW_tsIdx", tsIdx)
-        self.out.fillBranch("GenW_tauIdx", tauIdx)
-        self.out.fillBranch("GenW_wIdx", wIdx)
-        self.out.fillBranch("GenW_wDM", wDM)
-        self.out.fillBranch("GenW_wDau1Idx", wDau1Idx)
-        self.out.fillBranch("GenW_wDau2Idx", wDau2Idx)
-        self.out.fillBranch("GenW_wGenAK8Idx", wGenAK8Idx)
+                tauNuMET = invisbleParticles[0].p4()
+                for inPrtIdx, invisPart in enumerate(invisbleParticles):
+                    if inPrtIdx == 0:
+                        continue
+                    tauNuMET = tauNuMET + invisPart.p4()
+                tauNuMET_eta = tauNuMET.Eta()
+                tauNuMET_phi = tauNuMET.Phi()
+                tauNuMET_pt = tauNuMET.Pt()
+
+                #Now calculate MET from W
+                invisbleParticles = []
+                decayChain_w = getDecayChain(wIdx, genParts)
+                for i, partIdx in enumerate(decayChain_w):
+                    if abs(genParts[partIdx].pdgId) == 12 or abs(genParts[partIdx].pdgId) == 14 or abs(genParts[partIdx].pdgId) == 16:
+                        invisbleParticles.append(genParts[partIdx])
+                
+                wMET = invisbleParticles[0].p4()
+                for inPrtIdx, invisPart in enumerate(invisbleParticles):
+                    if inPrtIdx == 0:
+                        continue
+                    wMET = wMET + invisPart.p4()
+                wMET_eta = wMET.Eta()
+                wMET_phi = wMET.Phi()
+                wMET_pt = wMET.Pt()
+
+                #Total MET from interesting particles is tau + nu + W MET
+                totMET = tauNuMET + wMET
+                totMET_pt = totMET.Pt()
+                totMET_eta = totMET.Eta()
+                totMET_phi = totMET.Phi()
+
+                #DeltaR calculations
+                tau = genParts[tauIdx]
+                w = genParts[wIdx]
+                dr_tauW = tau.DeltaR(w)
+                dr_tauTotMET = tau.DeltaR(totMET)
+                dr_wTotMET = w.DeltaR(totMET)
+                dr_tauNuMETTotMET = tauNuMET.DeltaR(totMET)
+
+                break #Since we are done finding/calculating
+        #End GenPart looping
+
+        self.out.fillBranch("Gen_tsIdx", tsIdx)
+        self.out.fillBranch("Gen_tauIdx", tauIdx)
+        self.out.fillBranch("Gen_tauDM", tauDM)
+        self.out.fillBranch("Gen_wIdx", wIdx)
+        self.out.fillBranch("Gen_wDM", wDM)
+        self.out.fillBranch("Gen_wDau1Idx", wDau1Idx)
+        self.out.fillBranch("Gen_wDau2Idx", wDau2Idx)
+        self.out.fillBranch("Gen_wGenAK8Idx", wGenAK8Idx)
+        self.out.fillBranch("Gen_tauNuMET_pt", tauNuMET_pt)
+        self.out.fillBranch("Gen_tauNuMET_eta", tauNuMET_eta)
+        self.out.fillBranch("Gen_tauNuMET_phi", tauNuMET_phi)
+        self.out.fillBranch("Gen_wMET_pt", wMET_pt)
+        self.out.fillBranch("Gen_wMET_eta", wMET_eta)
+        self.out.fillBranch("Gen_wMET_phi", wMET_phi)
+        self.out.fillBranch("Gen_totMET_pt", totMET_pt)
+        self.out.fillBranch("Gen_totMET_eta", totMET_eta)
+        self.out.fillBranch("Gen_totMET_phi", totMET_phi)
         self.out.fillBranch("GenW_dr_tauW", dr_tauW)
+        self.out.fillBranch("Gen_dr_tauTotMET", dr_tauTotMET)
+        self.out.fillBranch("Gen_dr_wTotMET", dr_wTotMET)
+        self.out.fillBranch("Gen_dr_tauNuMETTotMET", dr_tauNuMETTotMET)
 
         return True
 
