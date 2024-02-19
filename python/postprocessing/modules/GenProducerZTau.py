@@ -37,7 +37,7 @@ class GenProducerZTau(Module):
         self.out.branch("Gen_tausMET_pt", "F") #"pT of MET from the spectator tau and taustar tau"
         self.out.branch("Gen_tausMET_eta", "F") #"eta of MET from the spectator tau and taustar tau"
         self.out.branch("Gen_tausMET_phi", "F") #"phi of MET from the spectator tau and taustar tau"
-        self.out.branch("Gen_totMET_pt", "F") #"pT of MET from the spectator tau and taustar tau"
+        self.out.branch("Gen_totMET_pt", "F") #"pT of MET from the spectator tau and taustar tau, and Z decay chains"
         self.out.branch("Gen_totMET_eta", "F") #"eta of MET from the spectator tau, taustar tau, and Z decay chains"
         self.out.branch("Gen_totMET_phi", "F") #"phi of MET from the spectator tau, taustar tau, and Z decay chains"
         self.out.branch("Gen_dr_tsTauTau", "F") #"DeltaR between tsTau and Tau"
