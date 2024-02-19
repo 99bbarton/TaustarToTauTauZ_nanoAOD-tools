@@ -51,9 +51,6 @@ class GenProducerZTau(Module):
         self.out.branch("Gen_dr_tauTotMET", "F") #"DeltaR between tau and total MET of interesting particles" 
         self.out.branch("Gen_dr_zTotMET", "F") #"DeltaR between the Z and total MET of interesting particles" 
         self.out.branch("Gen_dr_tausMETTotMET", "F") #"DeltaR between MET from the 2 taus and total MET of interesting particles" 
-    
-
-        #TODO,  add in MET from Taus and DR b/w MET and others
 
     def endFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         pass

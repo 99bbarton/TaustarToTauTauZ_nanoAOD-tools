@@ -1,0 +1,35 @@
+
+
+from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import PostProcessor
+from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
+from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection
+import PhysicsTools.NanoAODTools.postprocessing.framework.datamodel as datamodel
+
+# ----------------------------------------------------------------------------------------------------------------------------
+
+class CLASSNAME(Module):
+
+    def __init__(self):
+        pass
+    
+    def beginJob(self):
+        pass
+
+    def endJob(self):
+        pass
+
+    def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
+        self.out = wrappedOutputTree
+
+    def endFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
+        pass
+
+
+    def analyze(self, event):
+
+
+        return True
+    
+
+cLASSNAMEConstr = lambda: CLASSNAME()
+
