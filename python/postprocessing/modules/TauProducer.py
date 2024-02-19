@@ -20,8 +20,8 @@ class TauProducer(Module):
 
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.out = wrappedOutputTree
-        self.out.branch("SelTaus_n", "I")
-        self.out.branch("SelTaus_idxs", "i", lenVar="SelTaus_n")
+        self.out.branch("SelTaus_n", "I") #"The number of taus which passed basic requirements"
+        self.out.branch("SelTaus_idxs", "i", lenVar="SelTaus_n") #"List of length SelTaus_n of indices to Tau collection of taus passing basic requirements"
 
     def endFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         pass
