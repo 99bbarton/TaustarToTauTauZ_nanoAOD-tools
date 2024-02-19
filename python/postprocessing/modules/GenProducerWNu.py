@@ -43,7 +43,7 @@ class GenProducerWNu(Module):
         self.out.branch("Gen_dr_tauW", "F") #"DeltaR between tau and W"
         self.out.branch("Gen_dr_tauTotMET", "F") #"DeltaR between the spectator tau and the total MET"
         self.out.branch("Gen_dr_wTotMET", "F") #"DeltaR between the the W and the total MET"
-        self.out.bbarton("Gen_dr_tauNuMETTotMET", "F") #"DeltaR between the MET from the spectator tau + nu and the total MET"
+        self.out.branch("Gen_dr_tauNuMETTotMET", "F") #"DeltaR between the MET from the spectator tau + nu and the total MET"
 
 
     def endFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
@@ -56,7 +56,7 @@ class GenProducerWNu(Module):
         tauIdx = -1
         tauDM = -1
         wIdx = -1
-        nuIdx - -1
+        nuIdx = -1
         wDau1Idx = -1
         wDau2Idx = -1
         wDM = -1
@@ -173,26 +173,38 @@ class GenProducerWNu(Module):
                 tauNuMET_pt = tauNuMET.Pt()
 
                 #Now calculate MET from W
-                invisbleParticles = []
-                decayChain_w = getDecayChain(wIdx, genParts)
-                for i, partIdx in enumerate(decayChain_w):
-                    if abs(genParts[partIdx].pdgId) == 12 or abs(genParts[partIdx].pdgId) == 14 or abs(genParts[partIdx].pdgId) == 16:
-                        invisbleParticles.append(genParts[partIdx])
-                
-                wMET = invisbleParticles[0].p4()
-                for inPrtIdx, invisPart in enumerate(invisbleParticles):
-                    if inPrtIdx == 0:
-                        continue
-                    wMET = wMET + invisPart.p4()
-                wMET_eta = wMET.Eta()
-                wMET_phi = wMET.Phi()
-                wMET_pt = wMET.Pt()
+                if wDM > 0:
+                    invisbleParticles = []
+                    decayChain_w = getDecayChain(wIdx, genParts)
+                    for i, partIdx in enumerate(decayChain_w):
+                        if abs(genParts[partIdx].pdgId) == 12 or abs(genParts[partIdx].pdgId) == 14 or abs(genParts[partIdx].pdgId) == 16:
+                            invisbleParticles.append(genParts[partIdx])
+                        elif abs(genParts[partIdx].pdgId) == 15: #If the W decayed to tauNu then we also need to search for invisible particles from tau decay
+                            decayChain_wTau = getDecayChain(partIdx, genParts)
+                            for tauPartIdx in decayChain_wTau:
+                                if abs(genParts[tauPartIdx].pdgId) == 12 or abs(genParts[tauPartIdx].pdgId) == 14 or abs(genParts[tauPartIdx].pdgId) == 16:
+                                    invisbleParticles.append(genParts[tauPartIdx])
 
-                #Total MET from interesting particles is tau + nu + W MET
-                totMET = tauNuMET + wMET
-                totMET_pt = totMET.Pt()
-                totMET_eta = totMET.Eta()
-                totMET_phi = totMET.Phi()
+                    wMET = invisbleParticles[0].p4()
+                    for inPrtIdx, invisPart in enumerate(invisbleParticles):
+                        if inPrtIdx == 0:
+                            continue
+                        wMET = wMET + invisPart.p4()
+
+                    wMET_eta = wMET.Eta()
+                    wMET_phi = wMET.Phi()
+                    wMET_pt = wMET.Pt()
+
+                    #Total MET from interesting particles is tau + nu + W MET
+                    totMET = tauNuMET + wMET
+                    totMET_pt = totMET.Pt()
+                    totMET_eta = totMET.Eta()
+                    totMET_phi = totMET.Phi()
+                else:
+                    totMET = tauNuMET
+                    totMET_pt = tauNuMET.Pt()
+                    totMET_eta = tauNuMET.Eta()
+                    totMET_phi = tauNuMET.Phi()
 
                 #DeltaR calculations
                 tau = genParts[tauIdx]
@@ -222,7 +234,7 @@ class GenProducerWNu(Module):
         self.out.fillBranch("Gen_totMET_pt", totMET_pt)
         self.out.fillBranch("Gen_totMET_eta", totMET_eta)
         self.out.fillBranch("Gen_totMET_phi", totMET_phi)
-        self.out.fillBranch("GenW_dr_tauW", dr_tauW)
+        self.out.fillBranch("Gen_dr_tauW", dr_tauW)
         self.out.fillBranch("Gen_dr_tauTotMET", dr_tauTotMET)
         self.out.fillBranch("Gen_dr_wTotMET", dr_wTotMET)
         self.out.fillBranch("Gen_dr_tauNuMETTotMET", dr_tauNuMETTotMET)

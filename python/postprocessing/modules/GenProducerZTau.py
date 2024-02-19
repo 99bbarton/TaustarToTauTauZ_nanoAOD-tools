@@ -120,13 +120,13 @@ class GenProducerZTau(Module):
                     decayChain = getDecayChain(tauIdx, genParts)
                     for partIdx in decayChain: #Check for electron/muon or their neutrinos in decay chain
                         if abs(genParts[partIdx].pdgId) == 11 or abs(genParts[partIdx].pdgId) == 12:
-                            tauDM == 1
+                            tauDM = 1
                             break
                         elif abs(genParts[partIdx].pdgId) == 13 or abs(genParts[partIdx].pdgId) == 14:
-                            tauDM == 2
+                            tauDM = 2
                             break
                     if tauDM < 0: #If we didnt find an e/mu or nu_e/nu_mu must be a hadronic decay
-                        tauDM == 0
+                        tauDM = 0
 
             elif abs(genPart.pdgId) == 23: #Found a Z
                 prodChain = getProdChain(idx, genParts)
