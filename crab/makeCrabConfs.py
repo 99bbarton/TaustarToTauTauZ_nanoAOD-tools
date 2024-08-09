@@ -11,16 +11,17 @@ def parseArgs():
     argparser.add_argument("-a", "--action", action="store", required=True, choices=["GEN", "GEN_SUB", "SUB"], help="Whether to generate, generate and submit, or only submit configs")
     argparser.add_argument("-t", "--type", action="store", choices=["SIG", "MC", "DATA"], help="Whether to run on signal MC, background MC, or data. Required if action includes generating configs")
     argparser.add_argument("-y", "--year", action="append", choices=["RUN2", "RUN3", "2016", "2016post", "2017", "2018", "2022", "2022post", "2023", "2023post"], help="A year or run period to process")
-    argparser.add_argument("-d", "--dataset", action="append", choices=["SIG", "M250"," M500", "M750", "M1000", "M1250", "M1500", "M1750", "M2000", "M2500", "M3000", "M3500", "M4000", "M4500", "M5000"], default="ALL", help="A specific dataset to process. Must also provide one or more years. Dataset takes precedent of --inFiles")
-    argparser.add_argument("-e", "--executable", action="store", default="crab_script.py", help="The executable script to use")
+    argparser.add_argument("-d", "--dataset", action="append", choices=["SIG", "M250", "M500", "M750", "M1000", "M1250", "M1500", "M1750", "M2000", "M2500", "M3000", "M3500", "M4000", "M4500", "M5000"], help="A specific dataset to process. Must also provide one or more years. Dataset takes precedent of --inFiles")
+    argparser.add_argument("-e", "--executable", action="store", default="./crab_script.py", help="The executable script to use")
     argparser.add_argument("-i", "--inFiles", action="append", help="A file to use as input. Multiple files can be specified. If action=GEN/GEN_SUB, these should be the input root files. If action=SUB, this should be directory/file to submit")
-    argparser.add_argument("-n", "--nEvents", action="store", type=int, help="The maximum number of events to process")
+    #argparser.add_argument("-n", "--nEvents", action="store", type=int, help="The maximum number of events to process")
     #argparser.add_argument("-o", "--outDir", action="store", default="./", help="The desired output directory")
     argparser.add_argument("-k", "--keepAndDrop", action="store", default="./keep_and_drop.txt", help="A path to a text file listing which branches to keep/drop")
     argparser.add_argument("--echo", action="store_true", help="Echo the arguments used")
-    argparser.add_argument("--log", action="Store", choices=["TRUE", "FALSE"], default="TRUE", help="Whether to log this configuration creation/submission in crabLog.txt")
+    argparser.add_argument("--log", action="store", choices=["TRUE", "FALSE"], default="TRUE", help="Whether to log this configuration creation/submission in crabLog.txt")
 
     raw_args = argparser.parse_args()  
+    args = {}
 
     args["GEN"] = raw_args.action == "GEN" or raw_args.action == "GEN_SUB"
     args["SUB"] = raw_args.action == "SUB" or raw_args.action == "GEN_SUB"
@@ -43,7 +44,7 @@ def parseArgs():
     args["YEARS"] = []
     if raw_args.year:
         
-        for year in raw_args.years:
+        for year in raw_args.year:
             #if year == "ALL":
             #    args["YEARS"].extend(["2015", "2016", "2017", "2018", "2022", "2023"])
             if year == "RUN2":
@@ -91,8 +92,8 @@ def parseArgs():
             elif os.path.isdir(fil):
                 dirContents = os.listdir(fil)
                 for f in dirContents:
-                    if os.path.isfile(f):
-                        args["FILES"].append(f)
+                    if os.path.isfile(fil + "/" + f):
+                        args["FILES"].append(fil + "/" + f)
             else:
                 print("WARNING: could not file or directory: " + fil)
     elif raw_args.type == "SIG" and raw_args.dataset and args["ERA"] == 2: #Run2 MC was private production so not a DAS dataset
@@ -110,11 +111,12 @@ def parseArgs():
                     args["FILES"].append("/store/user/bbarton/TaustarToTauTauZ/SignalMC/TauZ/taustarToTauZ_"+mass.lower()+"_"+year+".root")
         
 
-    if os.path.isfile(raw_args.executable) and os.path.isfile(raw_args.executable[:-2] + ".sh"):
-        args["EXE"] = raw_args.executable
-    else:
-        print("Could not locate desired executable file and/or associated .sh file")
-        exit(1)
+    if args["GEN"]:
+        if os.path.isfile(raw_args.executable) and os.path.isfile(raw_args.executable[:-2] + "sh"):
+            args["EXE"] = raw_args.executable
+        else:
+            print("Could not locate desired executable file and/or associated .sh file")
+            exit(1)
 
     
     if args["TYPE"] == "Data":
@@ -122,16 +124,16 @@ def parseArgs():
     else:
         args["LUMI"] = {}
 
-
-    args["N"] = -1
-    if raw_args.nEvents:
-        args["N"] = raw_args.nEvents
+    #args["N"] = -1
+    #if raw_args.nEvents:
+    #    args["N"] = raw_args.nEvents
     
-    if args["GEN"] and os.path.isfile(raw_args.keepAndDrop):
-        args["KEEP_DROP"] = raw_args.keepAndDrop
-    else:
-        print("ERROR: Could not find keep/drop file")
-        exit(1)
+    if args["GEN"]:
+        if os.path.isfile(raw_args.keepAndDrop):
+            args["KEEP_DROP"] = raw_args.keepAndDrop
+        else:
+            print("ERROR: Could not find keep/drop file")
+            exit(1)
 
     args["LOG"] = raw_args.log == "TRUE"
 
@@ -144,13 +146,13 @@ def parseArgs():
 ## ---------------------------------------------------------------------------------------------------------------------------- ##
 
 def main(args):
-    if args.action == "GEN" or args.action == "GEN_SUB":
+    if args["GEN"]:
         filelist = makeConfigs(args)
-    
-    if args.action == "SUB":
-        submit(args.inFiles)
-    else:
-        submit(filelist)
+        if args["SUB"]:
+            submit(filelist)
+    elif args["SUB"]:
+        submit(args)
+        
 
 ## ---------------------------------------------------------------------------------------------------------------------------- ##
 
@@ -160,13 +162,14 @@ def makeConfigs(args):
     typeStr = args["TYPE"] + "/"
     if not os.path.isdir("./CrabConfigs/" + args["TYPE"] + "/"):
         os.system("mkdir ./CrabConfigs/" + args["TYPE"] + "/")
-    dirName = "./CrabConfigs/" + typeStr + date.strftime("%d%b%Y")
+    dirName = "./CrabConfigs/" + typeStr + date.strftime("%d%b%Y") + "/"
     if not os.path.isdir(dirName):
         os.system("mkdir " + dirName)
+    print("\n\nWill write config files to " + dirName)
 
-    requestName = args["TYPE"] + "_" + args["ERA"].lower() + "_" + date.strftime("%d%b%Y")
+    requestName = args["TYPE"] + "_run" + str(args["ERA"]) + "_" + date.strftime("%d%b%Y")
     outDir = "/store/user/bbarton/TaustarToTauTauZ/Crab/"+ requestName + "/"
-    print("\n\nPlease execute: eoskmkdir " + outDir + "\n\n")
+    print("Please execute: eosmkdir " + outDir + "\n\n")
 
     inputs = []
     dataset = False
@@ -179,18 +182,25 @@ def makeConfigs(args):
     for inputName in inputs:
         filename = ""
         if dataset:
-            filename = datasetToName(inputName)
+            filename, year =  datasetToName(inputName)
+            filename = "crabConf_" + filename + ".py"
         else:
-            filename = inputName.split("/")[-1].split(".")[0]
+            filename = "crabConf_" + inputName.split("/")[-1].split(".")[0] + ".py"
+            year = ""
+            yrOptions = ["2016post", "2016", "2017", "2018", "2022post", "2022",  "2023post", "2023"]
+            for yrOp in yrOptions: 
+                if inputName.find(yrOp) >= 0: #Note, this relies on the "post" periods appearing first in the yrOptions list
+                    year = yrOp
+                    break
         
-        with open(filename, "w+") as confFile:
+        with open(dirName + filename, "w+") as confFile:
             confFile.write("from WMCore.Configuration import Configuration\n")
             confFile.write("from CRABClient.UserUtilities import config\n\n")
 
             confFile.write("config = config()\n\n")
 
             confFile.write("config.section_('General')\n")
-            confFile.write("config.General.requestName = " + requestName + "\n")
+            confFile.write("config.General.requestName = '" + requestName + "'\n")
             confFile.write("config.General.workArea = 'CrabSubmits'\n")
             confFile.write("config.General.transferOutputs = True\n")
             confFile.write("config.General.transferLogs = True\n\n")
@@ -200,7 +210,7 @@ def makeConfigs(args):
             confFile.write("config.JobType.psetName = 'PSet.py'\n")
             confFile.write("config.JobType.scriptExe = '" + args["EXE"][:-3] +".sh'\n")
             scriptArgs = ""
-            confFile.write("config.JobType.scriptArgs = %s\n" % scriptArgs)
+            confFile.write("config.JobType.scriptArgs = '%s'\n" % scriptArgs)
             confFile.write("config.JobType.inputFiles = ['" + args["KEEP_DROP"] + "', '" + args["EXE"] + "', '../scripts/haddnano.py']\n")
             confFile.write("config.JobType.allowUndistributedCMSSW = True\n\n")
 
@@ -222,9 +232,16 @@ def makeConfigs(args):
 
 #Convert DAS dataset name to a version friendly for naming config files, histograms, etc
 def datasetToName(dataset):
-    dataset = dataset.split("/")[0]
-    if dataset.startswith("TaustarToTauZ"):
-        return "taustarToTauZ"
+    year = ""
+    yrOptions = ["2016post", "2016", "2017", "2018", "2022post", "2022",  "2023post", "2023"]
+    for yrOp in yrOptions: 
+        if dataset.find(yrOp) >= 0: #Note, this relies on the "post" periods appearing first in the yrOptions list
+            year = yrOp
+            break
+
+    if dataset.startswith("/TaustarToTauZ"):
+        name = "taustarToTauZ_" + dataset.split("_")[1] + "_" + year
+        return name, year
     else:
         print("WARNING: Unrecognized dataset!")
         return dataset
@@ -239,7 +256,9 @@ def submit(args):
     logStr = "\nSubmitting CRAB jobs:\n"
     logStr += "Time: " + datetime.datetime.now().strftime("%Y-%m-%d %H:%M") + "\n"
     logStr += "Configs:\n"
+
     for f in args["FILES"]:
+        print("Submitting: " + f)
         os.system("crab submit -c " + f)
         if args["LOG"]:
             logStr += f + "\n"
