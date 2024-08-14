@@ -22,7 +22,7 @@ def parseArgs():
 
     raw_args = argparser.parse_args()  
     args = {}
-
+    
     args["GEN"] = raw_args.action == "GEN" or raw_args.action == "GEN_SUB"
     args["SUB"] = raw_args.action == "SUB" or raw_args.action == "GEN_SUB"
 
@@ -50,17 +50,15 @@ def parseArgs():
             if year == "RUN2":
                 args["YEARS"].extend(["2016", "2016post", "2017", "2018"])
                 args["ERA"] = 2
+            elif year == "2016" or year == "2016post" or year =="2017" or year == "2018":
+                args["YEARS"].append(year)
+                args["ERA"] = 2
             elif year == "RUN3":
                 args["YEARS"].extend(["2022", "2022post", "2023", "2023post"])
                 args["ERA"] = 3
-            else:
+            elif year == "2022" or year == "2022post" or year == "2023" or year == "2023post":
                 args["YEARS"].append(year)
-
-        if args["ERA"] == 0:
-            if "2022" in raw_args.year or "2022post" in raw_args.year or  "2023" in raw_args.year or "2023post":
                 args["ERA"] = 3
-            else:
-                args["ERA"] = 2
         args["YEARS"] = set(args["YEARS"])
 
     args["DATASETS"] = []
@@ -109,13 +107,13 @@ def parseArgs():
             masses = raw_args.dataset
         
         for year in args["YEARS"]:
-                if year == "2016":
-                    year = "2015"
-                elif year == "2016post":
-                    year = "2016"
-                for mass in masses:
-                    args["FILES"].append("/store/user/bbarton/TaustarToTauTauZ/SignalMC/TauZ/taustarToTauZ_"+mass.lower()+"_"+year+".root")
-        
+            if year == "2016":
+                year = "2015"
+            elif year == "2016post":
+                year = "2016"
+            for mass in masses:
+                args["FILES"].append("/store/user/bbarton/TaustarToTauTauZ/SignalMC/TauZ/taustarToTauZ_"+mass.lower()+"_"+year+".root")
+        print(args["FILES"])
 
     if args["GEN"]:
         if os.path.isfile(raw_args.executable) and os.path.isfile(raw_args.executable[:-2] + "sh"):
@@ -227,6 +225,8 @@ def makeConfigs(args):
                 confFile.write("config.Data.inputDataset = '%s'\n" % inputName )
                 if args["TYPE"] == "Data":
                     confFile.write("config.Data.lumiMask='%s'\n" % args["LUMI"][year])
+            else:
+                confFile.write("config.Data.userInputFiles= ['%s']\n" % inputName) 
             confFile.write("config.Data.inputDBS = 'global'\n")
             confFile.write("config.Data.splitting = 'FileBased'\n")
             confFile.write("config.Data.unitsPerJob = 1\n")
