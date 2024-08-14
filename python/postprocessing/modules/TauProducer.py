@@ -65,6 +65,6 @@ class TauProducer(Module):
 tauProducerConstr = lambda era: TauProducer(era = era)
 
 # ----------------------------------------------------------------------------------------------------------------------------
-files = ["root://cmsxrootd.fnal.gov//store/user/bbarton/TaustarToTauTauZ/SignalMC/TauZ/taustarToTauZ_m3000_2018.root"]
-p = PostProcessor(".", files, cut="1>0", branchsel=None, modules=[tauProducerConstr()] )
-p.run()
+#files = ["root://cmsxrootd.fnal.gov//store/user/bbarton/TaustarToTauTauZ/SignalMC/TauZ/taustarToTauZ_m3000_2018.root"]
+#p = PostProcessor(".", files, cut="1>0", branchsel=None, modules=[tauProducerConstr()] )
+#p.run()

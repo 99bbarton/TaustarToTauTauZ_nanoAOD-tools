@@ -44,7 +44,7 @@ class ZProducer(Module):
         electrons = Collection(event, "Electron")
         for e1Idx, e1 in enumerate(electrons):
             for e2Idx, e2 in enumerate(electrons):
-                if selt.era == 2:
+                if self.era == 2:
                     cuts = (e1.charge * e2.charge) < 0 #Opposite charge
                     cuts = cuts and (abs(e1.eta + e1.deltaEtaSC) >= 1.566 or abs( e1.eta + e1.deltaEtaSC) < 1.444) #Fiducial
                     cuts = cuts and (abs(e2.eta + e2.deltaEtaSC) >= 1.566 or abs(e2.eta + e2.deltaEtaSC) < 1.444)
@@ -94,14 +94,14 @@ class ZProducer(Module):
             score_pn = 0 #Best ParticleNet tagger score
             for jetIdx, jet in enumerate(fatJets):
                 if jet.mass >= 40 and jet.mass <= 150:
-                    if era == 2:
+                    if self.era == 2:
                         if jet.deepTag_ZvsQCD > 0.7 and jet.deepTag_ZvsQCD > score_dt:
                             score_dt = jet.deepTag_ZvsQCD
                             Z_jetIdxDT = jetIdx
                         if jet.particleNet_ZvsQCD > 0.7 and jet.particleNet_ZvsQCD > score_pn:
                             score_pn = jet.particleNet_ZvsQCD
                             Z_jetIdxPN = jetIdx
-                    elif era ==3:
+                    elif self.era ==3:
                         if jet.particleNetWithMass_ZvsQCD > 0.7 and jet.particleNetWithMass_ZvsQCD > score_pn:
                             score_pn = jet.particleNetWithMass_ZvsQCD
                             Z_jetIdxPN = jetIdx
@@ -130,8 +130,8 @@ class ZProducer(Module):
 
 zProducerConstr = lambda era: ZProducer(era = era)
 
-from PhysicsTools.NanoAODTools.postprocessing.modules.GenProducerZTau import genProducerZTauConstr
+#from PhysicsTools.NanoAODTools.postprocessing.modules.GenProducerZTau import genProducerZTauConstr
 
-files = ["root://cmsxrootd.fnal.gov//store/user/bbarton/TaustarToTauTauZ/SignalMC/TauZ/taustarToTauZ_m500_2018.root"]
-p = PostProcessor(".", files, cut="1>0", branchsel=None, postfix="", modules=[genProducerZTauConstr(), zProducerConstr()] )
-p.run()
+#files = ["root://cmsxrootd.fnal.gov//store/user/bbarton/TaustarToTauTauZ/SignalMC/TauZ/taustarToTauZ_m500_2018.root"]
+#p = PostProcessor(".", files, cut="1>0", branchsel=None, postfix="", modules=[genProducerZTauConstr(), zProducerConstr()] )
+#p.run()

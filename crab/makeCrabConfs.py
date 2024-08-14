@@ -217,8 +217,8 @@ def makeConfigs(args):
             confFile.write("config.JobType.pluginName = 'Analysis'\n")
             confFile.write("config.JobType.psetName = 'PSet.py'\n")
             confFile.write("config.JobType.scriptExe = '" + args["EXE"][:-3] +".sh'\n")
-            scriptArgs = ""
-            confFile.write("config.JobType.scriptArgs = '%s'\n" % scriptArgs)
+            scriptArgs = str(args["ERA"])
+            confFile.write("config.JobType.scriptArgs = ['arg1=%s']\n" % scriptArgs)
             confFile.write("config.JobType.inputFiles = ['" + args["KEEP_DROP"] + "', '" + args["EXE"] + "', '../scripts/haddnano.py']\n")
             confFile.write("config.JobType.allowUndistributedCMSSW = True\n\n")
 
