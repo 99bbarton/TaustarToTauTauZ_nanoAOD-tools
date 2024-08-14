@@ -55,13 +55,19 @@ def parseArgs():
                 args["ERA"] = 3
             else:
                 args["YEARS"].append(year)
+
+        if args["ERA"] == 0:
+            if "2022" in raw_args.year or "2022post" in raw_args.year or  "2023" in raw_args.year or "2023post":
+                args["ERA"] = 3
+            else:
+                args["ERA"] = 2
         args["YEARS"] = set(args["YEARS"])
 
     args["DATASETS"] = []
     if raw_args.type == "SIG" and raw_args.dataset:
         if args["ERA"] == 3: 
             if "SIG" in raw_args.dataset or "ALL" in raw_args.dataset:
-                masses = ["M250"," M500", "M750", "M1000", "M1250", "M1500", "M1750", "M2000", "M2500", "M3000", "M3500", "M4000", "M4500", "M5000"]
+                masses = ["M250","M500", "M750", "M1000", "M1250", "M1500", "M1750", "M2000", "M2500", "M3000", "M3500", "M4000", "M4500", "M5000"]
             else:
                 masses = raw_args.dataset
             
@@ -149,28 +155,30 @@ def main(args):
     if args["GEN"]:
         filelist = makeConfigs(args)
         if args["SUB"]:
-            submit(filelist)
+            submit(args, filelist)
     elif args["SUB"]:
-        submit(args)
+        submit(args, filelist=[])
         
 
 ## ---------------------------------------------------------------------------------------------------------------------------- ##
 
 #Create the CRAB configuration files
 def makeConfigs(args):
-    date = datetime.datetime.today()
+    date = datetime.datetime.now()
     typeStr = args["TYPE"] + "/"
     if not os.path.isdir("./CrabConfigs/" + args["TYPE"] + "/"):
         os.system("mkdir ./CrabConfigs/" + args["TYPE"] + "/")
-    dirName = "./CrabConfigs/" + typeStr + date.strftime("%d%b%Y") + "/"
+    dirName = "./CrabConfigs/" + typeStr + date.strftime("%d%b%Y_%H-%M") + "/"
     if not os.path.isdir(dirName):
         os.system("mkdir " + dirName)
     print("\n\nWill write config files to " + dirName)
 
-    requestName = args["TYPE"] + "_run" + str(args["ERA"]) + "_" + date.strftime("%d%b%Y")
-    outDir = "/store/user/bbarton/TaustarToTauTauZ/Crab/"+ requestName + "/"
+    #requestName = args["TYPE"] + "_run" + str(args["ERA"]) + "_" + date.strftime("%d%b%Y_%H%M")
+    outDir = "/store/user/bbarton/TaustarToTauTauZ/Crab/" + typeStr + date.strftime("%d%b%Y_%H-%M") + "/"
     print("Please execute: eosmkdir " + outDir + "\n\n")
+    createdFiles = []
 
+    
     inputs = []
     dataset = False
     if len(args["DATASETS"]) > 0:
@@ -200,8 +208,8 @@ def makeConfigs(args):
             confFile.write("config = config()\n\n")
 
             confFile.write("config.section_('General')\n")
-            confFile.write("config.General.requestName = '" + requestName + "'\n")
-            confFile.write("config.General.workArea = 'CrabSubmits'\n")
+            confFile.write("config.General.requestName = '" + filename[9:-3] + "'\n")
+            confFile.write("config.General.workArea = 'CrabSubmits/" + typeStr + date.strftime("%d%b%Y_%H-%M") + "'\n")
             confFile.write("config.General.transferOutputs = True\n")
             confFile.write("config.General.transferLogs = True\n\n")
 
@@ -222,23 +230,29 @@ def makeConfigs(args):
             confFile.write("config.Data.inputDBS = 'global'\n")
             confFile.write("config.Data.splitting = 'FileBased'\n")
             confFile.write("config.Data.unitsPerJob = 1\n")
-            confFile.write("config.Data.outLFNDirBase = '"+ outDir + "'\n")
+            confFile.write("config.Data.outLFNDirBase = '"+ outDir + "/'\n")
             confFile.write("config.Data.publication = False\n\n")
 
             confFile.write("config.section_('Site')\n")
             confFile.write("config.Site.storageSite = 'T3_US_FNALLPC'\n")
 
+        createdFiles.append(dirName + filename)
+    return createdFiles
 ## ---------------------------------------------------------------------------------------------------------------------------- ##
 
 #Convert DAS dataset name to a version friendly for naming config files, histograms, etc
 def datasetToName(dataset):
     year = ""
-    yrOptions = ["2016post", "2016", "2017", "2018", "2022post", "2022",  "2023post", "2023"]
-    for yrOp in yrOptions: 
-        if dataset.find(yrOp) >= 0: #Note, this relies on the "post" periods appearing first in the yrOptions list
-            year = yrOp
+    yrOptions = {"2016":"", "2016post":"", "2017":"2017", "2018":"2018", "22EE":"2022post", "2022":"2022", "23BPix":"2023post", "2023":"2023"} #TODO 2016 handling
+    for yrOp in yrOptions.keys(): 
+        if dataset.find(yrOp) >= 0:
+            year = yrOptions[yrOp]
             break
 
+    if year == "":
+        print("WARNING: No year found!")
+        
+        
     if dataset.startswith("/TaustarToTauZ"):
         name = "taustarToTauZ_" + dataset.split("_")[1] + "_" + year
         return name, year
@@ -251,13 +265,15 @@ def datasetToName(dataset):
 
 #Submit CRAB jobs for the files in filelist
 # filelist: A list of files/directories containing files to submit
-def submit(args):
+def submit(args, filelist=[]):
     print("\nSubmitting CRAB jobs:")
     logStr = "\nSubmitting CRAB jobs:\n"
     logStr += "Time: " + datetime.datetime.now().strftime("%Y-%m-%d %H:%M") + "\n"
     logStr += "Configs:\n"
 
-    for f in args["FILES"]:
+    if len(filelist) == 0:
+        filelist = args["FILES"]
+    for f in filelist:
         print("Submitting: " + f)
         os.system("crab submit -c " + f)
         if args["LOG"]:
