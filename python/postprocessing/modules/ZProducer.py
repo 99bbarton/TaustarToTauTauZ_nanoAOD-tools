@@ -7,7 +7,8 @@ import PhysicsTools.NanoAODTools.postprocessing.framework.datamodel as datamodel
 
 class ZProducer(Module):
 
-    def __init__(self):
+    def __init__(self, era):
+        self.era = era
         pass
     
     def beginJob(self):
@@ -43,11 +44,18 @@ class ZProducer(Module):
         electrons = Collection(event, "Electron")
         for e1Idx, e1 in enumerate(electrons):
             for e2Idx, e2 in enumerate(electrons):
-                cuts = True and (e1.charge * e2.charge < 0) #Opposite charge
-                cuts = cuts and (abs(e1.eta + e1.deltaEtaSC) >= 1.566 or abs( e1.eta + e1.deltaEtaSC) < 1.444) #Fiducial
-                cuts = cuts and (abs(e2.eta + e2.deltaEtaSC) >= 1.566 or abs(e2.eta + e2.deltaEtaSC) < 1.444)
-                cuts = cuts and (e1.pt >= 20.0 and abs(e1.eta + e1.deltaEtaSC) < 2.5 and e1.mvaFall17V2noIso_WPL) #ID (basic)
-                cuts = cuts and (e2.pt >= 20.0 and abs(e2.eta + e2.deltaEtaSC) < 2.5 and e2.mvaFall17V2noIso_WPL) #ID (basic)
+                if selt.era == 2:
+                    cuts = (e1.charge * e2.charge) < 0 #Opposite charge
+                    cuts = cuts and (abs(e1.eta + e1.deltaEtaSC) >= 1.566 or abs( e1.eta + e1.deltaEtaSC) < 1.444) #Fiducial
+                    cuts = cuts and (abs(e2.eta + e2.deltaEtaSC) >= 1.566 or abs(e2.eta + e2.deltaEtaSC) < 1.444)
+                    cuts = cuts and (e1.pt >= 20.0 and abs(e1.eta + e1.deltaEtaSC) < 2.5 and e1.mvaFall17V2noIso_WP80) #ID (basic)
+                    cuts = cuts and (e2.pt >= 20.0 and abs(e2.eta + e2.deltaEtaSC) < 2.5 and e2.mvaFall17V2noIso_WP80) #ID (basic)
+                elif self.era == 3:
+                    cuts = (e1.charge * e2.charge) < 0 #Opposite charge
+                    cuts = cuts and (abs(e1.eta + e1.deltaEtaSC) >= 1.566 or abs( e1.eta + e1.deltaEtaSC) < 1.444) #Fiducial
+                    cuts = cuts and (abs(e2.eta + e2.deltaEtaSC) >= 1.566 or abs(e2.eta + e2.deltaEtaSC) < 1.444)
+                    cuts = cuts and (e1.pt >= 20.0 and abs(e1.eta + e1.deltaEtaSC) < 2.5 and e1.mvaNoIso_WP80 ) #ID (basic)
+                    cuts = cuts and (e2.pt >= 20.0 and abs(e2.eta + e2.deltaEtaSC) < 2.5 and e2.mvaNoIso_WP80) #ID (basic)
 
                 if cuts:
                     tempPt = (e1.p4() + e2.p4()).Pt()
@@ -65,7 +73,7 @@ class ZProducer(Module):
             for mu1Idx, mu1 in enumerate(muons):
                 for mu2Idx, mu2 in enumerate(muons):
                     if (mu1.charge * mu2.charge < 0): #Opposite charge
-                        if (mu1.pt >= 15.0 and abs(mu1.eta) < 2.4 and mu1.looseId) and (mu2.pt >= 15.0 and abs(mu2.eta) < 2.4 and mu2.looseId): #ID
+                        if (mu1.pt >= 15.0 and abs(mu1.eta) < 2.4 and mu1.mediumId) and (mu2.pt >= 15.0 and abs(mu2.eta) < 2.4 and mu2.mediumId): #ID
                             tempPt = (mu1.p4() + mu2.p4()).Pt()
                             if tempPt > Z_pt:
                                 Z_mass = (mu1.p4()+mu2.p4()).M()
@@ -86,12 +94,17 @@ class ZProducer(Module):
             score_pn = 0 #Best ParticleNet tagger score
             for jetIdx, jet in enumerate(fatJets):
                 if jet.mass >= 40 and jet.mass <= 150:
-                    if jet.deepTag_ZvsQCD > 0.7 and jet.deepTag_ZvsQCD > score_dt:
-                        score_dt = jet.deepTag_ZvsQCD
-                        Z_jetIdxDT = jetIdx
-                    if jet.particleNet_ZvsQCD > 0.7 and jet.particleNet_ZvsQCD > score_pn:
-                        score_pn = jet.particleNet_ZvsQCD
-                        Z_jetIdxPN = jetIdx
+                    if era == 2:
+                        if jet.deepTag_ZvsQCD > 0.7 and jet.deepTag_ZvsQCD > score_dt:
+                            score_dt = jet.deepTag_ZvsQCD
+                            Z_jetIdxDT = jetIdx
+                        if jet.particleNet_ZvsQCD > 0.7 and jet.particleNet_ZvsQCD > score_pn:
+                            score_pn = jet.particleNet_ZvsQCD
+                            Z_jetIdxPN = jetIdx
+                    elif era ==3:
+                        if jet.particleNetWithMass_ZvsQCD > 0.7 and jet.particleNetWithMass_ZvsQCD > score_pn:
+                            score_pn = jet.particleNetWithMass_ZvsQCD
+                            Z_jetIdxPN = jetIdx
 
             if score_dt > score_pn and score_dt > 0.7: #Use the most confident score for now until 
                 Z_mass = fatJets[Z_jetIdxDT].mass
@@ -115,9 +128,9 @@ class ZProducer(Module):
     
     # -----------------------------------------------------------------------------------------------------------------------------
 
-zProducerConstr = lambda: ZProducer()
+zProducerConstr = lambda era: ZProducer(era = era)
 
-from GenProducerZTau import genProducerZTauConstr
+from PhysicsTools.NanoAODTools.postprocessing.modules.GenProducerZTau import genProducerZTauConstr
 
 files = ["root://cmsxrootd.fnal.gov//store/user/bbarton/TaustarToTauTauZ/SignalMC/TauZ/taustarToTauZ_m500_2018.root"]
 p = PostProcessor(".", files, cut="1>0", branchsel=None, postfix="", modules=[genProducerZTauConstr(), zProducerConstr()] )
