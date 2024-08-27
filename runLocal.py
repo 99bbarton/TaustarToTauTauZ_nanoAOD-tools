@@ -6,8 +6,9 @@ from PhysicsTools.NanoAODTools.postprocessing.modules.TauProducer import tauProd
 
 
 baseDir = "root://cmsxrootd.fnal.gov//store/user/bbarton/TaustarToTauTauZ/SignalMC/"
-masses = ["250","500","750","1000","1500","2000","2500","3000","3500","4000","4500","5000"]
+#masses = ["250","500","750","1000","1500","2000","2500","3000","3500","4000","4500","5000"]
 #masses = ["4000", "4500", "5000"]
+masses = ["500"]
 decay = "TauZ"
 year = "2018"
 

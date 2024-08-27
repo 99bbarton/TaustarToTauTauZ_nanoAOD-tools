@@ -11,7 +11,7 @@ def parseArgs():
     argparser.add_argument("-a", "--action", action="store", required=True, choices=["GEN", "GEN_SUB", "SUB"], help="Whether to generate, generate and submit, or only submit configs")
     argparser.add_argument("-t", "--type", action="store", choices=["SIG", "MC", "DATA"], help="Whether to run on signal MC, background MC, or data. Required if action includes generating configs")
     argparser.add_argument("-y", "--year", action="append", choices=["RUN2", "RUN3", "2016", "2016post", "2017", "2018", "2022", "2022post", "2023", "2023post"], help="A year or run period to process")
-    argparser.add_argument("-d", "--dataset", action="append", choices=["SIG", "M250", "M500", "M750", "M1000", "M1250", "M1500", "M1750", "M2000", "M2500", "M3000", "M3500", "M4000", "M4500", "M5000"], help="A specific dataset to process. Must also provide one or more years. Dataset takes precedent of --inFiles")
+    argparser.add_argument("-d", "--dataset", action="append", choices=["SIG", "M250", "M500", "M750", "M1000", "M1250", "M1500", "M1750", "M2000", "M2500", "M3000", "M3500", "M4000", "M4500", "M5000", "DY"], help="A specific dataset to process. Must also provide one or more years. Dataset takes precedent of --inFiles")
     argparser.add_argument("-e", "--executable", action="store", default="./crab_script.py", help="The executable script to use")
     argparser.add_argument("-i", "--inFiles", action="append", help="A file to use as input. Multiple files can be specified. If action=GEN/GEN_SUB, these should be the input root files. If action=SUB, this should be directory/file to submit")
     #argparser.add_argument("-n", "--nEvents", action="store", type=int, help="The maximum number of events to process")
@@ -19,7 +19,8 @@ def parseArgs():
     argparser.add_argument("-k", "--keepAndDrop", action="store", default="./keep_and_drop.txt", help="A path to a text file listing which branches to keep/drop")
     argparser.add_argument("--echo", action="store_true", help="Echo the arguments used")
     argparser.add_argument("--log", action="store", choices=["TRUE", "FALSE"], default="TRUE", help="Whether to log this configuration creation/submission in crabLog.txt")
-
+    argparser.add_argument("--dryrun", action="store_true", help="Specify that submission should be a --dryrun, not a real submission")
+    
     raw_args = argparser.parse_args()  
     args = {}
     
@@ -33,9 +34,14 @@ def parseArgs():
         print("Must provide a year(s) as well as a dataset via -y")
         exit(1)
 
+
+    args["DRYRUN"] = ""
+    if args["SUB"] and raw_args.dryrun:
+        args["DRYRUN"] = " --dryrun"
+
     if raw_args.type == "SIG":
         args['TYPE'] = "SignalMC"
-    elif raw_args.type == "SIG":
+    elif raw_args.type == "MC":
         args['TYPE'] = "BkgdMC"
     else:
         args['TYPE'] = "Data"
@@ -83,7 +89,10 @@ def parseArgs():
             args["DATASETS"] = []
     elif raw_args.dataset:
         if raw_args.type == "MC":
-            args["DATASETS"] = []
+            for year in args["YEARS"]:
+                if year == "2018":
+                    if "DY" in raw_args.dataset or "MC" in raw_args.dataset:
+                        args["DATASETS"].append("/DYJetsToLL_M-10to50_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM")
         elif raw_args.type == "DATA":
             args["DATASETS"] = []
 
@@ -98,8 +107,12 @@ def parseArgs():
                 for f in dirContents:
                     if os.path.isfile(fil + "/" + f):
                         args["FILES"].append(fil + "/" + f)
-            else:
-                print("WARNING: could not file or directory: " + fil)
+            elif fil.startswith("/store"): 
+                args["FILES"].append(os.environ["ROOTURL"] + fil)
+            elif fil.startswith("root://"):
+                args["FILES"].append(fil)
+                        
+                print("WARNING: could not find file or directory: " + fil)
     elif raw_args.type == "SIG" and raw_args.dataset and args["ERA"] == 2: #Run2 MC was private production so not a DAS dataset
         if "SIG" in raw_args.dataset or "ALL" in raw_args.dataset:
             masses = ["M250"," M500", "M750", "M1000", "M1250", "M1500", "M1750", "M2000", "M2500", "M3000", "M3500", "M4000", "M4500", "M5000"]
@@ -201,23 +214,25 @@ def makeConfigs(args):
         
         with open(dirName + filename, "w+") as confFile:
             confFile.write("from WMCore.Configuration import Configuration\n")
-            confFile.write("from CRABClient.UserUtilities import config\n\n")
-
+            confFile.write("from CRABClient.UserUtilities import config\n")
+            confFile.write("from CRABClient.ClientUtilities import getUsernameFromCRIC\n\n")
+            
             confFile.write("config = config()\n\n")
 
             confFile.write("config.section_('General')\n")
             confFile.write("config.General.requestName = '" + filename[9:-3] + "'\n")
             confFile.write("config.General.workArea = 'CrabSubmits/" + typeStr + date.strftime("%d%b%Y_%H-%M") + "'\n")
             confFile.write("config.General.transferOutputs = True\n")
-            confFile.write("config.General.transferLogs = True\n\n")
+            confFile.write("config.General.transferLogs = False\n\n")
 
             confFile.write("config.section_('JobType')\n")
             confFile.write("config.JobType.pluginName = 'Analysis'\n")
             confFile.write("config.JobType.psetName = 'PSet.py'\n")
             confFile.write("config.JobType.scriptExe = '" + args["EXE"][:-3] +".sh'\n")
-            scriptArgs = str(args["ERA"])
-            confFile.write("config.JobType.scriptArgs = ['arg1=%s']\n" % scriptArgs)
-            confFile.write("config.JobType.inputFiles = ['" + args["KEEP_DROP"] + "', '" + args["EXE"] + "', '../scripts/haddnano.py']\n")
+            #scriptArgs = args["ERA"]
+            #confFile.write("config.JobType.scriptArgs = ['arg1=%d']\n" % args["ERA"])
+            #confFile.write("config.JobType.inputFiles = ['" + args["KEEP_DROP"] + "', '" + args["EXE"] + "', '../scripts/haddnano.py']\n")
+            confFile.write("config.JobType.inputFiles = ['" + args["KEEP_DROP"] + "', '" + args["EXE"] +"']\n")
             confFile.write("config.JobType.allowUndistributedCMSSW = True\n\n")
 
             confFile.write("config.section_('Data')\n")
@@ -229,8 +244,9 @@ def makeConfigs(args):
                 confFile.write("config.Data.userInputFiles= ['%s']\n" % inputName) 
             confFile.write("config.Data.inputDBS = 'global'\n")
             confFile.write("config.Data.splitting = 'FileBased'\n")
+            #confFile.write("config.Data.splitting = 'Automatic'\n")
             confFile.write("config.Data.unitsPerJob = 1\n")
-            confFile.write("config.Data.outLFNDirBase = '"+ outDir + "/'\n")
+            confFile.write("config.Data.outLFNDirBase = '"+ outDir[:-1] + "'\n")
             confFile.write("config.Data.publication = False\n\n")
 
             confFile.write("config.section_('Site')\n")
@@ -256,6 +272,9 @@ def datasetToName(dataset):
     if dataset.startswith("/TaustarToTauZ"):
         name = "taustarToTauZ_" + dataset.split("_")[1] + "_" + year
         return name, year
+    elif dataset.startswith("/DYJetsToLL_M-10to50"):
+        name = "DYm10To50_" + year
+        return name, year
     else:
         print("WARNING: Unrecognized dataset!")
         return dataset
@@ -275,7 +294,7 @@ def submit(args, filelist=[]):
         filelist = args["FILES"]
     for f in filelist:
         print("Submitting: " + f)
-        os.system("crab submit -c " + f)
+        os.system("crab submit -c " + f + args["DRYRUN"])
         if args["LOG"]:
             logStr += f + "\n"
     

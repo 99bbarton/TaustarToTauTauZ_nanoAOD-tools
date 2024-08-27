@@ -1,14 +1,14 @@
-#this is not mean to be run locally
+#this is not meant to be run locally
 #
 echo Check if TTY
 if [ "`tty`" != "not a tty" ]; then
   echo "YOU SHOULD NOT RUN THIS IN INTERACTIVE, IT DELETES YOUR LOCAL FILES"
 else
 
-echo "ENV..................................."
-env 
-echo "VOMS"
-voms-proxy-info -all
+#echo "ENV..................................."
+#env 
+#echo "VOMS"
+#voms-proxy-info -all
 echo "CMSSW BASE, python path, pwd"
 echo $CMSSW_BASE 
 echo $PYTHON_PATH
@@ -23,5 +23,11 @@ mv module $CMSSW_BASE/module
 mv python $CMSSW_BASE/python
 
 echo Found Proxy in: $X509_USER_PROXY
-python crab_script.py $1
+
+python3 crab_script.py $1 #$2 #First is job number (provided by CRAB), second is era
+echo "=================================================================================== ls gives:"
+ls ./
+
+echo "=============================================================================================="
+
 fi
