@@ -69,7 +69,7 @@ class ZProducer(Module):
                     if (tempM - 91.18) < (Z_mass - 91.18): #If this pair is closer in mass to the nominal Z
                         Z_mass = (e1.p4()+e2.p4()).M()
                         Z_pt = (e1.p4()+e2.p4()).Pt()
-                        if Z_mass >= 60.0 and Z_mass < 130.0: 
+                        if Z_mass >= 60.0 and Z_mass < 120.0: 
                             Z_dm = 1
                             Z_d1Idx = e1Idx if e1.pt >= e2.pt else e2Idx  #daughter 1 is higher pT e
                             Z_d2Idx = e2Idx if e1.pt >= e2.pt else e1Idx 
@@ -88,7 +88,7 @@ class ZProducer(Module):
                         if (tempM - 91.18) < (Z_mass - 91.18):
                             Z_mass = (mu1.p4()+mu2.p4()).M()
                             Z_pt = (mu1.p4()+mu2.p4()).Pt()
-                            if Z_mass >= 60.0 and Z_mass < 130.0: 
+                            if Z_mass >= 60.0 and Z_mass < 120.0: 
                                 Z_dm = 2
                                 Z_d1Idx = mu1Idx if mu1.pt >= mu2.pt else mu2Idx  #daughter 1 is higher pT mu
                                 Z_d2Idx = mu2Idx if mu1.pt >= mu2.pt else mu1Idx
