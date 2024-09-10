@@ -9,8 +9,7 @@ class ZProducer(Module):
 
     def __init__(self, era):
         self.era = era
-        pass
-    
+
     def beginJob(self):
         pass
 

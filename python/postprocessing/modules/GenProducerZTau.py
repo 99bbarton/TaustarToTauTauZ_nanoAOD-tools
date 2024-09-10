@@ -29,9 +29,12 @@ class GenProducerZTau(Module):
         self.out.branch("Gen_tsTauDM", "I") #"Decay mode of the ts tau:  0=had, 1=e, 2=muon"
         self.out.branch("Gen_tauIdx", "I") #"Idx to the last copy of the spectator tau produced alongside the taustar in GenPart"
         self.out.branch("Gen_tauDM", "I") #"Decay mode of the spectator tau:  0=had, 1=e, 2=muon"
+        self.out.branch("Gen_tsTauFid", "O") #"True if the tsTau passes fiducial cuts"
+        self.out.branch("Gen_tauFid", "O") #"True if the tau passes fiducial cuts"
         self.out.branch("Gen_zIdx", "I") #"Idx to the last copy of the Z from the taustar decay in GenPart"
         self.out.branch("Gen_zDau1Idx", "I") #"Idx to the first daughter of the Z at zIdx in GenPart"
         self.out.branch("Gen_zDau2Idx", "I") #"Idx to the second daughter of the Z at zIdx in GenPart"
+        self.out.branch("Gen_zDauFid", "O") #"True if the Z daughters pass the appropriate fiducial cuts"
         self.out.branch("Gen_zDM","I") #"0 = hadronic, 1=electrons, 2=muons, 3=taus, 4=invisible"
         self.out.branch("Gen_zGenAK8Idx", "I") #"Idx to GenJetAK8 collection jet matching the Z from taustar if zDM == 0"
         self.out.branch("Gen_tausMET_pt", "F") #"pT of MET from the spectator tau and taustar tau"
@@ -64,9 +67,12 @@ class GenProducerZTau(Module):
         tsTauDM = -1
         tauIdx = -1
         tauDM = -1
+        tsTauFid = False
+        tauFid = False
         zIdx = -1
         zDau1Idx = -1
         zDau2Idx = -1
+        zDauFid = False
         zDM = -1
         zGenAK8Idx = -1
         dr_tsTauTau = -999
@@ -144,8 +150,15 @@ class GenProducerZTau(Module):
                             zDM = 0
                         elif abs(event.GenPart_pdgId[zDau1Idx]) == 11: #Z->ee
                             zDM = 1
+                            zDau1 = genParts[zDau1Idx]
+                            zDau2 = genParts[zDau2Idx]
+                            zDauFid = abs(zDau1.eta) < 2.5 and (abs(zDau1.eta) > 1.566 or abs(zDau1.eta) < 1.444)
+                            zDauFid = zDauFid and abs(zDau2.eta) < 2.5 and (abs(zDau2.eta) > 1.566 or abs(zDau2.eta) < 1.444)
                         elif abs(event.GenPart_pdgId[zDau1Idx]) == 13: #Z->mumu
                             zDM = 2
+                            zDau1 = genParts[zDau1Idx]
+                            zDau2 = genParts[zDau2Idx]
+                            zDauFid = zDau1.eta < 2.4 and zDau2.eta < 2.4
                         elif abs(event.GenPart_pdgId[zDau1Idx]) == 15: #Z->tautau
                             zDM = 3
                         if abs(event.GenPart_pdgId[zDau1Idx]) == 12 or abs(event.GenPart_pdgId[zDau1Idx]) == 14 or abs(event.GenPart_pdgId[zDau1Idx]) == 16:
@@ -234,6 +247,7 @@ class GenProducerZTau(Module):
         self.out.fillBranch("Gen_zIdx", zIdx)
         self.out.fillBranch("Gen_zDau1Idx",zDau1Idx)
         self.out.fillBranch("Gen_zDau2Idx",zDau2Idx)
+        self.out.fillBranch("Gen_zDauFid", zDauFid)
         self.out.fillBranch("Gen_zDM", zDM)
         self.out.fillBranch("Gen_zGenAK8Idx", zGenAK8Idx)
         self.out.fillBranch("Gen_tausMET_pt", tausMET_pt)
