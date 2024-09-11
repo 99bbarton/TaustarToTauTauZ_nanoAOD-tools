@@ -79,6 +79,8 @@ def copyFiles(fileList, args):
     print("\nCopying files...")
 
     outdir = os.environ["XRDURL"] + "/store/user/bbarton/TaustarToTauTauZ/" + args.out
+    if outdir[-1] != "/":
+        outdir += "/"
 
     if args.force:
         force = "-f "

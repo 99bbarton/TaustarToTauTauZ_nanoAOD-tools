@@ -8,7 +8,7 @@ from PhysicsTools.NanoAODTools.postprocessing.utils.crabhelper import inputFiles
 from PhysicsTools.NanoAODTools.postprocessing.modules.GenProducerZTau import genProducerZTauConstr
 from PhysicsTools.NanoAODTools.postprocessing.modules.ZProducer import zProducerConstr
 from PhysicsTools.NanoAODTools.postprocessing.modules.TauProducer import tauProducerConstr
-
+from PhysicsTools.NanoAODTools.postprocessing.modules.TrigProducer import trigProducerConstr
 
 #if len(sys.argv) == 3:
 #    era = sys.argv[2]
@@ -21,9 +21,10 @@ from PhysicsTools.NanoAODTools.postprocessing.modules.TauProducer import tauProd
 #    exit(1)
 
 era = 3
+year = "2023"
 outDir = "./"
 preSelection = "1>0"
-modules = [genProducerZTauConstr(), zProducerConstr(era), tauProducerConstr(era)]
+modules = [genProducerZTauConstr(), trigProducerConstr(year), zProducerConstr(era), tauProducerConstr(era)]
 ############################## TODO add era argument to constructors for z and tau, in .sh and config maker
 
 

@@ -32,6 +32,7 @@ class TauProducer(Module):
         taus = Collection(event, "Tau")
         goodTauIdxs = []
         nProngs = []
+
         for idx, tau in enumerate(taus):
             if self.era == 2: #https://twiki.cern.ch/twiki/bin/viewauth/CMS/TauIDRecommendationForRun2
                 tauID = tau.decayMode != 5 and tau.decayMode != 6 and tau.decayMode != 7
@@ -42,9 +43,9 @@ class TauProducer(Module):
             elif self.era == 3: #https://twiki.cern.ch/twiki/bin/view/CMS/TauIDRecommendationForRun3
                 tauID = tau.decayMode != 5 and tau.decayMode != 6 and tau.decayMode != 7
                 tauID = tauID and (tau.pt > 20.0) and (abs(tau.eta) < 2.5) and tau.dz < 0.2
-                tauID = tauID and tau.idDeepTau2018v2p5VSjet == 5 #5= medium
-                tauID = tauID and tau.idDeepTau2018v2p5VSmu == 3 #3= medium
-                tauID = tauID and tau.idDeepTau2018v2p5VSe == 5 #5= medium
+                tauID = tauID and tau.idDeepTau2018v2p5VSjet >= 4 #4= loose
+                tauID = tauID and tau.idDeepTau2018v2p5VSmu >= 2 #2= loose
+                tauID = tauID and tau.idDeepTau2018v2p5VSe >= 4 #4= loose
             if tauID:
                 goodTauIdxs.append(idx)
                 nP = -1
@@ -52,6 +53,7 @@ class TauProducer(Module):
                     nP = 1
                 elif tau.decayMode >= 10:
                     nP = 3
+
                 nProngs.append(nP)
                 
         self.out.fillBranch("SelTaus_n", len(goodTauIdxs))
