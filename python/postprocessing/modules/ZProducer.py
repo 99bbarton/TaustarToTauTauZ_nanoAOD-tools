@@ -46,9 +46,8 @@ class ZProducer(Module):
 
         electrons = Collection(event, "Electron")
         for e1Idx, e1 in enumerate(electrons):
-            for e2Idx, e2 in enumerate(electrons):
-                if e1Idx == e2Idx:
-                    continue
+            for e2Idx in range(e1Idx + 1, event.nElectron):
+                e2 = electrons[e2Idx]
                 if self.era == 2:
                     cuts = (e1.charge * e2.charge) < 0 #Opposite charge
                     cuts = cuts and (abs(e1.eta + e1.deltaEtaSC) >= 1.566 or abs( e1.eta + e1.deltaEtaSC) < 1.444)#Fiducial
@@ -65,37 +64,36 @@ class ZProducer(Module):
                 if cuts:
                     Z_nEE += 1
                     tempM = (e1.p4() + e2.p4()).M()
-                    if (tempM - 91.18) < (Z_mass - 91.18): #If this pair is closer in mass to the nominal Z
-                        Z_mass = (e1.p4()+e2.p4()).M()
+                    #print("Found a Z->ee candidate with mass = " + str(tempM) + " : current Z_mass = " + str(Z_mass))
+                    if abs(tempM - 91.18) < abs(Z_mass - 91.18) and tempM >= 60.0 and tempM <= 120.0: 
+                        Z_dm = 1
+                        Z_mass = tempM
                         Z_pt = (e1.p4()+e2.p4()).Pt()
-                        if Z_mass >= 60.0 and Z_mass < 120.0: 
-                            Z_dm = 1
-                            Z_d1Idx = e1Idx if e1.pt >= e2.pt else e2Idx  #daughter 1 is higher pT e
-                            Z_d2Idx = e2Idx if e1.pt >= e2.pt else e1Idx 
-                            Z_dauDR = e1.DeltaR(e2)
+                        Z_d1Idx = e1Idx if e1.pt >= e2.pt else e2Idx  #daughter 1 is higher pT e
+                        Z_d2Idx = e2Idx if e1.pt >= e2.pt else e1Idx 
+                        Z_dauDR = e1.DeltaR(e2)
         
         
         muons = Collection(event, "Muon")
         for mu1Idx, mu1 in enumerate(muons):
-            for mu2Idx, mu2 in enumerate(muons):
-                if mu2Idx == mu1Idx:
-                    continue
+            for mu2Idx in range(mu1Idx+1, event.nMuon):
+                mu2 = muons[mu2Idx]
+                
                 if (mu1.charge * mu2.charge < 0): #Opposite charge
                     if (mu1.pt >= 15.0 and abs(mu1.eta) < 2.4 and mu1.mediumId) and (mu2.pt >= 15.0 and abs(mu2.eta) < 2.4 and mu2.mediumId): #ID
                         Z_nMuMu += 1
                         tempM = (mu1.p4() + mu2.p4()).M()
-                        if (tempM - 91.18) < (Z_mass - 91.18):
-                            Z_mass = (mu1.p4()+mu2.p4()).M()
+                        #print("Found a Z->mumu candidate with mass = " + str(tempM) + " : current Z_mass = " + str(Z_mass))
+                        if abs(tempM - 91.18) < abs(Z_mass - 91.18) and tempM >= 60.0 and tempM <= 120.0: 
+                            Z_dm = 2
+                            Z_mass = tempM
                             Z_pt = (mu1.p4()+mu2.p4()).Pt()
-                            if Z_mass >= 60.0 and Z_mass < 120.0: 
-                                Z_dm = 2
-                                Z_d1Idx = mu1Idx if mu1.pt >= mu2.pt else mu2Idx  #daughter 1 is higher pT mu
-                                Z_d2Idx = mu2Idx if mu1.pt >= mu2.pt else mu1Idx
-                                Z_dauDR = mu1.DeltaR(mu2)
+                            Z_d1Idx = mu1Idx if mu1.pt >= mu2.pt else mu2Idx  #daughter 1 is higher pT mu
+                            Z_d2Idx = mu2Idx if mu1.pt >= mu2.pt else mu1Idx
+                            Z_dauDR = mu1.DeltaR(mu2)
 
                         
         #TODO Add Z-tautau
-
         
         if Z_dm < 0:
             fatJets = Collection(event, "FatJet")
@@ -104,14 +102,14 @@ class ZProducer(Module):
             for jetIdx, jet in enumerate(fatJets):
                 if jet.mass >= 40 and jet.mass <= 150:
                     if self.era == 2:
-                        if jet.deepTag_ZvsQCD > 0.7 and jet.deepTag_ZvsQCD > score_dt:
+                        if jet.deepTag_ZvsQCD > 0.6 and jet.deepTag_ZvsQCD > score_dt:
                             score_dt = jet.deepTag_ZvsQCD
                             Z_jetIdxDT = jetIdx
-                        if jet.particleNet_ZvsQCD > 0.7 and jet.particleNet_ZvsQCD > score_pn:
+                        if jet.particleNet_ZvsQCD > 0.6 and jet.particleNet_ZvsQCD > score_pn:
                             score_pn = jet.particleNet_ZvsQCD
                             Z_jetIdxPN = jetIdx
                     elif self.era ==3:
-                        if jet.particleNetWithMass_ZvsQCD > 0.7 and jet.particleNetWithMass_ZvsQCD > score_pn:
+                        if jet.particleNetWithMass_ZvsQCD > 0.6 and jet.particleNetWithMass_ZvsQCD > score_pn:
                             score_pn = jet.particleNetWithMass_ZvsQCD
                             Z_jetIdxPN = jetIdx
 

@@ -13,8 +13,8 @@ from PhysicsTools.NanoAODTools.postprocessing.framework.GenTools import getDecay
 
 class GenProducerZTau(Module):
 
-    def __init__(self):
-        pass
+    def __init__(self, era):
+        self.era = era
     
     def beginJob(self):
         pass
@@ -34,9 +34,14 @@ class GenProducerZTau(Module):
         self.out.branch("Gen_zIdx", "I") #"Idx to the last copy of the Z from the taustar decay in GenPart"
         self.out.branch("Gen_zDau1Idx", "I") #"Idx to the first daughter of the Z at zIdx in GenPart"
         self.out.branch("Gen_zDau2Idx", "I") #"Idx to the second daughter of the Z at zIdx in GenPart"
-        self.out.branch("Gen_zDauFid", "O") #"True if the Z daughters pass the appropriate fiducial cuts"
+        self.out.branch("Gen_zDauFid", "O") #"True if the (gen) Z daughters pass the appropriate fiducial cuts"
+        self.out.branch("Gen_zD1RecIdx", "I") #"The idx of the matching Electron/Muon matching to the zDau1Idx GenPart if zDM==1/2"
+        self.out.branch("Gen_zD2RecIdx", "I") #"The idx of the matching Electron/Muon matching to the zDau2Idx GenPart if zDM==1/2"
         self.out.branch("Gen_zDM","I") #"0 = hadronic, 1=electrons, 2=muons, 3=taus, 4=invisible"
         self.out.branch("Gen_zGenAK8Idx", "I") #"Idx to GenJetAK8 collection jet matching the Z from taustar if zDM == 0"
+        self.out.branch("Gen_isCand", "O") #"True if event could be reco'd i.e. z,tau,tsTau DMs good, all fiducial, etc" 
+        self.out.branch("Gen_ch", "I") #"0=tautau, 1=etau, 2=mutau. -1 otherwise"
+        
         self.out.branch("Gen_tausMET_pt", "F") #"pT of MET from the spectator tau and taustar tau"
         self.out.branch("Gen_tausMET_eta", "F") #"eta of MET from the spectator tau and taustar tau"
         self.out.branch("Gen_tausMET_phi", "F") #"phi of MET from the spectator tau and taustar tau"
@@ -72,9 +77,13 @@ class GenProducerZTau(Module):
         zIdx = -1
         zDau1Idx = -1
         zDau2Idx = -1
+        zD1RecIdx = -1
+        zD2RecIdx = -1
         zDauFid = False
+        zDauKin = False
         zDM = -1
         zGenAK8Idx = -1
+        isCand = False
         dr_tsTauTau = -999
         dr_tsTauZ = -999
         dr_tauZ = -999
@@ -92,7 +101,7 @@ class GenProducerZTau(Module):
         dr_tauTotMET = -999
         dr_zTotMET = -999
         dr_tausMETTotMET = -999
-
+        ch = -1
 
         genParts = Collection(event, "GenPart")
 
@@ -108,6 +117,10 @@ class GenProducerZTau(Module):
                 prodChain = getProdChain(idx, genParts)
                 if prodChainContains(prodChain, pdgID = 4000015): #If this tau is a taustar decay product
                     tsTauIdx = idx
+                    if self.era == 2:
+                        tsTauFid = abs(genPart.eta) < 2.3
+                    elif self.era == 3:
+                        tsTauFid = abs(genPart.eta) < 2.5
                     decayChain = getDecayChain(tsTauIdx, genParts)
                     for partIdx in decayChain: #Check for electron/muon or their neutrinos in decay chain
                         if abs(genParts[partIdx].pdgId) == 11 or abs(genParts[partIdx].pdgId) == 12:
@@ -120,6 +133,10 @@ class GenProducerZTau(Module):
                         tsTauDM = 0
                 elif prodChainContains(prodChain, idx = 0): # If this was the tau produced in the CI with the taustar (always idx 0 in GenParts)
                     tauIdx = idx
+                    if self.era == 2:
+                        tauFid = abs(genPart.eta) < 2.3
+                    elif self.era == 3:
+                        tauFid = abs(genPart.eta) < 2.5
                     decayChain = getDecayChain(tauIdx, genParts)
                     for partIdx in decayChain: #Check for electron/muon or their neutrinos in decay chain
                         if abs(genParts[partIdx].pdgId) == 11 or abs(genParts[partIdx].pdgId) == 12:
@@ -154,11 +171,52 @@ class GenProducerZTau(Module):
                             zDau2 = genParts[zDau2Idx]
                             zDauFid = abs(zDau1.eta) < 2.5 and (abs(zDau1.eta) > 1.566 or abs(zDau1.eta) < 1.444)
                             zDauFid = zDauFid and abs(zDau2.eta) < 2.5 and (abs(zDau2.eta) > 1.566 or abs(zDau2.eta) < 1.444)
+
+                            zDauKin = zDau1.pt > 20.0 and zDau2.pt > 20.0
+                            
+                            #Find the matching reco electron:
+                            electrons = Collection(event, "Electron")
+                            for elIdx, el in enumerate(electrons):
+                                if el.genPartIdx == zDau1Idx:
+                                    zD1RecIdx = elIdx
+                                elif el.genPartIdx == zDau2Idx:
+                                    zD2RecIdx = elIdx
+
+                            #if zD1RecIdx<0 or zD2RecIdx < 0:
+                                #print("WARNING: Could not find a reconstructed electron to match one or both Z daughters!")
+                                #print("Gen_zDau1Idx = " + str(zDau1Idx) + " : Gen_zDau1Idx = " + str(zDau2Idx))
+                                #printStr = "The (genPartIdx : genPar.pdgID) of reconstructed electrons were: "  
+                                #for el in electrons:
+                                #    if el.genPartIdx >= 0:
+                                #        printStr += "(" + str(el.genPartIdx) + " : " + str(genParts[el.genPartIdx].pdgId) + ") "
+                                #print(printStr)
+                                
                         elif abs(event.GenPart_pdgId[zDau1Idx]) == 13: #Z->mumu
                             zDM = 2
                             zDau1 = genParts[zDau1Idx]
                             zDau2 = genParts[zDau2Idx]
                             zDauFid = zDau1.eta < 2.4 and zDau2.eta < 2.4
+                            
+                            zDauKin = zDau1.pt > 15.0 and zDau2.pt > 15.0
+                            
+                            
+                             #Find the matching reco electron:
+                            muons = Collection(event, "Muon")
+                            for muIdx, mu in enumerate(muons):
+                                if mu.genPartIdx == zDau1Idx:
+                                    zD1RecIdx = muIdx
+                                elif mu.genPartIdx == zDau2Idx:
+                                    zD2RecIdx = muIdx
+
+                            #if zD1RecIdx<0 or zD2RecIdx < 0:
+                            #    print("WARNING: Could not find a reconstructed muon to match one or both Z daughters!")
+                            #    print("Gen_zDau1Idx = " + str(zDau1Idx) + " : Gen_zDau1Idx = " + str(zDau2Idx))
+                            #    printStr = "The (genPartIdx : pdgID) of reconstructed muons were: "
+                            #    for mu in muons:
+                            #        if mu.genPartIdx >= 0:
+                            #            printStr += "(" + str(mu.genPartIdx) + " : " + str(genParts[mu.genPartIdx].pdgId) + ") "
+                            #    print(printStr)
+                                
                         elif abs(event.GenPart_pdgId[zDau1Idx]) == 15: #Z->tautau
                             zDM = 3
                         if abs(event.GenPart_pdgId[zDau1Idx]) == 12 or abs(event.GenPart_pdgId[zDau1Idx]) == 14 or abs(event.GenPart_pdgId[zDau1Idx]) == 16:
@@ -172,10 +230,24 @@ class GenProducerZTau(Module):
                                 zGenAK8Idx = jetIdx
                                 break
 
-
             foundAll = (tsTauIdx >= 0) and (tauIdx >= 0) and (zIdx >= 0) and (zDau1Idx >=0) and (zDau2Idx >= 0)
             if foundAll:
 
+                isCand = zDM >= 0 and zDM <= 2 #Z->had/ee/mumu
+                isCand = isCand and (tsTauDM == 0 or tauDM == 0) #etau,mutau,tautau
+                isCand = isCand and (tsTauFid and tauFid) #Taus within fiducial region
+                if zDM == 1 or zDM == 2:
+                    isCand = isCand and zDauFid
+                    isCand = isCand and (zD1RecIdx >= 0 and zD2RecIdx >= 0) #Matching reco particles found
+                    isCand = isCand and zDauKin 
+
+                if tauDM == 0 and tsTauDM == 0:
+                    ch = 0
+                elif (tauDM == 0 and tsTauDM == 1) or (tauDM == 1 and tsTauDM == 0):
+                    ch = 1
+                elif (tauDM == 0 and tsTauDM == 2) or (tauDM == 2 and tsTauDM == 0):
+                    ch = 2
+                    
                 #Calculate the total MET coming from the decay of the two taus
                 decayChain_tsTau = getDecayChain(tsTauIdx, genParts)
                 decayChain_tau = getDecayChain(tauIdx, genParts)
@@ -244,12 +316,18 @@ class GenProducerZTau(Module):
         self.out.fillBranch("Gen_tsTauDM", tsTauDM)
         self.out.fillBranch("Gen_tauIdx", tauIdx)
         self.out.fillBranch("Gen_tauDM", tauDM)
+        self.out.fillBranch("Gen_tsTauFid", tsTauFid)
+        self.out.fillBranch("Gen_tauFid", tauFid)
         self.out.fillBranch("Gen_zIdx", zIdx)
         self.out.fillBranch("Gen_zDau1Idx",zDau1Idx)
         self.out.fillBranch("Gen_zDau2Idx",zDau2Idx)
         self.out.fillBranch("Gen_zDauFid", zDauFid)
+        self.out.fillBranch("Gen_zD1RecIdx", zD1RecIdx)
+        self.out.fillBranch("Gen_zD2RecIdx", zD2RecIdx)
         self.out.fillBranch("Gen_zDM", zDM)
         self.out.fillBranch("Gen_zGenAK8Idx", zGenAK8Idx)
+        self.out.fillBranch("Gen_isCand", isCand)
+        self.out.fillBranch("Gen_ch", ch)
         self.out.fillBranch("Gen_tausMET_pt", tausMET_pt)
         self.out.fillBranch("Gen_tausMET_eta", tausMET_eta)
         self.out.fillBranch("Gen_tausMET_phi", tausMET_phi)
@@ -272,7 +350,7 @@ class GenProducerZTau(Module):
 
 # -----------------------------------------------------------------------------------------------------------------------------            
 
-genProducerZTauConstr = lambda: GenProducerZTau()
+genProducerZTauConstr = lambda era: GenProducerZTau(era)
 
 # -----------------------------------------------------------------------------------------------------------------------------
 

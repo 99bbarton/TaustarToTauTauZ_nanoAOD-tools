@@ -19,6 +19,8 @@ class TrigProducer(Module):
 
     def __init__(self, year):
         self.year = year
+        if self.year.endswith("post"):
+            self.year = self.year[:-4]
     
     def beginJob(self):
         pass
