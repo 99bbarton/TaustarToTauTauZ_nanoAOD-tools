@@ -25,10 +25,12 @@ class ZProducer(Module):
         self.out.branch("Z_dauDR", "F") #"DeltaR(zDau1, zDau2). 0 default"
         self.out.branch("Z_mass", "F") #"Mass of ee or mumu pair if either Z_dm == 1 or Z_dm == 2 or jet if Z_dm =0. 0 default"
         self.out.branch("Z_pt", "F") #"Pt of ee or mumu pair or jet. 0 default"
-        self.out.branch("Z_jetIdxDT", "I") #"Idx to FatJet collection of the most Z-like jet determined using deepTag score. if Z_dm=0"
+        self.out.branch("Z_eta", "F") #"Eta of the overall Z candidate"
+        self.out.branch("Z_phi", "F") #"Phi of the overall Z candidate"
         self.out.branch("Z_jetIdxPN", "I") #"Idx to FatJet collection of the most Z-like jet determined using particle net score. if Z_dm=0"
         self.out.branch("Z_nEE", "I") #"Number of candidate ee pairs found"
         self.out.branch("Z_nMuMu", "I") #"Number of candidate mumu pairs found"
+        self.out.branch("Z_isCand", "O") #"True if Z is a good candidate (DM, mass, etc)"
 
     def endFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         pass
@@ -39,12 +41,14 @@ class ZProducer(Module):
         Z_d2Idx = -1
         Z_mass = 0
         Z_pt = 0
+        Z_eta = -999.99
+        Z_phi = -999.99
         Z_dauDR = 0
         Z_dauID = False
-        Z_jetIdxDT = -1
         Z_jetIdxPN = -1
         Z_nEE = 0
         Z_nMuMu = 0
+        Z_isCand = False
 
         electrons = Collection(event, "Electron")
         for e1Idx, e1 in enumerate(electrons):
@@ -71,6 +75,8 @@ class ZProducer(Module):
                         Z_dm = 1
                         Z_mass = tempM
                         Z_pt = (e1.p4()+e2.p4()).Pt()
+                        Z_eta = (e1.p4()+e2.p4()).Eta()
+                        Z_phi = (e1.p4()+e2.p4()).Phi()
                         Z_d1Idx = e1Idx if e1.pt >= e2.pt else e2Idx  #daughter 1 is higher pT e
                         Z_d2Idx = e2Idx if e1.pt >= e2.pt else e1Idx 
                         Z_dauDR = e1.DeltaR(e2)
@@ -95,51 +101,49 @@ class ZProducer(Module):
                             Z_dm = 2
                             Z_mass = tempM
                             Z_pt = (mu1.p4()+mu2.p4()).Pt()
+                            Z_eta = (mu1.p4()+mu2.p4()).Eta()
+                            Z_phi = (mu1.p4()+mu2.p4()).Phi()
                             Z_d1Idx = mu1Idx if mu1.pt >= mu2.pt else mu2Idx  #daughter 1 is higher pT mu
                             Z_d2Idx = mu2Idx if mu1.pt >= mu2.pt else mu1Idx
                             Z_dauDR = mu1.DeltaR(mu2)
                             Z_dauID = mu1.mediumId and mu2.mediumId
-                        
-        #TODO Add Z-tautau
+
         
         if Z_dm < 0:
             fatJets = Collection(event, "FatJet")
-            score_dt = 0 #Best DeepBoostedJet tagger score
-            score_pn = 0 #Best ParticleNet tagger score
-            for jetIdx, jet in enumerate(fatJets):
-                if jet.mass >= 40 and jet.mass <= 150:
-                    if self.era == 2:
-                        if jet.deepTag_ZvsQCD > 0.6 and jet.deepTag_ZvsQCD > score_dt:
-                            score_dt = jet.deepTag_ZvsQCD
-                            Z_jetIdxDT = jetIdx
-                        if jet.particleNet_ZvsQCD > 0.6 and jet.particleNet_ZvsQCD > score_pn:
-                            score_pn = jet.particleNet_ZvsQCD
-                            Z_jetIdxPN = jetIdx
-                    elif self.era ==3:
-                        if jet.particleNetWithMass_ZvsQCD > 0.6 and jet.particleNetWithMass_ZvsQCD > score_pn:
-                            score_pn = jet.particleNetWithMass_ZvsQCD
-                            Z_jetIdxPN = jetIdx
-
-            if score_dt > score_pn and score_dt > 0.6: #Use the most confident score for now until 
-                Z_mass = fatJets[Z_jetIdxDT].mass
-                Z_pt = fatJets[Z_jetIdxDT].pt
-                Z_dm = 0
-            elif score_pn > 0.6:
-                Z_mass = fatJets[Z_jetIdxPN].mass
-                Z_pt = fatJets[Z_jetIdxPN].pt
-                Z_dm = 0
         
+            for jetIdx, jet in enumerate(fatJets):
+                jetID = jet.jetId == 2 or jet.jetId == 6 #"bit1 is loose (always false in 2017 since it does not exist), bit2 is tight, bit3 is tightLepVeto"
+                jetID = jetID and (jet.mass >= 60.0 and jet.mass <= 120 .0)
+                if self.era == 2:
+                    jetID = jetID and jet.particleNet_ZvsQCD > 0.9
+                elif self.era == 3:
+                    jetID = jetID and jet.particleNetWithMass_ZvsQCD > 0.9
+
+                if jetID and abs(jet.mass - 91.18) < abs(Z_mass - 91.18):
+                    Z_mass = jet.mass 
+                    Z_jetIdxPN = jetIdx
+                    Z_dm = 0
+                    Z_pt = jet.pt
+                    Z_eta = jet.eta
+                    Z_phi = jet.phi
+        
+        Z_isCand = Z_dm == 0 or Z_dm == 1 or Z_dm==2 #Z->jets, ee, mumu
+        Z_isCand = Z_isCand and (Z_mass > 81 and Z_mass < 101) #Mass range
+
         self.out.fillBranch("Z_dm", Z_dm)
         self.out.fillBranch("Z_d1Idx", Z_d1Idx)
         self.out.fillBranch("Z_d2Idx", Z_d2Idx)
         self.out.fillBranch("Z_mass", Z_mass)
         self.out.fillBranch("Z_pt", Z_pt)
+        self.out.fillBranch("Z_eta", Z_eta)
+        self.out.fillBranch("Z_phi", Z_phi)
         self.out.fillBranch("Z_dauDR", Z_dauDR)
         self.out.fillBranch("Z_dauID", Z_dauID)
-        self.out.fillBranch("Z_jetIdxDT", Z_jetIdxDT)
         self.out.fillBranch("Z_jetIdxPN", Z_jetIdxPN)
         self.out.fillBranch("Z_nEE", Z_nEE)
         self.out.fillBranch("Z_nMuMu", Z_nMuMu)
+        self.out.fillBranch("Z_isCand", Z_isCand)
 
         return True
     

@@ -11,7 +11,7 @@ from PhysicsTools.NanoAODTools.postprocessing.framework.GenTools import getDecay
 
 # -----------------------------------------------------------------------------------------------------------------------------
 
-class GenProducerZTau(Module):
+class GenProducer(Module):
 
     def __init__(self, era):
         self.era = era
@@ -38,7 +38,7 @@ class GenProducerZTau(Module):
         self.out.branch("Gen_zD1RecIdx", "I") #"The idx of the matching Electron/Muon matching to the zDau1Idx GenPart if zDM==1/2"
         self.out.branch("Gen_zD2RecIdx", "I") #"The idx of the matching Electron/Muon matching to the zDau2Idx GenPart if zDM==1/2"
         self.out.branch("Gen_zDM","I") #"0 = hadronic, 1=electrons, 2=muons, 3=taus, 4=invisible"
-        self.out.branch("Gen_zGenAK8Idx", "I") #"Idx to GenJetAK8 collection jet matching the Z from taustar if zDM == 0"
+        self.out.branch("Gen_zGenAK8Idx", "I") #"Idx to GenJetAK8 collection of a possible jet matching the Z from taustar if zDM == 0" #TODO this might be wrong
         self.out.branch("Gen_isCand", "O") #"True if event could be reco'd i.e. z,tau,tsTau DMs good, all fiducial, etc" 
         self.out.branch("Gen_ch", "I") #"0=tautau, 1=etau, 2=mutau. -1 otherwise"
         
@@ -200,7 +200,7 @@ class GenProducerZTau(Module):
                             zDauKin = zDau1.pt > 15.0 and zDau2.pt > 15.0
                             
                             
-                             #Find the matching reco electron:
+                            #Find the matching reco electron:
                             muons = Collection(event, "Muon")
                             for muIdx, mu in enumerate(muons):
                                 if mu.genPartIdx == zDau1Idx:
@@ -222,7 +222,7 @@ class GenProducerZTau(Module):
                         if abs(event.GenPart_pdgId[zDau1Idx]) == 12 or abs(event.GenPart_pdgId[zDau1Idx]) == 14 or abs(event.GenPart_pdgId[zDau1Idx]) == 16:
                             zDM = 4 #Z->invisible
 
-                        #Check if the Z corresponds to a Gen AK8 jet
+                        #Check if the Z corresponds to a Gen AK8 jet #TODO this is at best non-thorough, potentially incorrect
                         theZ = genParts[zIdx]
                         genJetAK8s = Collection(event, "GenJetAK8")
                         for jetIdx, jet in enumerate(genJetAK8s):
@@ -350,7 +350,7 @@ class GenProducerZTau(Module):
 
 # -----------------------------------------------------------------------------------------------------------------------------            
 
-genProducerZTauConstr = lambda era: GenProducerZTau(era)
+genProducerConstr = lambda era: GenProducer(era)
 
 # -----------------------------------------------------------------------------------------------------------------------------
 
