@@ -106,8 +106,8 @@ class ETauProducer(Module):
             havePair = True
 
             eTauDR = theEl.DeltaR(theTau)
-            eTauDPhi = theEl.Phi - theTau.Phi
-            ePlusTau = theTau.P4() + theEl.P4()
+            eTauDPhi = theEl.phi - theTau.phi
+            ePlusTau = theTau.p4() + theEl.p4()
             visM = ePlusTau.M()
 
             #If the event also has a good Z candidate, we can calculate collinear mass
@@ -136,8 +136,8 @@ class ETauProducer(Module):
                 theZ = TLorentzVector()
                 theZ.SetPtEtaPhiM(event.Z_pt, event.Z_eta, event.Z_phi, event.Z_mass)
 
-                collM_tauZ = (theTau.P4() + nuTau + theZ.P4()).M() 
-                collM_elZ = (theEl.P4() + nuEl + theZ.P4()).M()
+                collM_tauZ = (theTau.p4() + nuTau + theZ).M() 
+                collM_elZ = (theEl.p4() + nuEl + theZ).M()
                 minCollM = min(collM_tauZ, collM_elZ)
                 maxCollM = max(collM_tauZ, collM_elZ)
 
@@ -162,4 +162,4 @@ class ETauProducer(Module):
     
 # ----------------------------------------------------------------------------------------------------------------------------
     
-ETauProducerConstr = lambda era: ETauProducer(era = era)
+eTauProducerConstr = lambda era: ETauProducer(era = era)

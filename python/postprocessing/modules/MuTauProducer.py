@@ -100,8 +100,8 @@ class MuTauProducer(Module):
             havePair = True
 
             muTauDR = theMu.DeltaR(theTau)
-            muTauDPhi = theMu.Phi - theTau.Phi
-            muPlusTau = theTau.P4() + theMu.P4()
+            muTauDPhi = theMu.phi - theTau.phi
+            muPlusTau = theTau.p4() + theMu.p4()
             visM = muPlusTau.M()
 
             #If the event also has a good Z candidate, we can calculate collinear mass
@@ -130,8 +130,8 @@ class MuTauProducer(Module):
                 theZ = TLorentzVector()
                 theZ.SetPtEtaPhiM(event.Z_pt, event.Z_eta, event.Z_phi, event.Z_mass)
 
-                collM_tauZ = (theTau.P4() + nuTau + theZ.P4()).M() 
-                collM_muZ = (theMu.P4() + nuMu + theZ.P4()).M()
+                collM_tauZ = (theTau.p4() + nuTau + theZ).M() 
+                collM_muZ = (theMu.p4() + nuMu + theZ).M()
                 minCollM = min(collM_tauZ, collM_muZ)
                 maxCollM = max(collM_tauZ, collM_muZ)
 
@@ -156,4 +156,4 @@ class MuTauProducer(Module):
     
 # ----------------------------------------------------------------------------------------------------------------------------
     
-MuTauProducerConstr = lambda era: MuTauProducer(era = era)
+muTauProducerConstr = lambda era: MuTauProducer(era = era)

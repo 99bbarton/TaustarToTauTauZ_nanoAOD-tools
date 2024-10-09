@@ -70,13 +70,13 @@ class TauTauProducer(Module):
                 tauID = tauID and tau.idDeepTau2018v2p5VSmu >= 4 #4= tight
                 tauID = tauID and tau.idDeepTau2018v2p5VSe >= 2 #2= VVLoose
             if tauID:
-                goodTaus.append(tauI, tau.idDeepTau2018v2p5VSjet, tau.pt)
+                goodTaus.append((tauI, tau.idDeepTau2018v2p5VSjet, tau.pt))
                             
         if len(goodTaus) >= 2:
             havePair = True
             #Sorts by vsJet score, then pt. Then we can find DR separated pairs
-            goodTaus.sort(key=lambda pt : goodTaus[2], reverse=True)
-            goodTaus.sort(key=lambda vsJet : goodTaus[1], reverse=True)
+            goodTaus.sort(key=lambda goodTau : goodTau[2], reverse=True)
+            goodTaus.sort(key=lambda goodTau : goodTau[1], reverse=True)
 
             tau1Idx = goodTaus[0][0]
             tau1 = taus[tau1Idx]
@@ -103,7 +103,7 @@ class TauTauProducer(Module):
 
             tausDR = tau1.DeltaR(tau2)
             tausDPhi = tau1.phi - tau2.phi
-            tauPlusTau = tau1.P4() + tau2.P4()
+            tauPlusTau = tau1.p4() + tau2.p4()
             visM = tauPlusTau.M()
 
             #If the event also has a good Z candidate, we can calculate collinear mass
@@ -132,8 +132,8 @@ class TauTauProducer(Module):
                 theZ = TLorentzVector()
                 theZ.SetPtEtaPhiM(event.Z_pt, event.Z_eta, event.Z_phi, event.Z_mass)
 
-                collM_tau1Z = (tau1.P4() + nuTau1 + theZ.P4()).M() 
-                collM_tau2Z= (tau2.P4() + nuTau2 + theZ.P4()).M()
+                collM_tau1Z = (tau1.p4() + nuTau1 + theZ).M() 
+                collM_tau2Z= (tau2.p4() + nuTau2 + theZ).M()
                 minCollM = min(collM_tau1Z, collM_tau2Z)
                 maxCollM = max(collM_tau1Z, collM_tau2Z)
 
@@ -160,4 +160,4 @@ class TauTauProducer(Module):
     
 # ----------------------------------------------------------------------------------------------------------------------------
     
-TauTauProducerConstr = lambda era: TauTauProducer(era = era)
+tauTauProducerConstr = lambda era: TauTauProducer(era = era)
