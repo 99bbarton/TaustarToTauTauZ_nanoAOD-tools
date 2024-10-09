@@ -35,7 +35,7 @@ class ETauProducer(Module):
         self.out.branch("ETau_visM", "F") #"Visible mass of the e+tau pair"
         
         #e+tau+Z
-        self.out.branch("ETau_haveTrip", "O") #"True if have a good e, tau, and Z
+        self.out.branch("ETau_haveTrip", "O") #"True if have a good e, tau, and Z"
         self.out.branch("ETau_minCollM", "F") #"The smaller collinear mass of either e+nu+Z or tau+nu+Z"
         self.out.branch("ETau_maxCollM", "F") #"The larger collinear mass of either e+nu+Z or tau+nu+Z"
         self.out.branch("ETau_isCand", "O") #"True if the event is good e+tau+Z event"

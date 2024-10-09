@@ -23,8 +23,8 @@ class TauTauProducer(Module):
 
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.out = wrappedOutputTree
-        self.out.branch("TauTau_tau1Idx", "I") #"Index to Taus of higher pt hadronic tau"
-        self.out.branch("TauTau_tau2Idx", "I") #"Index to Taus of lower pt hadronic tau"
+        self.out.branch("TauTau_tau1Idx", "I") #"Index to Taus of the best hadronic tau (sorted by vsJets, pt)"
+        self.out.branch("TauTau_tau2Idx", "I") #"Index to Taus of second best hadronic tau (sorted by vsJets, pt, and DR>0.4 from best tau)"
         self.out.branch("TauTau_tau1Prongs", "I") #"Number if prongs of tau1 (1 or 3)"
         self.out.branch("TauTau_tau2Prongs", "I") #"Number if prongs of tau2 (1 or 3)"
         self.out.branch("TauTau_havePair", "O") #"True if have two good taus"
