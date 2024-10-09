@@ -5,10 +5,12 @@ from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import *
 # this takes care of converting the input files from CRAB
 from PhysicsTools.NanoAODTools.postprocessing.utils.crabhelper import inputFiles, runsAndLumis
 
-from PhysicsTools.NanoAODTools.postprocessing.modules.GenProducerZTau import genProducerZTauConstr
-from PhysicsTools.NanoAODTools.postprocessing.modules.ZProducer import zProducerConstr
-from PhysicsTools.NanoAODTools.postprocessing.modules.TauProducer import tauProducerConstr
+from PhysicsTools.NanoAODTools.postprocessing.modules.GenProducer import genProducerConstr
 from PhysicsTools.NanoAODTools.postprocessing.modules.TrigProducer import trigProducerConstr
+from PhysicsTools.NanoAODTools.postprocessing.modules.ZProducer import zProducerConstr
+from PhysicsTools.NanoAODTools.postprocessing.modules.ETauProducer import eTauProducerConstr
+from PhysicsTools.NanoAODTools.postprocessing.modules.MuTauProducer import muTauProducerConstr
+from PhysicsTools.NanoAODTools.postprocessing.modules.TauTauProducer import tauTauProducerConstr
 
 #if len(sys.argv) == 3:
 #    era = sys.argv[2]
@@ -24,7 +26,7 @@ era = 3
 year = "2023"
 outDir = "./"
 preSelection = "1>0"
-modules = [genProducerZTauConstr(), trigProducerConstr(year), zProducerConstr(era), tauProducerConstr(era)]
+modules = [genProducerConstr(), trigProducerConstr(year), zProducerConstr(era), eTauProducerConstr(era), muTauProducerConstr(era), tauTauProducerConstr(era)]
 ############################## TODO add era argument to constructors for z and tau, in .sh and config maker
 
 
