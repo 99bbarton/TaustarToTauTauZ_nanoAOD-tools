@@ -8,6 +8,8 @@ from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collect
 import PhysicsTools.NanoAODTools.postprocessing.framework.datamodel as datamodel
 from PhysicsTools.NanoAODTools.postprocessing.framework.GenTools import getDecayChain, getProdChain, prodChainContains
 
+from ROOT import TH1F
+
 
 # -----------------------------------------------------------------------------------------------------------------------------
 
@@ -15,9 +17,14 @@ class GenProducer(Module):
 
     def __init__(self, era):
         self.era = era
+        self.writeHistFile = True
     
-    def beginJob(self):
-        pass
+    def beginJob(self, histFile, histDirName):
+        Module.beginJob(self, histFile, histDirName)
+        self.h_genAk4Mass = TH1F('h_genAk4Mass', 'Mass of GEN AK4 ;Mass [GeV];# of Jets', 100, 0, 500)
+        self.addObject(self.h_genAk4Mass)
+        self.h_genAk8Mass = TH1F('h_genAk8Mass', 'Mass of GEN AK8 Jets;Mass [GeV];# of Jets', 100, 0, 500)
+        self.addObject(self.h_genAk8Mass)
 
     def endJob(self):
         pass
@@ -83,6 +90,7 @@ class GenProducer(Module):
         zDauKin = False
         zDM = -1
         zGenAK8Idx = -1
+        zGenJetAK4Idx = -1
         isCand = False
         dr_tsTauTau = -999
         dr_tsTauZ = -999
@@ -181,15 +189,6 @@ class GenProducer(Module):
                                     zD1RecIdx = elIdx
                                 elif el.genPartIdx == zDau2Idx:
                                     zD2RecIdx = elIdx
-
-                            #if zD1RecIdx<0 or zD2RecIdx < 0:
-                                #print("WARNING: Could not find a reconstructed electron to match one or both Z daughters!")
-                                #print("Gen_zDau1Idx = " + str(zDau1Idx) + " : Gen_zDau1Idx = " + str(zDau2Idx))
-                                #printStr = "The (genPartIdx : genPar.pdgID) of reconstructed electrons were: "  
-                                #for el in electrons:
-                                #    if el.genPartIdx >= 0:
-                                #        printStr += "(" + str(el.genPartIdx) + " : " + str(genParts[el.genPartIdx].pdgId) + ") "
-                                #print(printStr)
                                 
                         elif abs(event.GenPart_pdgId[zDau1Idx]) == 13: #Z->mumu
                             zDM = 2
@@ -207,15 +206,6 @@ class GenProducer(Module):
                                     zD1RecIdx = muIdx
                                 elif mu.genPartIdx == zDau2Idx:
                                     zD2RecIdx = muIdx
-
-                            #if zD1RecIdx<0 or zD2RecIdx < 0:
-                            #    print("WARNING: Could not find a reconstructed muon to match one or both Z daughters!")
-                            #    print("Gen_zDau1Idx = " + str(zDau1Idx) + " : Gen_zDau1Idx = " + str(zDau2Idx))
-                            #    printStr = "The (genPartIdx : pdgID) of reconstructed muons were: "
-                            #    for mu in muons:
-                            #        if mu.genPartIdx >= 0:
-                            #            printStr += "(" + str(mu.genPartIdx) + " : " + str(genParts[mu.genPartIdx].pdgId) + ") "
-                            #    print(printStr)
                                 
                         elif abs(event.GenPart_pdgId[zDau1Idx]) == 15: #Z->tautau
                             zDM = 3
@@ -223,12 +213,27 @@ class GenProducer(Module):
                             zDM = 4 #Z->invisible
 
                         #Check if the Z corresponds to a Gen AK8 jet #TODO this is at best non-thorough, potentially incorrect
+                        print("Gen_zDM = " + str(zDM))
                         theZ = genParts[zIdx]
                         genJetAK8s = Collection(event, "GenJetAK8")
+                        nMatches_AK8 = 0
                         for jetIdx, jet in enumerate(genJetAK8s):
-                            if jet.DeltaR(theZ) < 0.1 and abs(jet.pt - theZ.pt) <= 0.1*theZ.pt:
+                            self.h_genAk8Mass.Fill(jet.Mass)
+                            if jet.DeltaR(theZ) < 0.1 and abs(jet.pt - theZ.pt) <= 0.1*theZ.pt and abs(jet.mass - 91.18) < 9:
                                 zGenAK8Idx = jetIdx
-                                break
+                                nMatches_AK8 += 1
+                        print("Number of AK8 Jet Matches = " + str(nMatches_AK8))
+
+                        genJetAK4s = Collection(event, "GenJet")
+                        zGenJetAK4Idx = -1
+                        nMatches_AK4 = 0
+                        for jetIdx, jet in enumerate(genJetAK4s):
+                            self.h_genAk4Mass.Fill(jet.Mass)
+                            if jet.DeltaR(theZ) < 0.1 and abs(jet.pt - theZ.pt) <= 0.1*theZ.pt and abs(jet.mass - 91.18) < 9:
+                                zGenAK4Idx = jetIdx
+                                nMatches_AK4 += 1
+                        print("Number of AK4 Jet Matches = " + str(nMatches_AK4))
+
 
             foundAll = (tsTauIdx >= 0) and (tauIdx >= 0) and (zIdx >= 0) and (zDau1Idx >=0) and (zDau2Idx >= 0)
             if foundAll:
@@ -326,6 +331,7 @@ class GenProducer(Module):
         self.out.fillBranch("Gen_zD2RecIdx", zD2RecIdx)
         self.out.fillBranch("Gen_zDM", zDM)
         self.out.fillBranch("Gen_zGenAK8Idx", zGenAK8Idx)
+        self.out.fillBranch("Gen_zGenAK4Idx", zGenAK4Idx)
         self.out.fillBranch("Gen_isCand", isCand)
         self.out.fillBranch("Gen_ch", ch)
         self.out.fillBranch("Gen_tausMET_pt", tausMET_pt)
