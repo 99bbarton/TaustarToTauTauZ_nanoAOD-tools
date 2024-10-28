@@ -21,13 +21,10 @@ class GenProducer(Module):
     
     def beginJob(self, histFile, histDirName):
         Module.beginJob(self, histFile, histDirName)
-        self.h_genAk4Mass = TH1F('h_genAk4Mass', 'Mass of GEN AK4 ;Mass [GeV];# of Jets', 100, 0, 500)
+        self.h_genAk4Mass = TH1F('h_genAk4Mass', 'Mass of GEN AK4 ;Mass [GeV];# of Jets', 75, 0, 150)
         self.addObject(self.h_genAk4Mass)
-        self.h_genAk8Mass = TH1F('h_genAk8Mass', 'Mass of GEN AK8 Jets;Mass [GeV];# of Jets', 100, 0, 500)
+        self.h_genAk8Mass = TH1F('h_genAk8Mass', 'Mass of GEN AK8 Jets;Mass [GeV];# of Jets', 75, 0, 150)
         self.addObject(self.h_genAk8Mass)
-
-    def endJob(self):
-        pass
 
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.out = wrappedOutputTree
@@ -45,7 +42,10 @@ class GenProducer(Module):
         self.out.branch("Gen_zD1RecIdx", "I") #"The idx of the matching Electron/Muon matching to the zDau1Idx GenPart if zDM==1/2"
         self.out.branch("Gen_zD2RecIdx", "I") #"The idx of the matching Electron/Muon matching to the zDau2Idx GenPart if zDM==1/2"
         self.out.branch("Gen_zDM","I") #"0 = hadronic, 1=electrons, 2=muons, 3=taus, 4=invisible"
-        self.out.branch("Gen_zGenAK8Idx", "I") #"Idx to GenJetAK8 collection of a possible jet matching the Z from taustar if zDM == 0" #TODO this might be wrong
+        self.out.branch("Gen_zGenAK8Idx", "I") #"Idx to GenJetAK8 collection of a possible jet matching the Z from taustar" 
+        self.out.branch("Gen_zGenAK4Idx", "I") #"Idx to GenJet collection of a possible jet matching the Z from the taustar"
+        self.out.branch("Gen_zRecAK8Idx", "I") #"Idx to FatJet collection of reco AK8 matching the best GenAK8 jet"
+        self.out.branch("Gen_zRecAK4Idx", "I") #"Idx to Jet collection of reco AK4 matching the best GenAK4 jet"
         self.out.branch("Gen_isCand", "O") #"True if event could be reco'd i.e. z,tau,tsTau DMs good, all fiducial, etc" 
         self.out.branch("Gen_ch", "I") #"0=tautau, 1=etau, 2=mutau. -1 otherwise"
         
@@ -67,10 +67,6 @@ class GenProducer(Module):
         self.out.branch("Gen_dr_zTotMET", "F") #"DeltaR between the Z and total MET of interesting particles" 
         self.out.branch("Gen_dr_tausMETTotMET", "F") #"DeltaR between MET from the 2 taus and total MET of interesting particles" 
 
-    def endFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
-        pass
-
-
     def analyze(self, event):
         
         #Indices default to -1, floats to -999
@@ -90,7 +86,9 @@ class GenProducer(Module):
         zDauKin = False
         zDM = -1
         zGenAK8Idx = -1
-        zGenJetAK4Idx = -1
+        zGenAK4Idx = -1
+        recAK4JetIdx = -1
+        recAK8JetIdx = -1
         isCand = False
         dr_tsTauTau = -999
         dr_tsTauZ = -999
@@ -194,11 +192,9 @@ class GenProducer(Module):
                             zDM = 2
                             zDau1 = genParts[zDau1Idx]
                             zDau2 = genParts[zDau2Idx]
-                            zDauFid = zDau1.eta < 2.4 and zDau2.eta < 2.4
-                            
+                            zDauFid = zDau1.eta < 2.4 and zDau2.eta < 2.4    
                             zDauKin = zDau1.pt > 15.0 and zDau2.pt > 15.0
-                            
-                            
+                        
                             #Find the matching reco electron:
                             muons = Collection(event, "Muon")
                             for muIdx, mu in enumerate(muons):
@@ -213,27 +209,53 @@ class GenProducer(Module):
                             zDM = 4 #Z->invisible
 
                         #Check if the Z corresponds to a Gen AK8 jet #TODO this is at best non-thorough, potentially incorrect
-                        print("Gen_zDM = " + str(zDM))
+                        #print("Gen_zDM = " + str(zDM))
                         theZ = genParts[zIdx]
                         genJetAK8s = Collection(event, "GenJetAK8")
                         nMatches_AK8 = 0
                         for jetIdx, jet in enumerate(genJetAK8s):
-                            self.h_genAk8Mass.Fill(jet.Mass)
-                            if jet.DeltaR(theZ) < 0.1 and abs(jet.pt - theZ.pt) <= 0.1*theZ.pt and abs(jet.mass - 91.18) < 9:
-                                zGenAK8Idx = jetIdx
+                            if abs(jet.eta) < 2.5 and jet.pt > 100:
+                                self.h_genAk8Mass.Fill(jet.mass)
+                            if jet.DeltaR(theZ) < 0.1 and abs(jet.pt - theZ.pt) <= 0.1*theZ.pt:# and abs(jet.mass - 91.18) < 9:
                                 nMatches_AK8 += 1
-                        print("Number of AK8 Jet Matches = " + str(nMatches_AK8))
+                                if zGenAK8Idx >= 0:
+                                    if jet.DeltaR(theZ) < genJetAK8s[zGenAK8Idx].DeltaR(theZ):
+                                        zGenAK8Idx = jetIdx
+                                else:
+                                    zGenAK8Idx = jetIdx
+                                
+                        #print("Number of AK8 Jet Matches = " + str(nMatches_AK8))
 
                         genJetAK4s = Collection(event, "GenJet")
-                        zGenJetAK4Idx = -1
+                        zGenAK4Idx = -1
                         nMatches_AK4 = 0
                         for jetIdx, jet in enumerate(genJetAK4s):
-                            self.h_genAk4Mass.Fill(jet.Mass)
-                            if jet.DeltaR(theZ) < 0.1 and abs(jet.pt - theZ.pt) <= 0.1*theZ.pt and abs(jet.mass - 91.18) < 9:
-                                zGenAK4Idx = jetIdx
+                            if abs(jet.eta) < 2.5 and jet.pt > 100:
+                                self.h_genAk4Mass.Fill(jet.mass)
+                            if jet.DeltaR(theZ) < 0.1 and abs(jet.pt - theZ.pt) <= 0.1*theZ.pt:# and abs(jet.mass - 91.18) < 9:
                                 nMatches_AK4 += 1
-                        print("Number of AK4 Jet Matches = " + str(nMatches_AK4))
+                                if zGenAK4Idx >= 0:
+                                    if jet.DeltaR(theZ) < genJetAK4s[zGenAK4Idx].DeltaR(theZ):
+                                        zGenAK4Idx = jetIdx
+                                else:
+                                    zGenAK4Idx = jetIdx
+                        #print("Number of AK4 Jet Matches = " + str(nMatches_AK4))
 
+                        #Find the reco jets corresponding to the GEN jets 
+                        if zGenAK8Idx >= 0:
+                            ak8Jets = Collection(event, "FatJet")
+                            for jetIdx, jet in enumerate(ak8Jets):
+                                if jet.genJetAK8Idx == zGenAK8Idx:
+                                    recAK8JetIdx = jetIdx
+                                    break
+                        if zGenAK4Idx >= 0:
+                            ak4Jets = Collection(event, "Jet")
+                            for jetIdx, jet in enumerate(ak4Jets):
+                                if jet.genJetIdx == zGenAK4Idx:
+                                    recAK4JetIdx = jetIdx
+                                    break
+                            
+                        
 
             foundAll = (tsTauIdx >= 0) and (tauIdx >= 0) and (zIdx >= 0) and (zDau1Idx >=0) and (zDau2Idx >= 0)
             if foundAll:
@@ -332,6 +354,8 @@ class GenProducer(Module):
         self.out.fillBranch("Gen_zDM", zDM)
         self.out.fillBranch("Gen_zGenAK8Idx", zGenAK8Idx)
         self.out.fillBranch("Gen_zGenAK4Idx", zGenAK4Idx)
+        self.out.fillBranch("Gen_zRecAK8Idx", recAK8JetIdx)
+        self.out.fillBranch("Gen_zRecAK4Idx", recAK4JetIdx)
         self.out.fillBranch("Gen_isCand", isCand)
         self.out.fillBranch("Gen_ch", ch)
         self.out.fillBranch("Gen_tausMET_pt", tausMET_pt)

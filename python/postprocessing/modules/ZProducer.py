@@ -15,17 +15,14 @@ class ZProducer(Module):
 
     def beginJob(self, histFile=None, histDirName=None):
         Module.beginJob(self, histFile, histDirName)
-        self.h_ak4Mass = TH1F('h_ak4Mass', 'Mass of AK4 ;Mass [GeV];# of Jets', 100, 0, 500)
+        self.h_ak4Mass = TH1F('h_ak4Mass', 'Mass of AK4 ;Mass [GeV];# of Jets', 75, 0, 150)
         self.addObject(self.h_ak4Mass)
         self.h_ak4MassCuts = TH1F('h_ak4MassCuts', 'Mass of AK4 Jets Passing ID Reqs.;Mass [GeV];# of Jets', 30, 60, 120)
         self.addObject(self.h_ak4Mass)
-        self.h_ak8Mass = TH1F('h_ak8Mass', 'Mass of AK8 Jets;Mass [GeV];# of Jets', 100, 0, 500)
+        self.h_ak8Mass = TH1F('h_ak8Mass', 'Mass of AK8 Jets;Mass [GeV];# of Jets', 75, 0, 150)
         self.addObject(self.h_ak8Mass)
         self.h_ak8MassCuts = TH1F('h_ak8MassCuts', 'Mass of AK8 Jets Passing ID Reqs;Mass [GeV];# of Jets', 30, 60, 120)
         self.addObject(self.h_ak8MassCuts)
-
-    def endJob(self):
-        pass
 
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.out = wrappedOutputTree
@@ -130,10 +127,11 @@ class ZProducer(Module):
             
         
             for jetIdx, jet in enumerate(ak8Jets):
-                self.h_ak8Mass.Fill(jet.mass)
-                jetID = jet.jetId == 2 or jet.jetId == 6 #2 = pass tight ID but fail tight lepton veto, 6 = pass both
-                jetID = jetID and (jet.mass >= 60.0 and jet.mass <= 120 .0)
-                jetID = jetID and (abs(jet.eta) < 2.5 and jet.pt > 250)
+                if abs(jet.eta) < 2.5 and jet.pt > 100:
+                    self.h_ak8Mass.Fill(jet.mass)
+                jetID = jet.jetId == 6 #2 = pass tight ID but fail tight lepton veto, 6 = pass both
+                jetID = jetID and (jet.mass >= 60.0 and jet.mass <= 120.0)
+                jetID = jetID and (abs(jet.eta) < 2.5 and jet.pt > 100)
                 if self.era == 2:
                     jetID = jetID and jet.particleNet_ZvsQCD > 0.9
                 elif self.era == 3:
@@ -152,20 +150,17 @@ class ZProducer(Module):
         
             bestAK4Mass = -999.99
             for jetIdx, jet in enumerate(ak4Jets):
+                if abs(jet.eta) < 2.5 and jet.pt > 100:
                     self.h_ak4Mass.Fill(jet.mass)
-                    jetID = jet.jetId == 2 or jet.jetId == 6 #2 = pass tight ID but fail tight lepton veto, 6 = pass both
-                    jetID = jetID and (jet.mass >= 60.0 and jet.mass <= 120 .0)
-                    jetID = jetID and (abs(jet.eta) < 2.5 and jet.pt > 250)
-                    if self.era == 2:
-                        jetID = jetID and jet.particleNet_ZvsQCD > 0.9
-                    elif self.era == 3:
-                        jetID = jetID and jet.particleNetWithMass_ZvsQCD > 0.9
+                jetID = jet.jetId == 6 #2 = pass tight ID but fail tight lepton veto, 6 = pass both
+                jetID = jetID and (jet.mass >= 60.0 and jet.mass <= 120.0)
+                jetID = jetID and (abs(jet.eta) < 2.5 and jet.pt > 250)
 
-                    if jetID:
-                        self.h_ak4MassCuts.Fill(jet.mass)
-                        if abs(jet.mass - 91.18) < abs(bestAK4Mass - 91.18):
-                            Z_jetIdxAK4 = jetIdx
-                            bestAK4Mass = jet.mass 
+                if jetID:
+                    self.h_ak4MassCuts.Fill(jet.mass)
+                    if abs(jet.mass - 91.18) < abs(bestAK4Mass - 91.18):
+                        Z_jetIdxAK4 = jetIdx
+                        bestAK4Mass = jet.mass 
 
             #IF AK4 jet was a better match than AK8, use AK4
             if abs(bestAK4Mass - 91.18) < abs(Z_mass - 91.18):

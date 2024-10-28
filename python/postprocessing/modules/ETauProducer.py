@@ -15,12 +15,6 @@ class ETauProducer(Module):
 
     def __init__(self, era):
         self.era = era
-    
-    def beginJob(self):
-        pass
-
-    def endJob(self):
-        pass
 
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.out = wrappedOutputTree
@@ -39,9 +33,6 @@ class ETauProducer(Module):
         self.out.branch("ETau_minCollM", "F") #"The smaller collinear mass of either e+nu+Z or tau+nu+Z"
         self.out.branch("ETau_maxCollM", "F") #"The larger collinear mass of either e+nu+Z or tau+nu+Z"
         self.out.branch("ETau_isCand", "O") #"True if the event is good e+tau+Z event"
-
-    def endFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
-        pass
 
     def analyze(self, event):
         eIdx = -1

@@ -15,12 +15,6 @@ class MuTauProducer(Module):
     def __init__(self, era):
         self.era = era
     
-    def beginJob(self):
-        pass
-
-    def endJob(self):
-        pass
-
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.out = wrappedOutputTree
         self.out.branch("MuTau_muIdx", "I") #"Index to Muons of muon"
@@ -34,9 +28,6 @@ class MuTauProducer(Module):
         self.out.branch("MuTau_minCollM", "F") #"The smaller collinear mass of e+nu+Z or tau+nu+z"
         self.out.branch("MuTau_maxCollM", "F") #"The larger collinear mass of either mu+nu+Z or tau+nu+Z"
         self.out.branch("MuTau_isCand", "O") #"True if the event is good mu+tau+Z event"
-
-    def endFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
-        pass
 
     def analyze(self, event):
         muIdx = -1
