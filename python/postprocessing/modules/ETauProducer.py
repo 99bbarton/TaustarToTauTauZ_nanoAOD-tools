@@ -112,7 +112,7 @@ class ETauProducer(Module):
                 cos_nuEl_MET = cos(theEl.phi - event.MET_phi)
                 cos_tau_el = cos(theTau.phi - theEl.phi)
                 
-                if (1.0 - cos_tau_el) < 0.001: #Avoid divide by zero issues if tau and el have same phi coord
+                if abs(1.0 - cos_tau_el) < 0.001: #Avoid divide by zero issues if tau and el have same phi coord
                     cos_tau_el_temp = 0.999
                 else:
                     cos_tau_el_temp = cos_tau_el

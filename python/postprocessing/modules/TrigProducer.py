@@ -21,12 +21,6 @@ class TrigProducer(Module):
         self.year = year
         if self.year.endswith("post"):
             self.year = self.year[:-4]
-    
-    def beginJob(self):
-        pass
-
-    def endJob(self):
-        pass
 
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.out = wrappedOutputTree
@@ -38,9 +32,6 @@ class TrigProducer(Module):
         self.out.branch("Trig_MET", "O") #"Whether the MET trigger is satisfied"
         self.out.branch("Trig_eIso", "O") #"Whether the single iso el trigger is satisfied"
         self.out.branch("Trig_muIso", "O") #"Whether the single iso mu trigger is satisfied"
-
-    def endFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
-        pass
 
     def analyze(self, event):
         Trig_eTau = False

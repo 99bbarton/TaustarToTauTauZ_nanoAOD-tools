@@ -18,7 +18,7 @@ class ZProducer(Module):
         self.h_ak4Mass = TH1F('h_ak4Mass', 'Mass of AK4 ;Mass [GeV];# of Jets', 75, 0, 150)
         self.addObject(self.h_ak4Mass)
         self.h_ak4MassCuts = TH1F('h_ak4MassCuts', 'Mass of AK4 Jets Passing ID Reqs.;Mass [GeV];# of Jets', 30, 60, 120)
-        self.addObject(self.h_ak4Mass)
+        self.addObject(self.h_ak4MassCuts)
         self.h_ak8Mass = TH1F('h_ak8Mass', 'Mass of AK8 Jets;Mass [GeV];# of Jets', 75, 0, 150)
         self.addObject(self.h_ak8Mass)
         self.h_ak8MassCuts = TH1F('h_ak8MassCuts', 'Mass of AK8 Jets Passing ID Reqs;Mass [GeV];# of Jets', 30, 60, 120)
@@ -41,9 +41,6 @@ class ZProducer(Module):
         self.out.branch("Z_nEE", "I") #"Number of candidate ee pairs found"
         self.out.branch("Z_nMuMu", "I") #"Number of candidate mumu pairs found"
         self.out.branch("Z_isCand", "O") #"True if Z is a good candidate (DM, mass, etc)"
-
-    def endFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
-        pass
 
     def analyze(self, event):
         Z_dm = -1
