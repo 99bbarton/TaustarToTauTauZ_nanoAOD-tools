@@ -12,7 +12,7 @@ def parseArgs():
     argparser.add_argument("-t", "--type", action="store", choices=["SIG", "MC", "DATA"], help="Whether to run on signal MC, background MC, or data. Required if action includes generating configs")
     argparser.add_argument("-y", "--year", action="append", choices=["RUN2", "RUN3", "2016", "2016post", "2017", "2018", "2022", "2022post", "2023", "2023post"], help="A year or run period to process")
     argparser.add_argument("-d", "--dataset", action="append", choices=["SIG", "M250", "M500", "M750", "M1000", "M1250", "M1500", "M1750", "M2000", "M2500", "M3000", "M3500", "M4000", "M4500", "M5000", "DY"], help="A specific dataset to process. Must also provide one or more years. Dataset takes precedent of --inFiles")
-    argparser.add_argument("-e", "--executable", action="store", default="./crab_script.py", help="The executable script to use")
+    argparser.add_argument("-e", "--executable", action="store", help="The executable script to use. Otherwise will use crab_script.py and crab_script_YEAR_.sh")
     argparser.add_argument("-i", "--inFiles", action="append", help="A file to use as input. Multiple files can be specified. If action=GEN/GEN_SUB, these should be the input root files. If action=SUB, this should be directory/file to submit")
     #argparser.add_argument("-n", "--nEvents", action="store", type=int, help="The maximum number of events to process")
     #argparser.add_argument("-o", "--outDir", action="store", default="./", help="The desired output directory")
@@ -129,11 +129,14 @@ def parseArgs():
         print(args["FILES"])
 
     if args["GEN"]:
-        if os.path.isfile(raw_args.executable) and os.path.isfile(raw_args.executable[:-2] + "sh"):
-            args["EXE"] = raw_args.executable
+        if raw_args.executable:
+            if os.path.isfile(raw_args.executable) and os.path.isfile(raw_args.executable[:-2] + "sh"):
+                args["EXE"] = raw_args.executable
+            else:
+                print("Could not locate desired executable file and/or associated .sh file")
+                exit(1)
         else:
-            print("Could not locate desired executable file and/or associated .sh file")
-            exit(1)
+            args["EXE"] = "crab_script.py" #This will be modified later
 
     
     if args["TYPE"] == "Data":
@@ -228,9 +231,9 @@ def makeConfigs(args):
             confFile.write("config.section_('JobType')\n")
             confFile.write("config.JobType.pluginName = 'Analysis'\n")
             confFile.write("config.JobType.psetName = 'PSet.py'\n")
-            confFile.write("config.JobType.scriptExe = '" + args["EXE"][:-3] +".sh'\n")
+            confFile.write("config.JobType.scriptExe = '" + args["EXE"][:-3] + "_" + year + ".sh'\n")
             #scriptArgs = args["ERA"]
-            #confFile.write("config.JobType.scriptArgs = ['arg1=%d']\n" % args["ERA"])
+            #confFile.write('config.JobType.scriptArgs = ["arg0=%d"]\n' % args["ERA"])
             #confFile.write("config.JobType.inputFiles = ['" + args["KEEP_DROP"] + "', '" + args["EXE"] + "', '../scripts/haddnano.py']\n")
             confFile.write("config.JobType.inputFiles = ['" + args["KEEP_DROP"] + "', '" + args["EXE"] +"']\n")
             confFile.write("config.JobType.allowUndistributedCMSSW = True\n\n")
