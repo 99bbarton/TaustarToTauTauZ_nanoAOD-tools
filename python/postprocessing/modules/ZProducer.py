@@ -170,7 +170,7 @@ class ZProducer(Module):
                 Z_phi = theJet.phi
 
         Z_isCand = Z_dm == 0 or Z_dm == 1 or Z_dm==2 #Z->jets, ee, mumu
-        Z_isCand = Z_isCand and (Z_mass > 81 and Z_mass < 101) #Mass range
+        Z_isCand = Z_isCand and (Z_mass > 61 and Z_mass < 121) #Mass range
 
         self.out.fillBranch("Z_dm", Z_dm)
         self.out.fillBranch("Z_d1Idx", Z_d1Idx)

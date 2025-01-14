@@ -6,9 +6,9 @@ from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import Pos
 from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection
 import PhysicsTools.NanoAODTools.postprocessing.framework.datamodel as datamodel
-from PhysicsTools.NanoAODTools.postprocessing.framework.GenTools import getDecayChain, getProdChain, prodChainContains
+from PhysicsTools.NanoAODTools.postprocessing.utils.GenTools import getDecayChain, getProdChain, prodChainContains
 
-from ROOT import TH1F
+from ROOT import TH1F, TLorentzVector
 
 
 # -----------------------------------------------------------------------------------------------------------------------------
@@ -32,7 +32,9 @@ class GenProducer(Module):
         self.out.branch("Gen_tsTauIdx", "I") #"Idx to the last copy of the tau decay product of the taustar in GenPart"
         self.out.branch("Gen_tsTauDM", "I") #"Decay mode of the ts tau:  0=had, 1=e, 2=muon"
         self.out.branch("Gen_tauIdx", "I") #"Idx to the last copy of the spectator tau produced alongside the taustar in GenPart"
-        self.out.branch("Gen_tauDM", "I") #"Decay mode of the spectator tau:  0=had, 1=e, 2=muon"
+        self.out.branch("Gen_tauDM", "I") #"Decay mode of the spectator tau:  0=had, 1=e, 2=muon
+        self.out.branch("Gen_tsTau_visInvDR", "F") #"DeltaR between the visible & invisible components of the tau from the taustar"
+        self.out.branch("Gen_tau_visInvDR", "F") #"DeltaR between the visible & invisible components of the spectator tau"
         self.out.branch("Gen_tsTauFid", "O") #"True if the tsTau passes fiducial cuts"
         self.out.branch("Gen_tauFid", "O") #"True if the tau passes fiducial cuts"
         self.out.branch("Gen_zIdx", "I") #"Idx to the last copy of the Z from the taustar decay in GenPart"
@@ -75,6 +77,23 @@ class GenProducer(Module):
         tsTauDM = -1
         tauIdx = -1
         tauDM = -1
+        #tsTau_vis_pt = -999
+        #tsTau_vis_eta = -999
+        #tsTau_vis_phi = -999
+        #tsTau_vis_mass = -999
+        #tsTau_inv_pt = -999 
+        #tsTau_inv_eta = -999
+        #tsTau_inv_phi = -999
+        tsTau_visInvDR = -999
+        #tau_vis_pt = -999
+        #tau_vis_eta = -999
+        #tau_vis_phi = -999
+        #tau_vis_mass = -999
+        #tau_inv_pt = -999 
+        #tau_inv_eta = -999
+        #tau_inv_phi = -999
+        tau_visInvDR = -999
+        
         tsTauFid = False
         tauFid = False
         zIdx = -1
@@ -109,6 +128,7 @@ class GenProducer(Module):
         dr_tausMETTotMET = -999
         ch = -1
 
+
         genParts = Collection(event, "GenPart")
 
         foundAll = False
@@ -129,9 +149,11 @@ class GenProducer(Module):
                         tsTauFid = abs(genPart.eta) < 2.5
                     decayChain = getDecayChain(tsTauIdx, genParts)
                     for partIdx in decayChain: #Check for electron/muon or their neutrinos in decay chain
-                        if abs(genParts[partIdx].pdgId) == 11 or abs(genParts[partIdx].pdgId) == 12:
+                        if abs(genParts[partIdx].pdgId) == 11:
                             tsTauDM = 1
-                            break
+                        elif abs(genParts[partIdx].pdgId) == 12:
+                            tsTauDM = 1
+                        
                         elif abs(genParts[partIdx].pdgId) == 13 or abs(genParts[partIdx].pdgId) == 14:
                             tsTauDM = 2
                             break
@@ -279,12 +301,16 @@ class GenProducer(Module):
                 decayChain_tsTau = getDecayChain(tsTauIdx, genParts)
                 decayChain_tau = getDecayChain(tauIdx, genParts)
                 invisbleParticles = []
+                tau_inv = TLorentzVector()
+                tsTau_inv = TLorentzVector()
                 for partIdx in decayChain_tsTau:
                     if abs(genParts[partIdx].pdgId) == 12 or abs(genParts[partIdx].pdgId) == 14 or abs(genParts[partIdx].pdgId) == 16:
                         invisbleParticles.append(genParts[partIdx])
+                        tsTau_inv = tsTau_inv + genParts[[partIdx]].p4()
                 for partIdx in decayChain_tau:
                     if abs(genParts[partIdx].pdgId) == 12 or abs(genParts[partIdx].pdgId) == 14 or abs(genParts[partIdx].pdgId) == 16:
                         invisbleParticles.append(genParts[partIdx]) 
+                        tau_inv = tau_inv + genParts[[partIdx]].p4()
                 if len(invisbleParticles) < 2: #Must have at least two neutrinos from the two taus
                     print("ERROR: In GenProducerZTau, could not find at least two neutrinos from tau decays")
                 else:
@@ -297,6 +323,11 @@ class GenProducer(Module):
                     tausMET_phi = met.Phi()
                     tausMET_pt = met.Pt()
                 
+                tau_vis = genParts[tauIdx].p4() - tau_inv
+                tau_visInvDR = tau_vis.DeltaR(tau_inv)
+                tsTau_vis = genParts[tsTauIdx].p4() - tsTau_inv
+                tsTau_visInvDR = tsTau_vis.DeltaR(tsTau_inv)
+
                 #Z->tautau and Z->invisible also contribute to MET from interesting particles in the event
                 totMet = met
                 if zDM == 3: #Z->tautau we need the daughters of the two taus
@@ -343,6 +374,8 @@ class GenProducer(Module):
         self.out.fillBranch("Gen_tsTauDM", tsTauDM)
         self.out.fillBranch("Gen_tauIdx", tauIdx)
         self.out.fillBranch("Gen_tauDM", tauDM)
+        self.out.fillBranch("Gen_tau_visInvDR", tau_visInvDR)
+        self.out.fillBranch("Gen_tsTau_visInvDR", tsTau_visInvDR)
         self.out.fillBranch("Gen_tsTauFid", tsTauFid)
         self.out.fillBranch("Gen_tauFid", tauFid)
         self.out.fillBranch("Gen_zIdx", zIdx)

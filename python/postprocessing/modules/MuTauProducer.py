@@ -4,6 +4,7 @@ from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import Pos
 from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection
 import PhysicsTools.NanoAODTools.postprocessing.framework.datamodel as datamodel
+from PhysicsTools.NanoAODTools.postprocessing.utils.Tools import deltaPhi, deltaR
 
 from ROOT import TLorentzVector
 from math import cos
@@ -21,8 +22,8 @@ class MuTauProducer(Module):
         self.out.branch("MuTau_tauIdx", "I") #"Index to Taus of hadronic tau"
         self.out.branch("MuTau_tauProngs", "I") #"Number if prongs of tau (1 or 3)"
         self.out.branch("MuTau_havePair", "O") #"True if have a good mu and tau"
-        self.out.branch("MuTau_muTauDR", "F") #"DeltaR betwenn mu and tau"
-        self.out.branch("MuTau_muTauDPhi", "F") #"Delta phi between mu and tau"
+        self.out.branch("MuTau_MuTauDR", "F") #"DeltaR betwenn mu and tau"
+        self.out.branch("MuTau_MuTauDPhi", "F") #"Delta phi between mu and tau"
         self.out.branch("MuTau_visM", "F") #"Visible mass of the mu+tau pair"
         self.out.branch("MuTau_haveTrip", "O") #"True if have a good mu, tau, and Z"
         self.out.branch("MuTau_minCollM", "F") #"The smaller collinear mass of e+nu+Z or tau+nu+z"
@@ -91,7 +92,7 @@ class MuTauProducer(Module):
             havePair = True
 
             muTauDR = theMu.DeltaR(theTau)
-            muTauDPhi = theMu.phi - theTau.phi
+            muTauDPhi = deltaPhi(theTau.phi, theMu.phi)
             muPlusTau = theTau.p4() + theMu.p4()
             visM = muPlusTau.M()
 
@@ -102,21 +103,21 @@ class MuTauProducer(Module):
                 #collinear approximation 
                 nuTau = TLorentzVector()
                 nuMu = TLorentzVector()
-                cos_nuTau_MET = cos(theTau.phi - event.MET_phi)
-                cos_nuMu_MET = cos(theMu.phi - event.MET_phi)
-                cos_tau_mu = cos(theTau.phi - theMu.phi)
+                cos_nuTau_MET = cos(deltaPhi(theTau.phi, event.MET_phi))
+                cos_nuMu_MET = cos(deltaPhi(theMu.phi, event.MET_phi))
+                cos_tau_mu = cos(deltaPhi(theTau.phi, theMu.phi))
 
                 if (1.0 - cos_tau_mu) < 0.001: #Avoid divide by zero issues if tau and el have same phi coord
-                    cos_tau_mu_temp = 0.999
+                    cos_Tau_mu_div0Safe = 0.999
                 else:
-                    cos_tau_mu_temp = cos_tau_mu
+                    cos_Tau_mu_div0Safe = cos_tau_mu
 
 #TODO check the direction of the decomposed MET vs the visible objects
-                nuTau_mag = event.MET_pt * (cos_nuTau_MET - (cos_nuMu_MET * cos_tau_mu)) / (1. - (cos_tau_mu_temp**2))
-                nuEl_mag = ((event.MET_pt * cos_nuTau_MET) - nuTau_mag) / cos_tau_mu
+                nuTau_mag = event.MET_pt * (cos_nuTau_MET - (cos_nuMu_MET * cos_Tau_mu_div0Safe)) / (1. - (cos_Tau_mu_div0Safe**2))
+                nuMu_mag = ((event.MET_pt * cos_nuTau_MET) - nuTau_mag) / cos_Tau_mu_div0Safe
 
                 nuTau.SetPtEtaPhiM(nuTau_mag, theTau.eta, theTau.phi, 0.)
-                nuMu.SetPtEtaPhiM(nuEl_mag, theMu.eta, theMu.phi, 0.)
+                nuMu.SetPtEtaPhiM(nuMu_mag, theMu.eta, theMu.phi, 0.)
 
                 theZ = TLorentzVector()
                 theZ.SetPtEtaPhiM(event.Z_pt, event.Z_eta, event.Z_phi, event.Z_mass)
@@ -135,8 +136,8 @@ class MuTauProducer(Module):
         self.out.fillBranch("MuTau_tauIdx", tauIdx)
         self.out.fillBranch("MuTau_tauProngs", tauProngs)
         self.out.fillBranch("MuTau_havePair", havePair)
-        self.out.fillBranch("MuTau_muTauDR", muTauDR)
-        self.out.fillBranch("MuTau_muTauDPhi", muTauDPhi)
+        self.out.fillBranch("MuTau_MuTauDR", muTauDR)
+        self.out.fillBranch("MuTau_MuTauCos2DPhi", cos_tau_mu**2)
         self.out.fillBranch("MuTau_visM", visM) 
         self.out.fillBranch("MuTau_haveTrip", haveTrip) 
         self.out.fillBranch("MuTau_minCollM", minCollM)

@@ -76,7 +76,7 @@ class TrigProducer(Module):
             Trig_tauTau = event.HLT_DoubleMediumDeepTauPFTauHPS35_L2NN_eta2p1
             Trig_tau = event.HLT_LooseDeepTauPFTauHPS180_L2NN_eta2p1
             Trig_tauOR = Trig_eTau or Trig_muTau or Trig_tauTau or Trig_tau
-            Trig_MET = event.HLT_PFMET200_BeamHaloCleaned #NOTE: No official trig recommendation from JetMET as of 4Sep2024
+            Trig_MET = event.HLT_PFMET200_BeamHaloCleaned #NOTE: No official trig recommendation from JetMET as of 6Jan2025
             Trig_eIso = event.HLT_Ele30_WPTight_Gsf
             Trig_muIso = event.HLT_IsoMu24
         elif self.year == "2023" or self.year == "2023post":

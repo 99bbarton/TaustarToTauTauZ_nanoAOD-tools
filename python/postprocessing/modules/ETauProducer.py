@@ -4,6 +4,7 @@ from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import Pos
 from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection
 import PhysicsTools.NanoAODTools.postprocessing.framework.datamodel as datamodel
+from PhysicsTools.NanoAODTools.postprocessing.utils.Tools import deltaPhi, deltaR
 
 from ROOT import TLorentzVector
 from math import cos
@@ -24,8 +25,8 @@ class ETauProducer(Module):
         
         #e+tau 
         self.out.branch("ETau_havePair", "O") #"True if have a good e and tau"
-        self.out.branch("ETau_eTauDR", "F") #"Delta R between electron and tau"
-        self.out.branch("ETau_eTauDPhi", "F") #"Delta Phi between electron and tau"
+        self.out.branch("ETau_ETauDR", "F") #"Delta R between electron and tau"
+        self.out.branch("ETau_ETauDPhi", "F") #"Delta Phi between electron and tau"
         self.out.branch("ETau_visM", "F") #"Visible mass of the e+tau pair"
         
         #e+tau+Z
@@ -97,7 +98,7 @@ class ETauProducer(Module):
             havePair = True
 
             eTauDR = theEl.DeltaR(theTau)
-            eTauDPhi = theEl.phi - theTau.phi
+            eTauDPhi = deltaPhi(theTau.phi, theEl.phi)
             ePlusTau = theTau.p4() + theEl.p4()
             visM = ePlusTau.M()
 
@@ -108,18 +109,18 @@ class ETauProducer(Module):
                 #collinear approximation 
                 nuTau = TLorentzVector()
                 nuEl = TLorentzVector()
-                cos_nuTau_MET = cos(theTau.phi - event.MET_phi)
-                cos_nuEl_MET = cos(theEl.phi - event.MET_phi)
-                cos_tau_el = cos(theTau.phi - theEl.phi)
+                cos_nuTau_MET = cos(deltaPhi(theTau.phi, event.MET_phi))
+                cos_nuEl_MET = cos(deltaPhi(theEl.phi, event.MET_phi))
+                cos_tau_el = cos(deltaPhi(theTau.phi, theEl.phi))
                 
                 if abs(1.0 - cos_tau_el) < 0.001: #Avoid divide by zero issues if tau and el have same phi coord
-                    cos_tau_el_temp = 0.999
+                    cos_tau_el_div0Safe = 0.999
                 else:
-                    cos_tau_el_temp = cos_tau_el
+                    cos_tau_el_div0Safe = cos_tau_el
 
-#TODO check the direction of the decomposed MET vs the visible objects
-                nuTau_mag = event.MET_pt * (cos_nuTau_MET - (cos_nuEl_MET * cos_tau_el)) / (1. - (cos_tau_el_temp**2))
-                nuEl_mag = ((event.MET_pt * cos_nuTau_MET) - nuTau_mag) / cos_tau_el
+                #TODO check the direction of the decomposed MET vs the visible objects
+                nuTau_mag = event.MET_pt * (cos_nuTau_MET - (cos_nuEl_MET * cos_tau_el_div0Safe)) / (1. - (cos_tau_el_div0Safe**2))
+                nuEl_mag = ((event.MET_pt * cos_nuTau_MET) - nuTau_mag) / cos_tau_el_div0Safe
 
                 nuTau.SetPtEtaPhiM(nuTau_mag, theTau.eta, theTau.phi, 0.)
                 nuEl.SetPtEtaPhiM(nuEl_mag, theEl.eta, theEl.phi, 0.)
@@ -135,14 +136,14 @@ class ETauProducer(Module):
                 isCand = haveTrip #A good triplet
                 isCand = isCand and (event.Trig_tau or event.Trig_eTau)  #Appropriate trigger
                 isCand = isCand and (abs(theEl.DeltaR(theTau)) > 0.4) #Separation of e and tau
-                isCand = isCand and (cos_tau_el**2 < 0.95) #DPhi separation of the e and tau
+                isCand = isCand and (cos_tau_el**2 < 0.95) #dphi separation of the e and tau
 
         self.out.fillBranch("ETau_eIdx", eIdx) 
         self.out.fillBranch("ETau_tauIdx", tauIdx)
         self.out.fillBranch("ETau_tauProngs", tauProngs)
         self.out.fillBranch("ETau_havePair", havePair)
-        self.out.fillBranch("ETau_eTauDR", eTauDR)
-        self.out.fillBranch("ETau_eTauDPhi", eTauDPhi)
+        self.out.fillBranch("ETau_ETauDR", eTauDR)
+        self.out.fillBranch("ETau_ETauCos2DPhi", cos_tau_el**2)
         self.out.fillBranch("ETau_visM", visM) 
         self.out.fillBranch("ETau_haveTrip", haveTrip) 
         self.out.fillBranch("ETau_minCollM", minCollM)

@@ -4,6 +4,7 @@ from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import Pos
 from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection
 import PhysicsTools.NanoAODTools.postprocessing.framework.datamodel as datamodel
+from PhysicsTools.NanoAODTools.postprocessing.utils.Tools import deltaPhi, deltaR
 
 from ROOT import TLorentzVector
 from math import cos
@@ -22,8 +23,8 @@ class TauTauProducer(Module):
         self.out.branch("TauTau_tau1Prongs", "I") #"Number if prongs of tau1 (1 or 3)"
         self.out.branch("TauTau_tau2Prongs", "I") #"Number if prongs of tau2 (1 or 3)"
         self.out.branch("TauTau_havePair", "O") #"True if have two good taus"
-        self.out.branch("TauTau_tausDR", "F") #"DeltaR betwenn the two taus"
-        self.out.branch("TauTau_tausDPhi", "F") #"Delta phi between the two taus"
+        self.out.branch("TauTau_TauTauDR", "F") #"DeltaR between the two taus"
+        self.out.branch("TauTau_TauTauDPhi", "F") #"Delta phi between the two taus"
         self.out.branch("TauTau_visM", "F") #"Visible mass of the tau pair"
         self.out.branch("TauTau_haveTrip", "O") #"True if have two good taus and a Z"
         self.out.branch("TauTau_minCollM", "F") #"The smaller collinear mass of tau1+nu+Z or tau2+nu+Z"
@@ -93,9 +94,9 @@ class TauTauProducer(Module):
 
 
             tausDR = tau1.DeltaR(tau2)
-            tausDPhi = tau1.phi - tau2.phi
+            tausDPhi = deltaPhi(tau1.phi, tau2.phi)
             tauPlusTau = tau1.p4() + tau2.p4()
-            visM = tauPlusTau.M()
+            visM = tauPlusTau.sM()
 
             #If the event also has a good Z candidate, we can calculate collinear mass
             if event.Z_dm >= 0 and event.Z_dm <= 2:
@@ -104,18 +105,18 @@ class TauTauProducer(Module):
                 #collinear approximation 
                 nuTau1 = TLorentzVector()
                 nuTau2 = TLorentzVector()
-                cos_nuTau1_MET = cos(tau1.phi - event.MET_phi)
-                cos_nuTau2_MET = cos(tau2.phi - event.MET_phi)
-                cos_tau1_tau2 = cos(tau1.phi - tau2.phi)
+                cos_nuTau1_MET = cos(deltaPhi(tau1.phi, event.MET_phi))
+                cos_nuTau2_MET = cos(deltaPhi(tau2.phi, event.MET_phi))
+                cos_tau1_tau2 = cos(deltaPhi(tau1.phi, tau2.phi))
 
                 if (1.0 - cos_tau1_tau2) < 0.001: #Avoid divide by zero issues if taus have same phi coord
-                    cos_tau1_tau2_temp = 0.999
+                    cos_tau1_tau2_div0Safe = 0.999
                 else:
-                    cos_tau1_tau2_temp = cos_tau1_tau2
+                    cos_tau1_tau2_div0Safe = cos_tau1_tau2
 
-#TODO check the direction of the decomposed MET vs the visible objects
-                nuTau1_mag = event.MET_pt * (cos_nuTau1_MET - (cos_nuTau2_MET * cos_tau1_tau2)) / (1. - (cos_tau1_tau2_temp**2))
-                nuTau2_mag = ((event.MET_pt * cos_nuTau1_MET) - nuTau1_mag) / cos_tau1_tau2
+                #TODO check the direction of the decomposed MET vs the visible objects
+                nuTau1_mag = event.MET_pt * (cos_nuTau1_MET - (cos_nuTau2_MET * cos_tau1_tau2_div0Safe)) / (1. - (cos_tau1_tau2_div0Safe**2))
+                nuTau2_mag = ((event.MET_pt * cos_nuTau1_MET) - nuTau1_mag) / cos_tau1_tau2_div0Safe
 
                 nuTau1.SetPtEtaPhiM(nuTau1_mag, tau1.eta, tau1.phi, 0.)
                 nuTau2.SetPtEtaPhiM(nuTau2_mag, tau2.eta, tau2.phi, 0.)
@@ -139,8 +140,8 @@ class TauTauProducer(Module):
         self.out.fillBranch("TauTau_tau1Prongs", tau1Prongs)
         self.out.fillBranch("TauTau_tau2Prongs", tau2Prongs)
         self.out.fillBranch("TauTau_havePair", havePair)
-        self.out.fillBranch("TauTau_tausDR", tausDR)
-        self.out.fillBranch("TauTau_tausDPhi", tausDPhi)
+        self.out.fillBranch("TauTau_TauTauDR", tausDR)
+        self.out.fillBranch("TauTau_TauTauCos2DPhi", cos_tau1_tau2**2)
         self.out.fillBranch("TauTau_visM", visM)
         self.out.fillBranch("TauTau_haveTrip", haveTrip)
         self.out.fillBranch("TauTau_minCollM", minCollM)
