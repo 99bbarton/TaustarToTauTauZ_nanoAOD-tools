@@ -306,11 +306,11 @@ class GenProducer(Module):
                 for partIdx in decayChain_tsTau:
                     if abs(genParts[partIdx].pdgId) == 12 or abs(genParts[partIdx].pdgId) == 14 or abs(genParts[partIdx].pdgId) == 16:
                         invisbleParticles.append(genParts[partIdx])
-                        tsTau_inv = tsTau_inv + genParts[[partIdx]].p4()
+                        tsTau_inv = tsTau_inv + genParts[partIdx].p4()
                 for partIdx in decayChain_tau:
                     if abs(genParts[partIdx].pdgId) == 12 or abs(genParts[partIdx].pdgId) == 14 or abs(genParts[partIdx].pdgId) == 16:
                         invisbleParticles.append(genParts[partIdx]) 
-                        tau_inv = tau_inv + genParts[[partIdx]].p4()
+                        tau_inv = tau_inv + genParts[partIdx].p4()
                 if len(invisbleParticles) < 2: #Must have at least two neutrinos from the two taus
                     print("ERROR: In GenProducerZTau, could not find at least two neutrinos from tau decays")
                 else:

@@ -144,33 +144,36 @@ class ZProducer(Module):
                         Z_pt = jet.pt
                         Z_eta = jet.eta
                         Z_phi = jet.phi
-        
-            bestAK4Mass = -999.99
-            for jetIdx, jet in enumerate(ak4Jets):
-                if abs(jet.eta) < 2.5 and jet.pt > 100:
-                    self.h_ak4Mass.Fill(jet.mass)
-                jetID = jet.jetId == 6 #2 = pass tight ID but fail tight lepton veto, 6 = pass both
-                jetID = jetID and (jet.mass >= 60.0 and jet.mass <= 120.0)
-                jetID = jetID and (abs(jet.eta) < 2.5 and jet.pt > 250)
 
-                if jetID:
-                    self.h_ak4MassCuts.Fill(jet.mass)
-                    if abs(jet.mass - 91.18) < abs(bestAK4Mass - 91.18):
-                        Z_jetIdxAK4 = jetIdx
-                        bestAK4Mass = jet.mass 
-
-            #IF AK4 jet was a better match than AK8, use AK4
-            if abs(bestAK4Mass - 91.18) < abs(Z_mass - 91.18):
-                theJet = ak4Jets[Z_jetIdxAK4]
-                Z_dm = 0
-                Z_jetR = 4
-                Z_mass = jet.mass
-                Z_pt = theJet.pt
-                Z_eta = theJet.eta
-                Z_phi = theJet.phi
+            #AK8 jets were overwhelmingly chosen so we only use AK8 now
+            #The below section would allow saving AK4 info instead of AK8 and is left for posterity and in case of futre tests
+            #bestAK4Mass = -999.99
+            #for jetIdx, jet in enumerate(ak4Jets):
+            #    if abs(jet.eta) < 2.5 and jet.pt > 100:
+            #        self.h_ak4Mass.Fill(jet.mass)
+            #    jetID = jet.jetId == 6 #2 = pass tight ID but fail tight lepton veto, 6 = pass both
+            #    jetID = jetID and (jet.mass >= 60.0 and jet.mass <= 120.0)
+            #    jetID = jetID and (abs(jet.eta) < 2.5 and jet.pt > 250)
+            #
+            #    if jetID:
+            #        self.h_ak4MassCuts.Fill(jet.mass)
+            #        if abs(jet.mass - 91.18) < abs(bestAK4Mass - 91.18):
+            #            Z_jetIdxAK4 = jetIdx
+            #            bestAK4Mass = jet.mass 
+            #
+            ##IF AK4 jet was a better match than AK8, use AK4
+            #if abs(bestAK4Mass - 91.18) < abs(Z_mass - 91.18):
+            #    theJet = ak4Jets[Z_jetIdxAK4]
+            #    Z_dm = 0
+            #    Z_jetR = 4
+            #    Z_mass = jet.mass
+            #    Z_pt = theJet.pt
+            #    Z_eta = theJet.eta
+            #    Z_phi = theJet.phi
 
         Z_isCand = Z_dm == 0 or Z_dm == 1 or Z_dm==2 #Z->jets, ee, mumu
         Z_isCand = Z_isCand and (Z_mass > 61 and Z_mass < 121) #Mass range
+        Z_isCand = Z_isCand and Z_dauDR < 1
 
         self.out.fillBranch("Z_dm", Z_dm)
         self.out.fillBranch("Z_d1Idx", Z_d1Idx)

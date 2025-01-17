@@ -4,7 +4,7 @@ from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import Pos
 from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection
 import PhysicsTools.NanoAODTools.postprocessing.framework.datamodel as datamodel
-from PhysicsTools.NanoAODTools.postprocessing.utils.Tools import deltaPhi, deltaR
+from PhysicsTools.NanoAODTools.postprocessing.utils.Tools import deltaPhi, deltaR, isBetween
 
 from ROOT import TLorentzVector
 from math import cos
@@ -23,7 +23,7 @@ class MuTauProducer(Module):
         self.out.branch("MuTau_tauProngs", "I") #"Number if prongs of tau (1 or 3)"
         self.out.branch("MuTau_havePair", "O") #"True if have a good mu and tau"
         self.out.branch("MuTau_MuTauDR", "F") #"DeltaR betwenn mu and tau"
-        self.out.branch("MuTau_MuTauDPhi", "F") #"Delta phi between mu and tau"
+        self.out.branch("MuTau_MuTauCos2DPhi", "F") #"cos^2(tau.phi-mu.phi)"
         self.out.branch("MuTau_visM", "F") #"Visible mass of the mu+tau pair"
         self.out.branch("MuTau_haveTrip", "O") #"True if have a good mu, tau, and Z"
         self.out.branch("MuTau_minCollM", "F") #"The smaller collinear mass of e+nu+Z or tau+nu+z"
@@ -36,6 +36,7 @@ class MuTauProducer(Module):
         tauProngs = -1
         muTauDR = -999.99
         muTauDPhi = -999.99
+        cos_tau_mu = -999.99
         visM = -999.99
         havePair = False
         haveTrip = False
@@ -112,7 +113,6 @@ class MuTauProducer(Module):
                 else:
                     cos_Tau_mu_div0Safe = cos_tau_mu
 
-#TODO check the direction of the decomposed MET vs the visible objects
                 nuTau_mag = event.MET_pt * (cos_nuTau_MET - (cos_nuMu_MET * cos_Tau_mu_div0Safe)) / (1. - (cos_Tau_mu_div0Safe**2))
                 nuMu_mag = ((event.MET_pt * cos_nuTau_MET) - nuTau_mag) / cos_Tau_mu_div0Safe
 
@@ -128,9 +128,20 @@ class MuTauProducer(Module):
                 maxCollM = max(collM_tauZ, collM_muZ)
 
                 isCand = haveTrip #A good triplet
-                isCand = isCand and (event.Trig_tau or event.Trig_muTau)  #Appropriate trigger
-                isCand = isCand and (abs(theMu.DeltaR(theTau)) > 0.4) #Separation of mu and tau
-                isCand = isCand and (cos_tau_mu**2 < 0.95) #DPhi separation of the mu and tau
+                isCand = isCand and event.Trig_tau  #Appropriate trigger
+                isCand = isCand and abs(theMu.DeltaR(theTau)) > 0.5 #Separation of mu and tau
+                isCand = isCand and cos_tau_mu**2 < 0.95 #DPhi separation of the mu and tau
+                isCand = isCand and isBetween(theTau.phi, theMu.phi, event.MET_phi) #MET is in small angle between tau & mu
+                isCand = isCand and minCollM > visM # Collinear mass should be greater than visible mass
+
+                if False and isCand and maxCollM < 1000 and minCollM < 1000:
+                    print("MuTau event")
+                    print("\tmin coll mass = " + str(minCollM))
+                    print("\tmax coll mass = " + str(maxCollM))
+                    print("\tvis_m = " + str(visM))
+                    print("\tnuTau_mag = " + str(nuTau_mag))
+                    print("\tnuMu_mag = " + str(nuMu_mag))
+                    print("\tMet_pt = " + str(event.MET_pt))
 
         self.out.fillBranch("MuTau_muIdx", muIdx) 
         self.out.fillBranch("MuTau_tauIdx", tauIdx)

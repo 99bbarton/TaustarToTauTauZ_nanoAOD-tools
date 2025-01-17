@@ -4,7 +4,7 @@ from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import Pos
 from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection
 import PhysicsTools.NanoAODTools.postprocessing.framework.datamodel as datamodel
-from PhysicsTools.NanoAODTools.postprocessing.utils.Tools import deltaPhi, deltaR
+from PhysicsTools.NanoAODTools.postprocessing.utils.Tools import deltaPhi, deltaR, isBetween
 
 from ROOT import TLorentzVector
 from math import cos
@@ -26,7 +26,7 @@ class ETauProducer(Module):
         #e+tau 
         self.out.branch("ETau_havePair", "O") #"True if have a good e and tau"
         self.out.branch("ETau_ETauDR", "F") #"Delta R between electron and tau"
-        self.out.branch("ETau_ETauDPhi", "F") #"Delta Phi between electron and tau"
+        self.out.branch("ETau_ETauCos2DPhi", "F") #"cos^2(tau.phi-e.phi)"
         self.out.branch("ETau_visM", "F") #"Visible mass of the e+tau pair"
         
         #e+tau+Z
@@ -41,6 +41,7 @@ class ETauProducer(Module):
         tauProngs = -1
         eTauDR = -999.99
         eTauDPhi = -999.99
+        cos_tau_el = -999.99
         visM = -999.99
         havePair = False
         haveTrip = False
@@ -118,7 +119,6 @@ class ETauProducer(Module):
                 else:
                     cos_tau_el_div0Safe = cos_tau_el
 
-                #TODO check the direction of the decomposed MET vs the visible objects
                 nuTau_mag = event.MET_pt * (cos_nuTau_MET - (cos_nuEl_MET * cos_tau_el_div0Safe)) / (1. - (cos_tau_el_div0Safe**2))
                 nuEl_mag = ((event.MET_pt * cos_nuTau_MET) - nuTau_mag) / cos_tau_el_div0Safe
 
@@ -134,9 +134,21 @@ class ETauProducer(Module):
                 maxCollM = max(collM_tauZ, collM_elZ)
 
                 isCand = haveTrip #A good triplet
-                isCand = isCand and (event.Trig_tau or event.Trig_eTau)  #Appropriate trigger
-                isCand = isCand and (abs(theEl.DeltaR(theTau)) > 0.4) #Separation of e and tau
-                isCand = isCand and (cos_tau_el**2 < 0.95) #dphi separation of the e and tau
+                isCand = isCand and event.Trig_tau  #Appropriate trigger
+                isCand = isCand and abs(theEl.DeltaR(theTau)) > 0.5 #Separation of e and tau
+                isCand = isCand and cos_tau_el**2 < 0.95 #dphi separation of the e and tau
+                isCand = isCand and isBetween(theTau.phi, theEl.phi, event.MET_phi) #MET is in small angle between tau & el
+                isCand = isCand and minCollM > visM # Collinear mass should be greater than visible mass
+
+                if False and isCand and maxCollM < 1000 and minCollM < 1000:
+                    print("ETau event")
+                    print("\tmin coll mass = " + str(minCollM))
+                    print("\tmax coll mass = " + str(maxCollM))
+                    print("\tvis_m = " + str(visM))
+                    print("\tnuTau_mag = " + str(nuTau_mag))
+                    print("\tnuEl_mag = " + str(nuEl_mag))
+                    print("\tMet_pt = " + str(event.MET_pt))
+                
 
         self.out.fillBranch("ETau_eIdx", eIdx) 
         self.out.fillBranch("ETau_tauIdx", tauIdx)

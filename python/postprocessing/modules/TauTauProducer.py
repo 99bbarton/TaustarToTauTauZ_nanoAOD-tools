@@ -4,7 +4,7 @@ from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import Pos
 from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection
 import PhysicsTools.NanoAODTools.postprocessing.framework.datamodel as datamodel
-from PhysicsTools.NanoAODTools.postprocessing.utils.Tools import deltaPhi, deltaR
+from PhysicsTools.NanoAODTools.postprocessing.utils.Tools import deltaPhi, deltaR, isBetween
 
 from ROOT import TLorentzVector
 from math import cos
@@ -24,7 +24,7 @@ class TauTauProducer(Module):
         self.out.branch("TauTau_tau2Prongs", "I") #"Number if prongs of tau2 (1 or 3)"
         self.out.branch("TauTau_havePair", "O") #"True if have two good taus"
         self.out.branch("TauTau_TauTauDR", "F") #"DeltaR between the two taus"
-        self.out.branch("TauTau_TauTauDPhi", "F") #"Delta phi between the two taus"
+        self.out.branch("TauTau_TauTauCos2DPhi", "F") #"cos^2(tau1.phi-tau2.phi)"
         self.out.branch("TauTau_visM", "F") #"Visible mass of the tau pair"
         self.out.branch("TauTau_haveTrip", "O") #"True if have two good taus and a Z"
         self.out.branch("TauTau_minCollM", "F") #"The smaller collinear mass of tau1+nu+Z or tau2+nu+Z"
@@ -38,6 +38,7 @@ class TauTauProducer(Module):
         tau2Prongs = -1
         tausDR = -999.99
         tausDPhi = -999.99
+        cos_tau1_tau2 = -999.99
         visM = -999.99
         havePair = False
         haveTrip = False
@@ -61,6 +62,7 @@ class TauTauProducer(Module):
                 tauID = tauID and tau.idDeepTau2018v2p5VSjet >= 4 #4= loose
                 tauID = tauID and tau.idDeepTau2018v2p5VSmu >= 4 #4= tight
                 tauID = tauID and tau.idDeepTau2018v2p5VSe >= 2 #2= VVLoose
+                
             if tauID:
                 goodTaus.append((tauI, tau.idDeepTau2018v2p5VSjet, tau.pt))
                             
@@ -96,7 +98,7 @@ class TauTauProducer(Module):
             tausDR = tau1.DeltaR(tau2)
             tausDPhi = deltaPhi(tau1.phi, tau2.phi)
             tauPlusTau = tau1.p4() + tau2.p4()
-            visM = tauPlusTau.sM()
+            visM = tauPlusTau.M()
 
             #If the event also has a good Z candidate, we can calculate collinear mass
             if event.Z_dm >= 0 and event.Z_dm <= 2:
@@ -113,8 +115,7 @@ class TauTauProducer(Module):
                     cos_tau1_tau2_div0Safe = 0.999
                 else:
                     cos_tau1_tau2_div0Safe = cos_tau1_tau2
-
-                #TODO check the direction of the decomposed MET vs the visible objects
+                    
                 nuTau1_mag = event.MET_pt * (cos_nuTau1_MET - (cos_nuTau2_MET * cos_tau1_tau2_div0Safe)) / (1. - (cos_tau1_tau2_div0Safe**2))
                 nuTau2_mag = ((event.MET_pt * cos_nuTau1_MET) - nuTau1_mag) / cos_tau1_tau2_div0Safe
 
@@ -128,11 +129,23 @@ class TauTauProducer(Module):
                 collM_tau2Z= (tau2.p4() + nuTau2 + theZ).M()
                 minCollM = min(collM_tau1Z, collM_tau2Z)
                 maxCollM = max(collM_tau1Z, collM_tau2Z)
-
+                
                 isCand = haveTrip #A good triplet
-                isCand = isCand and (event.Trig_tau or event.Trig_tauTau)  #Appropriate trigger
-                isCand = isCand and (abs(tau2.DeltaR(tau1)) > 0.4) #Separation of e and tau
-                isCand = isCand and (cos_tau1_tau2**2 < 0.95) #DPhi separation of the e and tau
+                isCand = isCand and event.Trig_tau  #Appropriate trigger
+                isCand = isCand and abs(tau2.DeltaR(tau1)) > 0.5 #Separation of e and tau
+                isCand = isCand and cos_tau1_tau2**2 < 0.95 #DPhi separation of the e and tau
+                isCand = isCand and isBetween(tau1.phi, tau2.phi, event.MET_phi) #MET in small angle between taus
+                isCand = isCand and minCollM > visM # Collinear mass should be greater than visible mass
+                
+                if False and isCand and maxCollM < 1000 and minCollM < 1000:
+                    print("TauTau event")
+                    print("\tmin coll mass = " + str(minCollM))
+                    print("\tmax coll mass = " + str(maxCollM))
+                    print("\tvis_m = " + str(visM))
+                    print("\tnuTau1_mag = " + str(nuTau1_mag))
+                    print("\tnuTau2_mag = " + str(nuTau2_mag))
+                    print("\tMet_pt = " + str(event.MET_pt))
+                    
 
 
         self.out.fillBranch("TauTau_tau1Idx", tau1Idx)
