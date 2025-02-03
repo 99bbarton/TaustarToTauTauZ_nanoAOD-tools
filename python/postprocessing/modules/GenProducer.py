@@ -48,6 +48,8 @@ class GenProducer(Module):
         self.out.branch("Gen_zGenAK4Idx", "I") #"Idx to GenJet collection of a possible jet matching the Z from the taustar"
         self.out.branch("Gen_zRecAK8Idx", "I") #"Idx to FatJet collection of reco AK8 matching the best GenAK8 jet"
         self.out.branch("Gen_zRecAK4Idx", "I") #"Idx to Jet collection of reco AK4 matching the best GenAK4 jet"
+        self.out.branch("Gen_zSubJetIdx1", "I") #"Idx to higher pt SubGenJetAK8 collection of subJet matching the zGenAK8Idx jet"
+        self.out.branch("Gen_zSubJetIdx2", "I") #"Idx to lower pt SubGenJetAK8 collection of subJet matching the zGenAK8Idx jet"
         self.out.branch("Gen_isCand", "O") #"True if event could be reco'd i.e. z,tau,tsTau DMs good, all fiducial, etc" 
         self.out.branch("Gen_ch", "I") #"0=tautau, 1=etau, 2=mutau. -1 otherwise"
         
@@ -108,6 +110,8 @@ class GenProducer(Module):
         zGenAK4Idx = -1
         recAK4JetIdx = -1
         recAK8JetIdx = -1
+        subGenJet1Idx = -1
+        subGenJet1Idx = -1
         isCand = False
         dr_tsTauTau = -999
         dr_tsTauZ = -999
@@ -230,7 +234,7 @@ class GenProducer(Module):
                         if abs(event.GenPart_pdgId[zDau1Idx]) == 12 or abs(event.GenPart_pdgId[zDau1Idx]) == 14 or abs(event.GenPart_pdgId[zDau1Idx]) == 16:
                             zDM = 4 #Z->invisible
 
-                        #Check if the Z corresponds to a Gen AK8 jet #TODO this is at best non-thorough, potentially incorrect
+                        #Check if the Z corresponds to a Gen AK8 jet 
                         #print("Gen_zDM = " + str(zDM))
                         theZ = genParts[zIdx]
                         genJetAK8s = Collection(event, "GenJetAK8")
@@ -277,7 +281,28 @@ class GenProducer(Module):
                                     recAK4JetIdx = jetIdx
                                     break
                             
-                        
+                        if zDM == 0:
+                            subGenJets = Collection(event, "SubGenJetAK8")
+                            zGenAK8 = genJetAK8s[zGenAK8Idx]
+                            subGenJet1Idx = -1
+                            subGenJet1Idx = -1
+                            for sJIdx, subJet in enumerate(subGenJets):
+                                if subJet.DeltaR(zGenAK8) < 0.05:
+                                    if subGenJet1Idx < 0:
+                                        subGenJet1Idx = sJIdx
+                                    elif subGenJet2Idx < 0:
+                                        subGenJet2Idx = sJIdx
+                                    else:
+                                        print('WARNING: Found more than two "matching" subGenJets to zGenAK8!"')
+                            if subGenJet1Idx < 0 or subGenJet2Idx < 0:
+                                print("WARNING: Did not find two subGenJets matching to zGenAK8")
+                            else:
+                                #Make first idx higher pt for consistency with other multi-idx convention
+                                if subGenJets[subGenJet1Idx].pt < subGenJets[subGenJet2Idx].pt:
+                                    temp = subGenJet1Idx
+                                    subGenJet1Idx = subGenJet2Idx
+                                    subGenJet2Idx = temp
+
 
             foundAll = (tsTauIdx >= 0) and (tauIdx >= 0) and (zIdx >= 0) and (zDau1Idx >=0) and (zDau2Idx >= 0)
             if foundAll:
@@ -366,7 +391,7 @@ class GenProducer(Module):
                 break #Since we've found all interesting particles and done all calculations
         
         if not foundAll:
-            print("WARNING: In GenProducerZTau: All interesting gen particles were not found")
+            print("WARNING: In GenProducer: All interesting gen particles were not found!")
 
         #Write output to tree
         self.out.fillBranch("Gen_tsIdx", tsIdx)
@@ -389,6 +414,8 @@ class GenProducer(Module):
         self.out.fillBranch("Gen_zGenAK4Idx", zGenAK4Idx)
         self.out.fillBranch("Gen_zRecAK8Idx", recAK8JetIdx)
         self.out.fillBranch("Gen_zRecAK4Idx", recAK4JetIdx)
+        self.out.fillBranch("Gen_zSubJetIdx1", subGenJet1Idx)
+        self.out.fillBranch("Gen_zSubJetIdx2", subGenJet2Idx)
         self.out.fillBranch("Gen_isCand", isCand)
         self.out.fillBranch("Gen_ch", ch)
         self.out.fillBranch("Gen_tausMET_pt", tausMET_pt)

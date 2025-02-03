@@ -23,7 +23,8 @@ class MuTauProducer(Module):
         self.out.branch("MuTau_tauProngs", "I") #"Number if prongs of tau (1 or 3)"
         self.out.branch("MuTau_havePair", "O") #"True if have a good mu and tau"
         self.out.branch("MuTau_MuTauDR", "F") #"DeltaR betwenn mu and tau"
-        self.out.branch("MuTau_MuTauCos2DPhi", "F") #"cos^2(tau.phi-mu.phi)"
+        self.out.branch("MuTau_MuTauDPhi", "F") #"Delta phi between the muon and tau"
+        #self.out.branch("MuTau_MuTauCos2DPhi", "F") #"cos^2(tau.phi-mu.phi)"
         self.out.branch("MuTau_visM", "F") #"Visible mass of the mu+tau pair"
         self.out.branch("MuTau_haveTrip", "O") #"True if have a good mu, tau, and Z"
         self.out.branch("MuTau_minCollM", "F") #"The smaller collinear mass of e+nu+Z or tau+nu+z"
@@ -59,6 +60,9 @@ class MuTauProducer(Module):
                 tauID = tauID and tau.idDeepTau2018v2p5VSjet >= 4 #4= loose
                 tauID = tauID and tau.idDeepTau2018v2p5VSmu >= 4 #4= tight
                 tauID = tauID and tau.idDeepTau2018v2p5VSe >= 2 #2= VVLoose
+
+                #I believe this is already applied but included here anyway for safety
+                tauID = tauID and tau.decayMode != 5 and tau.decayMode != 6 
 
             if tauID and tau.idDeepTau2018v2p5VSjet >= currTauVsJet:
                 if tau.idDeepTau2018v2p5VSjet == currTauVsJet:
@@ -131,6 +135,8 @@ class MuTauProducer(Module):
                 isCand = isCand and event.Trig_tau  #Appropriate trigger
                 isCand = isCand and abs(theMu.DeltaR(theTau)) > 0.5 #Separation of mu and tau
                 isCand = isCand and cos_tau_mu**2 < 0.95 #DPhi separation of the mu and tau
+                isCand = isCand and abs(theZ.DeltaR(theTau)) > 0.5 #Separation of the Z and tau
+                isCand = isCand and abs(theZ.DeltaR(theMu)) > 0.5 #Separation of the Z and mu
                 isCand = isCand and isBetween(theTau.phi, theMu.phi, event.MET_phi) #MET is in small angle between tau & mu
                 isCand = isCand and minCollM > visM # Collinear mass should be greater than visible mass
 
@@ -148,7 +154,7 @@ class MuTauProducer(Module):
         self.out.fillBranch("MuTau_tauProngs", tauProngs)
         self.out.fillBranch("MuTau_havePair", havePair)
         self.out.fillBranch("MuTau_MuTauDR", muTauDR)
-        self.out.fillBranch("MuTau_MuTauCos2DPhi", cos_tau_mu**2)
+        self.out.fillBranch("MuTau_MuTauDPhi", muTauDPhi)
         self.out.fillBranch("MuTau_visM", visM) 
         self.out.fillBranch("MuTau_haveTrip", haveTrip) 
         self.out.fillBranch("MuTau_minCollM", minCollM)

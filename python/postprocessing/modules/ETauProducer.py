@@ -26,7 +26,8 @@ class ETauProducer(Module):
         #e+tau 
         self.out.branch("ETau_havePair", "O") #"True if have a good e and tau"
         self.out.branch("ETau_ETauDR", "F") #"Delta R between electron and tau"
-        self.out.branch("ETau_ETauCos2DPhi", "F") #"cos^2(tau.phi-e.phi)"
+        self.out.branch("ETau_ETauDPhi", "F") #"Delta phi between the electron and tau"
+        #self.out.branch("ETau_ETauCos2DPhi", "F") #"cos^2(tau.phi-e.phi)"
         self.out.branch("ETau_visM", "F") #"Visible mass of the e+tau pair"
         
         #e+tau+Z
@@ -65,6 +66,9 @@ class ETauProducer(Module):
                 tauID = tauID and tau.idDeepTau2018v2p5VSjet >= 4 #4= loose
                 tauID = tauID and tau.idDeepTau2018v2p5VSmu >= 4 #4= tight
                 tauID = tauID and tau.idDeepTau2018v2p5VSe >= 2 #2= VVLoose
+
+                #I believe this is already applied but included here anyway for safety
+                tauID = tauID and tau.decayMode != 5 and tau.decayMode != 6 
 
             if tauID and tau.idDeepTau2018v2p5VSjet >= currTauVsJet:
                 if tau.idDeepTau2018v2p5VSjet == currTauVsJet:
@@ -137,6 +141,8 @@ class ETauProducer(Module):
                 isCand = isCand and event.Trig_tau  #Appropriate trigger
                 isCand = isCand and abs(theEl.DeltaR(theTau)) > 0.5 #Separation of e and tau
                 isCand = isCand and cos_tau_el**2 < 0.95 #dphi separation of the e and tau
+                isCand = isCand and abs(theZ.DeltaR(theTau)) > 0.5 #Separation of the Z and tau
+                isCand = isCand and abs(theZ.DeltaR(theEl)) > 0.5 #Separation of the Z and el
                 isCand = isCand and isBetween(theTau.phi, theEl.phi, event.MET_phi) #MET is in small angle between tau & el
                 isCand = isCand and minCollM > visM # Collinear mass should be greater than visible mass
 
@@ -155,7 +161,7 @@ class ETauProducer(Module):
         self.out.fillBranch("ETau_tauProngs", tauProngs)
         self.out.fillBranch("ETau_havePair", havePair)
         self.out.fillBranch("ETau_ETauDR", eTauDR)
-        self.out.fillBranch("ETau_ETauCos2DPhi", cos_tau_el**2)
+        self.out.fillBranch("ETau_ETauDPhi", eTauDPhi)
         self.out.fillBranch("ETau_visM", visM) 
         self.out.fillBranch("ETau_haveTrip", haveTrip) 
         self.out.fillBranch("ETau_minCollM", minCollM)

@@ -32,6 +32,7 @@ class ZProducer(Module):
         self.out.branch("Z_dauID", "O") #"For Z_dm=1 or 2, True if both Z daughter candidates pass the appropriate ID" 
         self.out.branch("Z_dauDR", "F") #"DeltaR(zDau1, zDau2). 0 default"
         self.out.branch("Z_mass", "F") #"Mass of ee or mumu pair if either Z_dm == 1 or Z_dm == 2 or jet if Z_dm =0. 0 default"
+        self.out.branch("Z_mCorr" , "F") #"For Z->jet events, mass plus a pt-based linear correction to adjust for bias. Equal to mass for ee,mumu Z's"
         self.out.branch("Z_pt", "F") #"Pt of ee or mumu pair or jet. 0 default"
         self.out.branch("Z_eta", "F") #"Eta of the overall Z candidate"
         self.out.branch("Z_phi", "F") #"Phi of the overall Z candidate"
@@ -47,6 +48,7 @@ class ZProducer(Module):
         Z_d1Idx = -1
         Z_d2Idx = -1
         Z_mass = 0
+        Z_mCorr = 0
         Z_pt = 0
         Z_eta = -999.99
         Z_phi = -999.99
@@ -65,14 +67,14 @@ class ZProducer(Module):
                 e2 = electrons[e2Idx]
                 if self.era == 2:
                     cuts = (e1.charge * e2.charge) < 0 #Opposite charge
-                    cuts = cuts and (abs(e1.eta + e1.deltaEtaSC) >= 1.566 or abs( e1.eta + e1.deltaEtaSC) < 1.444)#Fiducial
-                    cuts = cuts and (abs(e2.eta + e2.deltaEtaSC) >= 1.566 or abs(e2.eta + e2.deltaEtaSC) < 1.444)
+                    cuts = cuts and ((abs(e1.eta + e1.deltaEtaSC) >= 1.566 and abs(e1.eta + e1.deltaEtaSC) < 2.5) or abs( e1.eta + e1.deltaEtaSC) < 1.444)#Fiducial
+                    cuts = cuts and ((abs(e2.eta + e2.deltaEtaSC) >= 1.566 and abs(e1.eta + e1.deltaEtaSC) < 2.5) or abs(e2.eta + e2.deltaEtaSC) < 1.444)
                     #cuts = cuts and (e1.pt >= 20.0 and abs(e1.eta + e1.deltaEtaSC) < 2.5 and e1.mvaFall17V2noIso_WP80) #ID
                     #cuts = cuts and (e2.pt >= 20.0 and abs(e2.eta + e2.deltaEtaSC) < 2.5 and e2.mvaFall17V2noIso_WP80)
                 elif self.era == 3:
                     cuts = (e1.charge * e2.charge) < 0 #Opposite charge
-                    cuts = cuts and (abs(e1.eta + e1.deltaEtaSC) >= 1.566 or abs( e1.eta + e1.deltaEtaSC) < 1.444) #Fiducial
-                    cuts = cuts and (abs(e2.eta + e2.deltaEtaSC) >= 1.566 or abs(e2.eta + e2.deltaEtaSC) < 1.444)
+                    cuts = cuts and ((abs(e1.eta + e1.deltaEtaSC) >= 1.566 and abs(e1.eta + e1.deltaEtaSC) < 2.5) or abs( e1.eta + e1.deltaEtaSC) < 1.444) #Fiducial
+                    cuts = cuts and ((abs(e2.eta + e2.deltaEtaSC) >= 1.566 and abs(e1.eta + e1.deltaEtaSC) < 2.5) or abs(e2.eta + e2.deltaEtaSC) < 1.444)
                     #cuts = cuts and (e1.pt >= 20.0 and abs(e1.eta + e1.deltaEtaSC) < 2.5 and e1.mvaNoIso_WP80 ) #ID (basic)
                     #cuts = cuts and (e2.pt >= 20.0 and abs(e2.eta + e2.deltaEtaSC) < 2.5 and e2.mvaNoIso_WP80) #ID (basic)
 
@@ -83,6 +85,7 @@ class ZProducer(Module):
                     if abs(tempM - 91.18) < abs(Z_mass - 91.18) and tempM >= 60.0 and tempM <= 120.0: 
                         Z_dm = 1
                         Z_mass = tempM
+                        Z_mCorr = Z_mass
                         Z_pt = (e1.p4()+e2.p4()).Pt()
                         Z_eta = (e1.p4()+e2.p4()).Eta()
                         Z_phi = (e1.p4()+e2.p4()).Phi()
@@ -92,7 +95,10 @@ class ZProducer(Module):
                         if self.era == 2:
                             Z_dauID = (e1.pt >= 20.0 and abs(e1.eta + e1.deltaEtaSC) < 2.5 and e1.mvaFall17V2noIso_WP80)
                             Z_dauID = Z_dauID and (e2.pt >= 20.0 and abs(e2.eta + e2.deltaEtaSC) < 2.5 and e2.mvaFall17V2noIso_WP80)
-                        elif self.era == 3:
+                        elif self.era == 3: 
+                            #NB: A bug means that the "non-iso" el IDs require isolation! 
+                            #The reconstruction efficiency when requiring the ID is therefore much lower than expected and not recommended
+                            # see https://twiki.cern.ch/twiki/bin/view/CMS/MultivariateElectronIdentificationRun3
                             Z_dauID = (e1.pt >= 20.0 and abs(e1.eta + e1.deltaEtaSC) < 2.5 and e1.mvaNoIso_WP80 )
                             Z_dauID = Z_dauID and (e2.pt >= 20.0 and abs(e2.eta + e2.deltaEtaSC) < 2.5 and e2.mvaNoIso_WP80)
         
@@ -102,20 +108,21 @@ class ZProducer(Module):
                 mu2 = muons[mu2Idx]
                 
                 if (mu1.charge * mu2.charge < 0): #Opposite charge
-                    if (mu1.pt >= 15.0 and abs(mu1.eta) < 2.4) and (mu2.pt >= 15.0 and abs(mu2.eta) < 2.4): 
+                    if (mu1.pt >= 15.0 and abs(mu1.eta) < 2.4 and mu1.mediumId) and (mu2.pt >= 15.0 and abs(mu2.eta) < 2.4 and mu2.mediumId): 
                         Z_nMuMu += 1
                         tempM = (mu1.p4() + mu2.p4()).M()
                         #print("Found a Z->mumu candidate with mass = " + str(tempM) + " : current Z_mass = " + str(Z_mass))
                         if abs(tempM - 91.18) < abs(Z_mass - 91.18) and tempM >= 60.0 and tempM <= 120.0: 
                             Z_dm = 2
                             Z_mass = tempM
+                            Z_mCorr = Z_mass
                             Z_pt = (mu1.p4()+mu2.p4()).Pt()
                             Z_eta = (mu1.p4()+mu2.p4()).Eta()
                             Z_phi = (mu1.p4()+mu2.p4()).Phi()
                             Z_d1Idx = mu1Idx if mu1.pt >= mu2.pt else mu2Idx  #daughter 1 is higher pT mu
                             Z_d2Idx = mu2Idx if mu1.pt >= mu2.pt else mu1Idx
                             Z_dauDR = mu1.DeltaR(mu2)
-                            Z_dauID = mu1.mediumId and mu2.mediumId
+                            Z_dauID = True # ID is applied for muons, just not electrons due to a bug with isolation
 
         
         if Z_dm < 0:
@@ -127,7 +134,7 @@ class ZProducer(Module):
                 if abs(jet.eta) < 2.5 and jet.pt > 100:
                     self.h_ak8Mass.Fill(jet.mass)
                 jetID = jet.jetId == 6 #2 = pass tight ID but fail tight lepton veto, 6 = pass both
-                jetID = jetID and (jet.mass >= 60.0 and jet.mass <= 120.0)
+                jetID = jetID and (jet.mass >= 61.0 and jet.mass <= 121.0)
                 jetID = jetID and (abs(jet.eta) < 2.5 and jet.pt > 100)
                 if self.era == 2:
                     jetID = jetID and jet.particleNet_ZvsQCD > 0.9
@@ -144,6 +151,17 @@ class ZProducer(Module):
                         Z_pt = jet.pt
                         Z_eta = jet.eta
                         Z_phi = jet.phi
+                        Z_dauDR = -1 #This is meaningless but satisfies the general requirement Z_dauDR<1 later
+
+            #Plots of Z_mass vs Z_pt revealed a bias towards higher masses at higher pts for Z->jet events.
+            #A linear fit of this bias was performed here in order to develop the correction applied below:
+            corr = 90.6837 + (Z_pt * 0.0137035) - 91.18
+            if (Z_mass - corr) > (91.18 * 0.95) and Z_mass > (91.18 * 1.05):
+                Z_mCorr = Z_mass - corr
+            else:
+                Z_mCorr = Z_mass
+
+
 
             #AK8 jets were overwhelmingly chosen so we only use AK8 now
             #The below section would allow saving AK4 info instead of AK8 and is left for posterity and in case of futre tests
@@ -172,13 +190,15 @@ class ZProducer(Module):
             #    Z_phi = theJet.phi
 
         Z_isCand = Z_dm == 0 or Z_dm == 1 or Z_dm==2 #Z->jets, ee, mumu
-        Z_isCand = Z_isCand and (Z_mass > 61 and Z_mass < 121) #Mass range
+        Z_isCand = Z_isCand and (Z_mass > 61 and Z_mass < 141) #Mass range
         Z_isCand = Z_isCand and Z_dauDR < 1
+
 
         self.out.fillBranch("Z_dm", Z_dm)
         self.out.fillBranch("Z_d1Idx", Z_d1Idx)
         self.out.fillBranch("Z_d2Idx", Z_d2Idx)
         self.out.fillBranch("Z_mass", Z_mass)
+        self.out.fillBranch("Z_mCorr", Z_mCorr)
         self.out.fillBranch("Z_pt", Z_pt)
         self.out.fillBranch("Z_eta", Z_eta)
         self.out.fillBranch("Z_phi", Z_phi)

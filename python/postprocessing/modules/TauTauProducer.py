@@ -24,12 +24,17 @@ class TauTauProducer(Module):
         self.out.branch("TauTau_tau2Prongs", "I") #"Number if prongs of tau2 (1 or 3)"
         self.out.branch("TauTau_havePair", "O") #"True if have two good taus"
         self.out.branch("TauTau_TauTauDR", "F") #"DeltaR between the two taus"
-        self.out.branch("TauTau_TauTauCos2DPhi", "F") #"cos^2(tau1.phi-tau2.phi)"
+        self.out.branch("TauTau_TauTauDPhi", "F") #"Delta phi between the two taus"
+        #self.out.branch("TauTau_TauTauCos2DPhi", "F") #"cos^2(tau1.phi-tau2.phi)"
         self.out.branch("TauTau_visM", "F") #"Visible mass of the tau pair"
         self.out.branch("TauTau_haveTrip", "O") #"True if have two good taus and a Z"
         self.out.branch("TauTau_minCollM", "F") #"The smaller collinear mass of tau1+nu+Z or tau2+nu+Z"
         self.out.branch("TauTau_maxCollM", "F") #"The larger collinear mass of either tau1+nu+Z or tau2+nu+Z"
         self.out.branch("TauTau_isCand", "O") #"True if the event is good tau+tau+Z event"
+
+        self.out.branch("TauTau_trigMatchTau", "O") #"True if the event passes the single tau trigger and one tau matches to the trigObj"
+        self.out.branch("TauTau_trigMatchTauTau", "O") #"True if the event passes the d-tau trigger and both taus matche to the trigObj"
+        
 
     def analyze(self, event):
         tau1Idx = -1
@@ -62,6 +67,9 @@ class TauTauProducer(Module):
                 tauID = tauID and tau.idDeepTau2018v2p5VSjet >= 4 #4= loose
                 tauID = tauID and tau.idDeepTau2018v2p5VSmu >= 4 #4= tight
                 tauID = tauID and tau.idDeepTau2018v2p5VSe >= 2 #2= VVLoose
+
+                #I believe this is already applied but included here anyway for safety
+                tauID = tauID and tau.decayMode != 5 and tau.decayMode != 6 
                 
             if tauID:
                 goodTaus.append((tauI, tau.idDeepTau2018v2p5VSjet, tau.pt))
@@ -78,7 +86,7 @@ class TauTauProducer(Module):
             for i in range(1, len(goodTaus)):
                 tau2 = taus[goodTaus[i][0]]
                 
-                if abs(tau1.DeltaR(tau2)) < 0.4:
+                if abs(tau1.DeltaR(tau2)) < 0.5:
                     tau2Idx = goodTaus[i][0]
                     break #Since list is sorted, as soon as we find a DR separated tau, we're done
             if tau2Idx < 0: #No DR separated tau so choose the second best vsJet and pt ranked tau 
@@ -131,20 +139,14 @@ class TauTauProducer(Module):
                 maxCollM = max(collM_tau1Z, collM_tau2Z)
                 
                 isCand = haveTrip #A good triplet
-                isCand = isCand and event.Trig_tau  #Appropriate trigger
-                isCand = isCand and abs(tau2.DeltaR(tau1)) > 0.5 #Separation of e and tau
-                isCand = isCand and cos_tau1_tau2**2 < 0.95 #DPhi separation of the e and tau
+                isCand = isCand and (event.Trig_tau or event.Trig_tauTau)  #Appropriate trigger
+                isCand = isCand and abs(tau2.DeltaR(tau1)) > 0.5 #Separation of two taus
+                isCand = isCand and cos_tau1_tau2**2 < 0.95 #DPhi separation of the two taus
+                isCand = isCand and abs(theZ.DeltaR(tau1)) > 0.5 #Separation of the Z and tau1
+                isCand = isCand and abs(theZ.DeltaR(tau2)) > 0.5 #Separation of the Z and tau2
                 isCand = isCand and isBetween(tau1.phi, tau2.phi, event.MET_phi) #MET in small angle between taus
                 isCand = isCand and minCollM > visM # Collinear mass should be greater than visible mass
                 
-                if False and isCand and maxCollM < 1000 and minCollM < 1000:
-                    print("TauTau event")
-                    print("\tmin coll mass = " + str(minCollM))
-                    print("\tmax coll mass = " + str(maxCollM))
-                    print("\tvis_m = " + str(visM))
-                    print("\tnuTau1_mag = " + str(nuTau1_mag))
-                    print("\tnuTau2_mag = " + str(nuTau2_mag))
-                    print("\tMet_pt = " + str(event.MET_pt))
                     
 
 
@@ -154,7 +156,7 @@ class TauTauProducer(Module):
         self.out.fillBranch("TauTau_tau2Prongs", tau2Prongs)
         self.out.fillBranch("TauTau_havePair", havePair)
         self.out.fillBranch("TauTau_TauTauDR", tausDR)
-        self.out.fillBranch("TauTau_TauTauCos2DPhi", cos_tau1_tau2**2)
+        self.out.fillBranch("TauTau_TauTauDPhi", tausDPhi)
         self.out.fillBranch("TauTau_visM", visM)
         self.out.fillBranch("TauTau_haveTrip", haveTrip)
         self.out.fillBranch("TauTau_minCollM", minCollM)
