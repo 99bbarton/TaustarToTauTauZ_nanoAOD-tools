@@ -7,6 +7,7 @@ from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection
 import PhysicsTools.NanoAODTools.postprocessing.framework.datamodel as datamodel
 from PhysicsTools.NanoAODTools.postprocessing.utils.GenTools import getDecayChain, getProdChain, prodChainContains
+from PhysicsTools.NanoAODTools.postprocessing.utils.Tools import deltaR, isBetween
 
 from ROOT import TH1F, TLorentzVector
 
@@ -111,7 +112,7 @@ class GenProducer(Module):
         recAK4JetIdx = -1
         recAK8JetIdx = -1
         subGenJet1Idx = -1
-        subGenJet1Idx = -1
+        subGenJet2Idx = -1
         isCand = False
         dr_tsTauTau = -999
         dr_tsTauZ = -999
@@ -281,13 +282,11 @@ class GenProducer(Module):
                                     recAK4JetIdx = jetIdx
                                     break
                             
-                        if zDM == 0:
+                        if zDM == 0 and zGenAK8Idx >=0:
                             subGenJets = Collection(event, "SubGenJetAK8")
                             zGenAK8 = genJetAK8s[zGenAK8Idx]
-                            subGenJet1Idx = -1
-                            subGenJet1Idx = -1
                             for sJIdx, subJet in enumerate(subGenJets):
-                                if subJet.DeltaR(zGenAK8) < 0.05:
+                                if deltaR(subJet.eta, subJet.phi, zGenAK8.eta, zGenAK8.phi) < 0.5:
                                     if subGenJet1Idx < 0:
                                         subGenJet1Idx = sJIdx
                                     elif subGenJet2Idx < 0:
@@ -313,7 +312,8 @@ class GenProducer(Module):
                 if zDM == 1 or zDM == 2:
                     isCand = isCand and zDauFid
                     isCand = isCand and (zD1RecIdx >= 0 and zD2RecIdx >= 0) #Matching reco particles found
-                    isCand = isCand and zDauKin 
+                    isCand = isCand and zDauKin
+                #One more requirement is below after MET calculation. Namely, that MET is between the two taus
 
                 if tauDM == 0 and tsTauDM == 0:
                     ch = 0
@@ -368,6 +368,10 @@ class GenProducer(Module):
                 totMET_eta = totMet.Eta()
                 totMET_phi = totMet.Phi()
                 totMET_pt = totMet.Pt()
+
+
+                isCand = isCand and isBetween(genParts[tsTauIdx].phi, genParts[tauIdx].phi, totMET_phi)
+                
                 
                 #Now do DeltaR calculations
                 tsTau = genParts[tsTauIdx]

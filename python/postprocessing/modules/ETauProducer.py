@@ -141,8 +141,8 @@ class ETauProducer(Module):
                 isCand = isCand and event.Trig_tau  #Appropriate trigger
                 isCand = isCand and abs(theEl.DeltaR(theTau)) > 0.5 #Separation of e and tau
                 isCand = isCand and cos_tau_el**2 < 0.95 #dphi separation of the e and tau
-                isCand = isCand and abs(theZ.DeltaR(theTau)) > 0.5 #Separation of the Z and tau
-                isCand = isCand and abs(theZ.DeltaR(theEl)) > 0.5 #Separation of the Z and el
+                isCand = isCand and abs(deltaR(theZ.Eta(), theZ.Phi(), theTau.eta, theTau.phi)) > 0.5 #Separation of the Z and tau
+                isCand = isCand and abs(deltaR(theZ.Eta(), theZ.Phi(), theEl.eta, theEl.phi)) > 0.5 #Separation of the Z and el
                 isCand = isCand and isBetween(theTau.phi, theEl.phi, event.MET_phi) #MET is in small angle between tau & el
                 isCand = isCand and minCollM > visM # Collinear mass should be greater than visible mass
 

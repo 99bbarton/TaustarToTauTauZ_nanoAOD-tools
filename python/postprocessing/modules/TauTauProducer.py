@@ -142,8 +142,8 @@ class TauTauProducer(Module):
                 isCand = isCand and (event.Trig_tau or event.Trig_tauTau)  #Appropriate trigger
                 isCand = isCand and abs(tau2.DeltaR(tau1)) > 0.5 #Separation of two taus
                 isCand = isCand and cos_tau1_tau2**2 < 0.95 #DPhi separation of the two taus
-                isCand = isCand and abs(theZ.DeltaR(tau1)) > 0.5 #Separation of the Z and tau1
-                isCand = isCand and abs(theZ.DeltaR(tau2)) > 0.5 #Separation of the Z and tau2
+                isCand = isCand and abs(deltaR(theZ.Eta(), theZ.Phi(), tau1.eta, tau1.phi)) > 0.5 #Separation of the Z and tau1
+                isCand = isCand and abs(deltaR(theZ.Eta(), theZ.Phi(), tau2.eta, tau2.phi)) > 0.5 #Separation of the Z and tau2
                 isCand = isCand and isBetween(tau1.phi, tau2.phi, event.MET_phi) #MET in small angle between taus
                 isCand = isCand and minCollM > visM # Collinear mass should be greater than visible mass
                 
