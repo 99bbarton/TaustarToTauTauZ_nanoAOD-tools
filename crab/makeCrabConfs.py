@@ -14,6 +14,7 @@ def parseArgs():
     argparser.add_argument("-d", "--dataset", action="append", choices=["SIG", "M250", "M500", "M750", "M1000", "M1250", "M1500", "M1750", "M2000", "M2500", "M3000", "M3500", "M4000", "M4500", "M5000", "DY"], help="A specific dataset to process. Must also provide one or more years. Dataset takes precedent of --inFiles")
     argparser.add_argument("-e", "--executable", action="store", help="The executable script to use. Otherwise will use crab_script.py and crab_script_YEAR_.sh")
     argparser.add_argument("-i", "--inFiles", action="append", help="A file to use as input. Multiple files can be specified. If action=GEN/GEN_SUB, these should be the input root files. If action=SUB, this should be directory/file to submit")
+    argparser.add_argument("-p", "--usePFNano", action="store_true", help="If specified, uses input files which have been processed through btvnano-prod first")
     #argparser.add_argument("-n", "--nEvents", action="store", type=int, help="The maximum number of events to process")
     #argparser.add_argument("-o", "--outDir", action="store", default="./", help="The desired output directory")
     argparser.add_argument("-k", "--keepAndDrop", action="store", default="./keep_and_drop.txt", help="A path to a text file listing which branches to keep/drop")
@@ -68,7 +69,8 @@ def parseArgs():
         args["YEARS"] = set(args["YEARS"])
 
     args["DATASETS"] = []
-    if raw_args.type == "SIG" and raw_args.dataset:
+    if raw_args.type == "SIG" and raw_args.dataset and not raw_args.usePFNano:
+            
         if args["ERA"] == 3: 
             if "SIG" in raw_args.dataset or "ALL" in raw_args.dataset:
                 masses = ["M250","M500", "M750", "M1000", "M1250", "M1500", "M1750", "M2000", "M2500", "M3000", "M3500", "M4000", "M4500", "M5000"]
@@ -87,7 +89,7 @@ def parseArgs():
                         args["DATASETS"].append("/TaustarToTauZ_"+mass.lower()+"_TuneCP5_13p6TeV_pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v2/NANOAODSIM")
         else: 
             args["DATASETS"] = []
-    elif raw_args.dataset:
+    elif raw_args.dataset and not raw_args.usePFNano:
         if raw_args.type == "MC":
             for year in args["YEARS"]:
                 if year == "2018":
@@ -127,6 +129,17 @@ def parseArgs():
             for mass in masses:
                 args["FILES"].append("/store/user/bbarton/TaustarToTauTauZ/SignalMC/TauZ/taustarToTauZ_"+mass.lower()+"_"+year+".root")
         print(args["FILES"])
+    elif raw_args.usePFNano:
+        #PF info is added to NanoAOD via the btvnano-prod repo. Those outputs are stored in EOS
+        if raw_args.type == "SIG":
+            if "SIG" in raw_args.dataset or "ALL" in raw_args.dataset:
+                masses = ["M250"," M500", "M750", "M1000", "M1250", "M1500", "M1750", "M2000", "M2500", "M3000", "M3500", "M4000", "M4500", "M5000"]
+            else:
+                masses = raw_args.dataset
+            
+            for year in args["YEARS"]:
+                for mass in masses:
+                    args["FILES"].append("/store/user/bbarton/TaustarToTauTauZ/SignalMC/SigPFNano/" + year + "/taustarToTauZ_"+mass.lower()+"_"+year+".root")
 
     if args["GEN"]:
         if raw_args.executable:
