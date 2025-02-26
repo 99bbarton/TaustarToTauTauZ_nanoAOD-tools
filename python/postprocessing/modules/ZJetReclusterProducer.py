@@ -2,19 +2,66 @@
 #Requires the information added by the bvnano-prod package: https://github.com/cms-btv-pog/btvnano-prod/tree/NanoAODv12_22Sep2023
 # 
 
-from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import PostProcessor
 from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection
-import PhysicsTools.NanoAODTools.postprocessing.framework.datamodel as datamodel
 
 from ROOT import TLorentzVector, TVector3
 
 # ----------------------------------------------------------------------------------------------------------------------------- #
+# ----------------------------------------------------------------------------------------------------------------------------- #
 
-#Return the boost vector which makes the two particle flow candidates, pfc1 and pfc2 closest to being back-to-back as possible
-def getBoost(pfc1, pfc2):
-    p1 = pfc1.p4()
-    p2 = pfc2.p4()
+#Returns distance dij from https://arxiv.org/pdf/0802.1189
+#objs can either be TLorentzVectors or ReClJets
+#R is the radius, p the power (not including the "2") which the momentum is raised two
+def distance(obj1, obj2, p, R):
+    p = 2 * p
+    return min(obj1.Pt()**p, obj2.Pt()**p) * (obj1.DeltaR(obj2)**2) / (R**2)
+
+#Recluster the PF candidate four-vectors pfCands after boosting by the boost TLorentzVector
+#p=-1 => anti-kt, p=0 => cambridge/aachen, p=1 =>inclusive kt
+#R is the jet cone radius i.e. 0.4 = AK4, 0.8 = AK8, etc.
+#Returns a list of four vectors representing the reclustered jets
+def recluster(pfCands, p, R):
+    
+    reClJets = []
+    
+    while len(pfCands > 0):
+        minDist = 9999999
+        minPairIdxs = None
+        minBDist = 9999999
+        minBDistIdx = -1
+
+        for pfcN1, pfc1 in enumerate(pfCands):
+            
+            #Find them minimum distance between pfc1 and all other PFCs
+            for pfcN2 in range(pfcN1+1, len(pfCands)):
+                pfc2 = pfCands[pfcN2]
+                dist = distance(pfc1, pfc2, p, R)
+                if dist < minDist:
+                    minDist = dist
+                    minPairIdxs = (pfcN1, pfcN2)
+            
+            #Find the minimum "beam distance"
+            bDist = pfc1.Pt()**(2*p)
+            if bDist < minBDist:
+                minBDist = bDist
+                minBDistIdx = pfcN1
+            
+        #If two PFCs are the closest pairing, combine them into the first and delete the second from the list
+        if minDist < minBDist and minPairIdxs is not None:
+            pfCands[minPairIdxs[0]] += pfCands[minPairIdxs[1]] 
+            del pfCands[minPairIdxs[1]]
+        else: #If beam distance is minimum, call that a reclustered jet
+            reClJets.append(minBDistIdx)
+
+    return reClJets
+
+
+# ----------------------------------------------------------------------------------------------------------------------------- #
+# ----------------------------------------------------------------------------------------------------------------------------- #
+
+#Return the boost vector which makes the two four vectors closest to being back-to-back as possible
+def getBoost(p1, p2):
 
     pTot3Vec = p1.Vect() + p2.Vect()
 
@@ -26,6 +73,7 @@ def getBoost(pfc1, pfc2):
 
     return boost
 
+# ----------------------------------------------------------------------------------------------------------------------------- #
 # ----------------------------------------------------------------------------------------------------------------------------- #
 
 class ZJetReclusterProducer(Module):
@@ -41,99 +89,80 @@ class ZJetReclusterProducer(Module):
 
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.out = wrappedOutputTree
-        self.out.branch("ZReCl_nPFCs", "I") #"Number of PF candidates corresponding included in the reclustered jet"
-        self.out.branch("ZReCl_pfcIdxs", "I", lenVar="ZReCl_nPFCs") #"Indices to PFCands of the utilized PF candidates"
-        self.out.branch("ZReCl_pfcBoostPt", "F", lenVar="ZReCl_nPFCs") #"PT of the PF candidates in the Z frame"
-        self.out.branch("ZReCl_pfcBoostEta", "F", lenVar="ZReCl_nPFCs") #"eta of the PF candidates in the Z frame"
-        self.out.branch("ZReCl_pfcBoostPhi", "F", lenVar="ZReCl_nPFCs") #"phi of the PF candidates in the Z frame"
-        self.out.branch("ZReCl_mass", "F", lenVar="ZReCl_nPFCs") #"Mass of the reclusted jet. idx 0 is of leading PF cand, idx 1, leading+sub-leading PF cand, etc"
-        self.out.branch("ZReCl_pt", "F", lenVar="ZReCl_nPFCs") #"pt of the reclusted jet. idx 0 is of leading PF cand, idx 1, leading+sub-leading PF cand, etc"
-        self.out.branch("ZReCl_eta", "F", lenVar="ZReCl_nPFCs") #"eta of the reclusted jet. idx 0 is of leading PF cand, idx 1, leading+sub-leading PF cand, etc"
-        self.out.branch("ZReCl_phi", "F", lenVar="ZReCl_nPFCs") #"phi of the reclusted jet. idx 0 is of leading PF cand, idx 1, leading+sub-leading PF cand, etc"
+        self.out.branch("ZReClJ_pow", "I") #"The power used in the reclustering step (-1=anti-kt, 0=cambridge-aachen, 1=kt)"
+        self.out.branch("ZReClJ_pt", "F") #"pt of the overall reclustered Z->AK8 Jet"
+        self.out.branch("ZReClJ_eta", "F") #"eta of the overall reclustered Z->AK8 Jet"
+        self.out.branch("ZReClJ_phi", "F") #"phi of the overall reclustered Z->AK8 Jet"
+        self.out.branch("ZReClJ_mass", "F") #"m of the overall reclustered Z->AK8 Jet"
+        self.out.branch("ZReClJ_nSJs", "I") #"The number of AK4 subjets after reclustering"
+        self.out.branch("ZReClJ_sjPt", "F", lenVar="ZReClJ_nSJs") #"pt of the Z subjets (AK4 clustering results)"
+        self.out.branch("ZReClJ_sjEta", "F", lenVar="ZReClJ_nSJs") #"eta of the Z subjets (AK4 clustering results)"
+        self.out.branch("ZReClJ_sjPhi", "F", lenVar="ZReClJ_nSJs") #"phi of the Z subjets (AK4 clustering results)"
+        self.out.branch("ZReClJ_sjMass", "F", lenVar="ZReClJ_nSJs") #"mass of the Z subjets (AK4 clustering results)"
 
     # ----------------------------------------------------------------------------------------------------------------------------- #
 
     def analyze(self, event):
-        MAX_PFCs = 6
-
-        ZReCl_nPFCs = 0
-        ZReCl_pfcIdxs = []
-        ZReCl_pfcBoostPt  = []
-        ZReCl_pfcBoostEta = []
-        ZReCl_pfcBoostPhi = []
-        ZReCl_mass = []
-        ZReCl_pt = []
-        ZReCl_eta = []
-        ZReCl_phi = []
-        
-        #First, find all the PF candidates which are in the FatJet selected by ZProducer 
-        fatJetPFCands = Collection(event, "FatJetPFCands")
-        zJetPFCs = [] # list of (pfCandIdx, pfCandPt)
-        for fJPFC in fatJetPFCands:
-            if fJPFC.jetIdx == event.Z_jetIdxAK8:
-                zJetPFCs.append((fJPFC.pFCandsIdx, fJPFC.pt))
-
-        #Sort the located PF cands by descending pt (in lab frame)
-        zJetPFCs.sort(key=lambda fJPFC : fJPFC[1], reverse=True) 
-
-        if len(zJetPFCs) >= 2:
-            pfCands = Collection(event, "PFCands")
-
-            #Get the Lorentz boost which makes the two leading PF cands as close to back-to-back as possible
-            #Apply the boost to the PFCs in the Z jet and resort by descending pT, this time in the Z rest frame
-            boost = getBoost(pfc1=pfCands[zJetPFCs[0][0]], pfc2=pfCands[zJetPFCs[1][0]])
-            boostedPFCs = []
-            for pfcN in range(len(zJetPFCs)):
-                pfcIdx = zJetPFCs[pfcN][0]
-                pfc = pfCands[pfcIdx]
-                boostedPFCs.append(( pfcIdx, pfCands[pfcIdx].p4() + boost))
-
-            boostedPFCs.sort(key= lambda pfc : pfc[1].Pt(), reverse=True)
+        #POWER=-1 => anti-kt, POWER=0 => cambridge/aachen, POWER=1 =>inclusive kt
+        pow = -1
+        pt = -999.99
+        eta = -999.99
+        phi = -999.99
+        mass = -999.99
+        nSJs = 0
+        sjPt = []
+        sjEta = []
+        sjPhi = []
+        sjMass = []
 
 
-            reClZJet = TLorentzVector()
-            for pfCandN in range( min(len(boostedPFCs), MAX_PFCs) ):
-                ZReCl_nPFCs += 1
-                ZReCl_pfcIdxs.append(boostedPFCs[pfCandN][0])
+        if event.Z_jetIdxAK8 >=0 and event.Z_dm == 0 and event.Z_sJIdx1 >=0 and event.Z_sJIdx2 >=0:
+            pfCands = Collection(event, "FatJetPFCands")
+
+            zSJ1 = event.SubJet[event.Z_sJIdx1].p4()
+            zSJ2 = event.SubJet[event.Z_sJIdx2].p4()
+            boost = getBoost(zSJ1, zSJ2)
+
+            zJetPFCs = []
+            for pfCand in pfCands:
+                if pfCand.jetIdx == event.Z_jetIdxAK8:
+                    zJetPFCs.append(pfCand.p4() + boost)
             
-                pfCand = boostedPFCs[pfCandN][1]
+            if len(zJetPFCs) < 2:
+                print("WARNING: Did not find at least 2 PFCs matching to Z AK8 jet!")
+            else:
+                reClAK4Jets = recluster(pfCands=zJetPFCs, p=pow, R=0.4)
 
-                ZReCl_pfcBoostPt.append(pfCand.Pt())
-                ZReCl_pfcBoostEta.append(pfCand.Eta())
-                ZReCl_pfcBoostPhi.append(pfCand.Phi())
+                reClAK8Jet = TLorentzVector()
 
-                if pfCandN == 0: 
-                    #The overall "jet" is just the single pf candidate for the first pfc
-                    ZReCl_pt.append(pfCand.Pt())
-                    ZReCl_eta.append(pfCand.Eta())
-                    ZReCl_phi.append(pfCand.Phi())
-                    ZReCl_mass.append(pfCand.M())
-                    reClZJet.SetPtEtaPhiM(ZReCl_pt[-1], ZReCl_eta[-1], ZReCl_phi[-1], ZReCl_mass[-1])
-                
-                else: #In all other iterations, add the next highest pT pfc to the sum of previous
-                    reClZJet = reClZJet + pfCand
-                    ZReCl_mass.append(reClZJet.M())
-                    ZReCl_pt.append(reClZJet.Pt())
-                    ZReCl_eta.append(reClZJet.Eta())
-                    ZReCl_phi.append(reClZJet.Phi())
+                for reClAK4Jet in reClAK4Jets:
+                    reClAK4Jet -= boost #Boost back to the lab frame
 
-        else:
-            print("WARNING: <2 Z jet PF cands found! Cannot perform boosed reclustering!")
+                    nSJs += 1
+                    sjPt.append(reClAK4Jet.Pt())
+                    sjEta.append(reClAK4Jet.Eta())
+                    sjPhi.append(reClAK4Jet.Phi())
+                    sjMass.append(reClAK4Jet.M())
 
-        self.out.fillBranch("ZReCl_nPFCs", ZReCl_nPFCs)
-        self.out.fillBranch("ZReCl_pfcIdxs", ZReCl_pfcIdxs)
-        self.out.fillBranch("ZReCl_pfcBoostPt", ZReCl_pfcBoostPt)
-        self.out.fillBranch("ZReCl_pfcBoostEta", ZReCl_pfcBoostEta)
-        self.out.fillBranch("ZReCl_pfcBoostPhi", ZReCl_pfcBoostPhi)
-        self.out.fillBranch("ZReCl_mass", ZReCl_mass)
-        self.out.fillBranch("ZReCl_pt", ZReCl_pt)
-        self.out.fillBranch("ZReCl_eta", ZReCl_eta)
-        self.out.fillBranch("ZReCl_phi", ZReCl_phi)
+                    reClAK8Jet += reClAK4Jet
 
-        return True
+                pt = reClAK8Jet.Pt()
+                eta = reClAK8Jet.Eta()
+                phi = reClAK8Jet.Phi()
+                mass = reClAK8Jet.M()
+
+
+        self.out.fillBranch("ZReClJ_pow", pow)
+        self.out.fillBranch("ZReClJ_pt", pt)
+        self.out.fillBranch("ZReClJ_eta", eta)
+        self.out.fillBranch("ZReClJ_phi", phi)
+        self.out.fillBranch("ZReClJ_mass", mass)
+        self.out.fillBranch("ZReClJ_nSJs", nSJs)
+        self.out.fillBranch("ZReClJ_sjPt", sjPt)
+        self.out.fillBranch("ZReClJ_sjEta", sjEta)
+        self.out.fillBranch("ZReClJ_sjPhi", sjPhi)
+        self.out.fillBranch("ZReClJ_sjMass", sjMass)
 
     # ----------------------------------------------------------------------------------------------------------------------------- #
 
-# ----------------------------------------------------------------------------------------------------------------------------- #
 zJetReclusterProducerConstr = lambda : ZJetReclusterProducer()
-# ----------------------------------------------------------------------------------------------------------------------------- #
