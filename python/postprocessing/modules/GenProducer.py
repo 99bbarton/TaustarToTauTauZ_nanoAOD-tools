@@ -33,7 +33,7 @@ class GenProducer(Module):
         self.out.branch("Gen_tsTauIdx", "I") #"Idx to the last copy of the tau decay product of the taustar in GenPart"
         self.out.branch("Gen_tsTauDM", "I") #"Decay mode of the ts tau:  0=had, 1=e, 2=muon"
         self.out.branch("Gen_tauIdx", "I") #"Idx to the last copy of the spectator tau produced alongside the taustar in GenPart"
-        self.out.branch("Gen_tauDM", "I") #"Decay mode of the spectator tau:  0=had, 1=e, 2=muon
+        self.out.branch("Gen_tauDM", "I") #"Decay mode of the spectator tau:  0=had, 1=e, 2=muon"
         self.out.branch("Gen_tsTau_visInvDR", "F") #"DeltaR between the visible & invisible components of the tau from the taustar"
         self.out.branch("Gen_tau_visInvDR", "F") #"DeltaR between the visible & invisible components of the spectator tau"
         self.out.branch("Gen_tsTauFid", "O") #"True if the tsTau passes fiducial cuts"
