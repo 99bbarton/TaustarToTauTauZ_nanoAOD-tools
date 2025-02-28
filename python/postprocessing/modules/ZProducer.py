@@ -138,7 +138,7 @@ class ZProducer(Module):
                 jetID = jet.jetId == 6 #2 = pass tight ID but fail tight lepton veto, 6 = pass both
                 jetID = jetID and (jet.mass >= 61.0 and jet.mass <= 121.0)
                 jetID = jetID and (abs(jet.eta) < 2.5 and jet.pt > 100)
-                jetID = jetID and jet.bTagDeepB < 0.7 # Require no b-tag
+                jetID = jetID and jet.btagDeepB < 0.7 # Require no b-tag
                 
                 if self.era == 2:
                     jetID = jetID and jet.particleNet_ZvsQCD > 0.9
@@ -157,37 +157,39 @@ class ZProducer(Module):
                         Z_phi = jet.phi
                         Z_dauDR = -1 #This is meaningless but satisfies the general requirement Z_dauDR<1 later
 
-            subJets = Collection(event, "SubJet")
-            ak8Jet = ak8Jets[Z_jetIdxAK8]
+            if Z_jetIdxAK8 >= 0:
+                subJets = Collection(event, "SubJet")
+                ak8Jet = ak8Jets[Z_jetIdxAK8]
 
-            for sJIdx, subJet in enumerate(subJets):
-                if sJIdx.DeltaR(ak8Jet) < 0.5:
-                    if Z_sJIdx1 < 0:
-                        Z_sJIdx1 = sJIdx
-                    elif Z_sJIdx2 <0:
-                        Z_sJIdx2 = sJIdx
-                    else:
-                        print('WARNING: Found more than two "matching" subJets to the Z FatJet!"')
-            if Z_sJIdx1 < 0 or Z_sJIdx2 < 0:
-                print("WARNING: Did not find two subJets matching to the Z FatJet")
-            else:
-                #Make first idx higher pt for consistency with other multi-idx convention
-                if subJets[Z_sJIdx1].pt < subJets[Z_sJIdx2].pt:
-                    temp = Z_sJIdx1
-                    Z_sJIdx1 = Z_sJIdx2
-                    Z_sJIdx2 = temp
+                for sJIdx, subJet in enumerate(subJets):
+                    if subJet.DeltaR(ak8Jet) < 0.5:
+                        if Z_sJIdx1 < 0:
+                            Z_sJIdx1 = sJIdx
+                        elif Z_sJIdx2 <0:
+                            Z_sJIdx2 = sJIdx
+                        else:
+                            print('WARNING: Found more than two "matching" subJets to the Z FatJet!"')
+                if Z_sJIdx1 < 0 or Z_sJIdx2 < 0:
+                    pass
+                    #print("WARNING: Did not find two subJets matching to the Z FatJet")
+                else:
+                    #Make first idx higher pt for consistency with other multi-idx convention
+                    if subJets[Z_sJIdx1].pt < subJets[Z_sJIdx2].pt:
+                        temp = Z_sJIdx1
+                        Z_sJIdx1 = Z_sJIdx2
+                        Z_sJIdx2 = temp
                 
-                subJet1 = subJets[Z_sJIdx1]
-                subJet2 = subJets[Z_sJIdx2]
-                Z_dauDR = subJet1.DeltaR(subJet2)
+                    subJet1 = subJets[Z_sJIdx1]
+                    subJet2 = subJets[Z_sJIdx2]
+                    Z_dauDR = subJet1.DeltaR(subJet2)
 
-            #Plots of Z_mass vs Z_pt revealed a bias towards higher masses at higher pts for Z->jet events.
-            #A linear fit of this bias was performed here in order to develop the correction applied below:
-            corr = 90.6837 + (Z_pt * 0.0137035) - 91.18
-            if (Z_mass - corr) > (91.18 * 0.95) and Z_mass > (91.18 * 1.05):
-                Z_mCorr = Z_mass - corr
-            else:
-                Z_mCorr = Z_mass
+                #Plots of Z_mass vs Z_pt revealed a bias towards higher masses at higher pts for Z->jet events.
+                #A linear fit of this bias was performed here in order to develop the correction applied below:
+                corr = 90.6837 + (Z_pt * 0.0137035) - 91.18
+                if (Z_mass - corr) > (91.18 * 0.95) and Z_mass > (91.18 * 1.05):
+                    Z_mCorr = Z_mass - corr
+                else:
+                    Z_mCorr = Z_mass
 
 
 

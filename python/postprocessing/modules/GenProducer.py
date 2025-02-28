@@ -294,7 +294,8 @@ class GenProducer(Module):
                                     else:
                                         print('WARNING: Found more than two "matching" subGenJets to zGenAK8!"')
                             if subGenJet1Idx < 0 or subGenJet2Idx < 0:
-                                print("WARNING: Did not find two subGenJets matching to zGenAK8")
+                                pass
+                                #print("WARNING: Did not find two subGenJets matching to zGenAK8")
                             else:
                                 #Make first idx higher pt for consistency with other multi-idx convention
                                 if subGenJets[subGenJet1Idx].pt < subGenJets[subGenJet2Idx].pt:

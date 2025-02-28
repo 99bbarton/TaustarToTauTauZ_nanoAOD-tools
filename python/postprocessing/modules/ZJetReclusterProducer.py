@@ -22,10 +22,10 @@ def distance(obj1, obj2, p, R):
 #R is the jet cone radius i.e. 0.4 = AK4, 0.8 = AK8, etc.
 #Returns a list of four vectors representing the reclustered jets
 def recluster(pfCands, p, R):
-    
+
     reClJets = []
     
-    while len(pfCands > 0):
+    while len(pfCands) > 0:
         minDist = 9999999
         minPairIdxs = None
         minBDist = 9999999
@@ -52,7 +52,8 @@ def recluster(pfCands, p, R):
             pfCands[minPairIdxs[0]] += pfCands[minPairIdxs[1]] 
             del pfCands[minPairIdxs[1]]
         else: #If beam distance is minimum, call that a reclustered jet
-            reClJets.append(minBDistIdx)
+            reClJets.append(pfCands[minBDistIdx])
+            del pfCands[minBDistIdx]
 
     return reClJets
 
@@ -65,9 +66,10 @@ def getBoost(p1, p2):
 
     pTot3Vec = p1.Vect() + p2.Vect()
 
-    beta = pTot3Vec / pTot3Vec.Mag()
+    #beta = pTot3Vec / pTot3Vec.Mag()
 
-    boost3Vec = TVector3(*beta)
+    boost3Vec = TVector3(pTot3Vec.X() / pTot3Vec.Mag(), pTot3Vec.Y() / pTot3Vec.Mag(), pTot3Vec.Z() / pTot3Vec.Mag())
+    
     boost = TLorentzVector()
     boost.SetVectM(boost3Vec, 0)
 
@@ -104,7 +106,7 @@ class ZJetReclusterProducer(Module):
 
     def analyze(self, event):
         #POWER=-1 => anti-kt, POWER=0 => cambridge/aachen, POWER=1 =>inclusive kt
-        pow = -1
+        power = 0
         pt = -999.99
         eta = -999.99
         phi = -999.99
@@ -117,21 +119,25 @@ class ZJetReclusterProducer(Module):
 
 
         if event.Z_jetIdxAK8 >=0 and event.Z_dm == 0 and event.Z_sJIdx1 >=0 and event.Z_sJIdx2 >=0:
-            pfCands = Collection(event, "FatJetPFCands")
 
-            zSJ1 = event.SubJet[event.Z_sJIdx1].p4()
-            zSJ2 = event.SubJet[event.Z_sJIdx2].p4()
+            fjPFCands = Collection(event, "FatJetPFCands")
+            pfCands = Collection(event, "PFCands")
+            subJets = Collection(event, "SubJet")
+            
+            zSJ1 = subJets[event.Z_sJIdx1].p4()
+            zSJ2 = subJets[event.Z_sJIdx2].p4()
             boost = getBoost(zSJ1, zSJ2)
 
             zJetPFCs = []
-            for pfCand in pfCands:
-                if pfCand.jetIdx == event.Z_jetIdxAK8:
-                    zJetPFCs.append(pfCand.p4() + boost)
+            for fjPFCand in fjPFCands:
+                if fjPFCand.jetIdx == event.Z_jetIdxAK8:
+                    pfCand = pfCands[fjPFCand.pFCandsIdx].p4()
+                    zJetPFCs.append(pfCand + boost)
             
             if len(zJetPFCs) < 2:
                 print("WARNING: Did not find at least 2 PFCs matching to Z AK8 jet!")
             else:
-                reClAK4Jets = recluster(pfCands=zJetPFCs, p=pow, R=0.4)
+                reClAK4Jets = recluster(pfCands=zJetPFCs, p=power, R=0.4)
 
                 reClAK8Jet = TLorentzVector()
 
@@ -152,7 +158,7 @@ class ZJetReclusterProducer(Module):
                 mass = reClAK8Jet.M()
 
 
-        self.out.fillBranch("ZReClJ_pow", pow)
+        self.out.fillBranch("ZReClJ_pow", power)
         self.out.fillBranch("ZReClJ_pt", pt)
         self.out.fillBranch("ZReClJ_eta", eta)
         self.out.fillBranch("ZReClJ_phi", phi)
@@ -162,6 +168,8 @@ class ZJetReclusterProducer(Module):
         self.out.fillBranch("ZReClJ_sjEta", sjEta)
         self.out.fillBranch("ZReClJ_sjPhi", sjPhi)
         self.out.fillBranch("ZReClJ_sjMass", sjMass)
+
+        return True
 
     # ----------------------------------------------------------------------------------------------------------------------------- #
 
