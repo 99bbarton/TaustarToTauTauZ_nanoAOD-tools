@@ -38,16 +38,24 @@ def buildDirList(args):
         #print("subTime=" + subTime)
         #print("jobName=" + jobName)
 
+        dataset = ""
+        
         command = 'less ' + dirPath + subDir + '/crab.log | grep "config.Data.inputDataset ="'
         stdout, stderr  = subprocess.Popen(command, universal_newlines=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
         if len(stdout) == 0:
-            print("ERROR: No dataset found")
-            exit(2)
-        dataset = stdout.split("'")[-2].split("/")[1]
-        #print("dataset="+dataset)
+            command = 'less ' + dirPath + subDir + '/crab.log | grep "config.Data.userInputFiles"'
+            stdout, stderr  = subprocess.Popen(command, universal_newlines=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+            
+            if len(stdout) == 0:
+                print("ERROR: No dataset or inputFiles found")
+                exit(2)
+            else:
+                dataset = "CRAB_UserFiles"
+        else:
+            dataset = stdout.split("'")[-2].split("/")[1]
 
         eosDirPath = dirBase + "/" + dataset + "/" + jobName + "/" + subTime + "/0000/"
-        #print(eosDirPath)
+        print(eosDirPath)
         eosDirList.append(eosDirPath)
 
     print("... done building directory list\n")
@@ -71,8 +79,8 @@ def haddFiles(dirList, args):
         
         os.system("hadd " + force + targetName + " `xrdfsls -u " + dirPath + "`")
 
-    return fileList
     print("...done hadd'ing files together")
+    return fileList
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------#
 

@@ -133,7 +133,7 @@ def parseArgs():
         #PF info is added to NanoAOD via the btvnano-prod repo. Those outputs are stored in EOS
         if raw_args.type == "SIG":
             if "SIG" in raw_args.dataset or "ALL" in raw_args.dataset:
-                masses = ["M250"," M500", "M750", "M1000", "M1250", "M1500", "M1750", "M2000", "M2500", "M3000", "M3500", "M4000", "M4500", "M5000"]
+                masses = ["M250"," M500", "M750", "M1000", "M1500", "M2000", "M2500", "M3000", "M3500", "M4000", "M4500", "M5000"]
             else:
                 masses = raw_args.dataset
             
