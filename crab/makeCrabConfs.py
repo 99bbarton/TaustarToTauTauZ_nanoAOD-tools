@@ -127,7 +127,7 @@ def parseArgs():
             elif year == "2016post":
                 year = "2016"
             for mass in masses:
-                args["FILES"].append("/store/user/bbarton/TaustarToTauTauZ/SignalMC/TauZ/taustarToTauZ_"+mass.lower()+"_"+year+".root")
+                args["FILES"].append(os.environ["ROOTURL"] + "/store/user/bbarton/TaustarToTauTauZ/SignalMC/TauZ/taustarToTauZ_"+mass.lower()+"_"+year+".root")
         print(args["FILES"])
     elif raw_args.usePFNano:
         #PF info is added to NanoAOD via the btvnano-prod repo. Those outputs are stored in EOS
@@ -139,7 +139,7 @@ def parseArgs():
             
             for year in args["YEARS"]:
                 for mass in masses:
-                    args["FILES"].append("/store/user/bbarton/TaustarToTauTauZ/SignalMC/SigPFNano/" + year + "/taustarToTauZ_"+mass.lower()+"_"+year+".root")
+                    args["FILES"].append(os.environ["ROOTURL"] + "/store/user/bbarton/TaustarToTauTauZ/SignalMC/SigPFNano/" + year + "/taustarToTauZ_"+mass.lower()+"_"+year+".root")
 
     if args["GEN"]:
         if raw_args.executable:

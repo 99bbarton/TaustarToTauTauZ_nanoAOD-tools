@@ -5,11 +5,13 @@ from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import *
 # this takes care of converting the input files from CRAB
 from PhysicsTools.NanoAODTools.postprocessing.utils.crabhelper import inputFiles, runsAndLumis
 
-from PhysicsTools.NanoAODTools.postprocessing.examples.exampleModule import exampleModuleConstr
+#from PhysicsTools.NanoAODTools.postprocessing.examples.exampleModule import exampleModuleConstr
 
 from PhysicsTools.NanoAODTools.postprocessing.modules.GenProducer import genProducerConstr
 from PhysicsTools.NanoAODTools.postprocessing.modules.TrigProducer import trigProducerConstr
 from PhysicsTools.NanoAODTools.postprocessing.modules.ZProducer import zProducerConstr
+from PhysicsTools.NanoAODTools.postprocessing.modules.BoostProducer import boostProducerConstr
+from PhysicsTools.NanoAODTools.postprocessing.modules.ZJetReclusterProducer import zJetReclusterProducerConstr
 from PhysicsTools.NanoAODTools.postprocessing.modules.ETauProducer import eTauProducerConstr
 from PhysicsTools.NanoAODTools.postprocessing.modules.MuTauProducer import muTauProducerConstr
 from PhysicsTools.NanoAODTools.postprocessing.modules.TauTauProducer import tauTauProducerConstr
@@ -30,7 +32,7 @@ else:
 
 outDir = "./"
 preSelection = "1>0"
-modules = [genProducerConstr(era), trigProducerConstr(year), zProducerConstr(era), eTauProducerConstr(era), muTauProducerConstr(era), tauTauProducerConstr(era)]
+modules = [genProducerConstr(era), trigProducerConstr(year), zProducerConstr(era), boostProducerConstr(), zJetReclusterProducerConstr(), eTauProducerConstr(era), muTauProducerConstr(era), tauTauProducerConstr(era)]
 #modules = [exampleModuleConstr()]
 ############################## TODO add era argument to constructors for z and tau, in .sh and config maker
 
@@ -38,7 +40,7 @@ modules = [genProducerConstr(era), trigProducerConstr(year), zProducerConstr(era
 #files=["root://cmsxrootd.fnal.gov//store/user/bbarton/TaustarToTauTauZ/SignalMC/TauZ/taustarToTauZ_m250_2018.root"]
 
 #NB: Despite not being in most of the supposedly working examples and defaulting to False, both fwkJObReport and provenance must be True for jobs to succeed fully.
-p = PostProcessor(outDir, inputFiles(), cut=preSelection, modules=modules, haddFileName="tree.root", fwkJobReport=True, provenance=True, histFileName="hists.root", histDirName="Hists" )
+p = PostProcessor(outDir, inputFiles(), cut=preSelection, modules=modules, haddFileName="tree.root", fwkJobReport=True, provenance=True, histFileName="hists.root", histDirName="Hists", outputbranchsel="keep_and_drop.txt" )
 p.run()
 
 print("DONE")

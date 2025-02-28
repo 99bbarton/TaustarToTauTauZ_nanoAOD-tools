@@ -29,6 +29,7 @@ def buildDirList(args):
 
     dirPath = "CrabSubmits/" + args.dir + "/"
     for subDir in os.listdir(dirPath):
+        print("\tgetting status of " + subDir)
         command = 'crab status -d ' + dirPath + subDir + ' | grep "Task name:" ' 
         stdout, stderr  = subprocess.Popen(command, universal_newlines=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
         splitOut = stdout.split(":")
