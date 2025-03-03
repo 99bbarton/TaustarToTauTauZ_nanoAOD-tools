@@ -131,7 +131,10 @@ class TauTauProducer(Module):
                 nuTau2.SetPtEtaPhiM(nuTau2_mag, tau2.eta, tau2.phi, 0.)
 
                 theZ = TLorentzVector()
-                theZ.SetPtEtaPhiM(event.Z_pt, event.Z_eta, event.Z_phi, event.Z_mass)
+                if event.ZReClJ_mass > 0:
+                    theZ.SetPtEtaPhiM(event.ZReClJ_pt, event.ZReClJ_eta, event.ZReClJ_phi, event.ZReClJ_mass)
+                else:
+                    theZ.SetPtEtaPhiM(event.Z_pt, event.Z_eta, event.Z_phi, event.Z_mass)
 
                 collM_tau1Z = (tau1.p4() + nuTau1 + theZ).M() 
                 collM_tau2Z= (tau2.p4() + nuTau2 + theZ).M()
@@ -146,8 +149,6 @@ class TauTauProducer(Module):
                 isCand = isCand and abs(deltaR(theZ.Eta(), theZ.Phi(), tau2.eta, tau2.phi)) > 0.5 #Separation of the Z and tau2
                 isCand = isCand and isBetween(tau1.phi, tau2.phi, event.MET_phi) #MET in small angle between taus
                 isCand = isCand and minCollM > visM # Collinear mass should be greater than visible mass
-                
-                    
 
 
         self.out.fillBranch("TauTau_tau1Idx", tau1Idx)

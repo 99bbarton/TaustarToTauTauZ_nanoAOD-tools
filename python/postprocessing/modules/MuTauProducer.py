@@ -124,7 +124,10 @@ class MuTauProducer(Module):
                 nuMu.SetPtEtaPhiM(nuMu_mag, theMu.eta, theMu.phi, 0.)
 
                 theZ = TLorentzVector()
-                theZ.SetPtEtaPhiM(event.Z_pt, event.Z_eta, event.Z_phi, event.Z_mass)
+                if event.ZReClJ_mass > 0:
+                    theZ.SetPtEtaPhiM(event.ZReClJ_pt, event.ZReClJ_eta, event.ZReClJ_phi, event.ZReClJ_mass)
+                else:
+                    theZ.SetPtEtaPhiM(event.Z_pt, event.Z_eta, event.Z_phi, event.Z_mass)
 
                 collM_tauZ = (theTau.p4() + nuTau + theZ).M() 
                 collM_muZ = (theMu.p4() + nuMu + theZ).M()

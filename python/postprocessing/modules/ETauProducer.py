@@ -130,7 +130,10 @@ class ETauProducer(Module):
                 nuEl.SetPtEtaPhiM(nuEl_mag, theEl.eta, theEl.phi, 0.)
 
                 theZ = TLorentzVector()
-                theZ.SetPtEtaPhiM(event.Z_pt, event.Z_eta, event.Z_phi, event.Z_mass)
+                if event.ZReClJ_mass > 0:
+                    theZ.SetPtEtaPhiM(event.ZReClJ_pt, event.ZReClJ_eta, event.ZReClJ_phi, event.ZReClJ_mass)
+                else:
+                    theZ.SetPtEtaPhiM(event.Z_pt, event.Z_eta, event.Z_phi, event.Z_mass)
 
                 collM_tauZ = (theTau.p4() + nuTau + theZ).M() 
                 collM_elZ = (theEl.p4() + nuEl + theZ).M()
@@ -146,15 +149,6 @@ class ETauProducer(Module):
                 isCand = isCand and isBetween(theTau.phi, theEl.phi, event.MET_phi) #MET is in small angle between tau & el
                 isCand = isCand and minCollM > visM # Collinear mass should be greater than visible mass
 
-                if False and isCand and maxCollM < 1000 and minCollM < 1000:
-                    print("ETau event")
-                    print("\tmin coll mass = " + str(minCollM))
-                    print("\tmax coll mass = " + str(maxCollM))
-                    print("\tvis_m = " + str(visM))
-                    print("\tnuTau_mag = " + str(nuTau_mag))
-                    print("\tnuEl_mag = " + str(nuEl_mag))
-                    print("\tMet_pt = " + str(event.MET_pt))
-                
 
         self.out.fillBranch("ETau_eIdx", eIdx) 
         self.out.fillBranch("ETau_tauIdx", tauIdx)

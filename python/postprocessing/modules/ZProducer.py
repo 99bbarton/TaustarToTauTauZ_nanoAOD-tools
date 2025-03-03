@@ -59,7 +59,7 @@ class ZProducer(Module):
         Z_jetIdxAK8 = -1
         Z_sJIdx1 = -1
         Z_sJIdx2 = -1
-        Z_jetIdxAK4 = -1
+        #Z_jetIdxAK4 = -1
         Z_jetR = -1
         Z_nEE = 0
         Z_nMuMu = 0
@@ -136,7 +136,7 @@ class ZProducer(Module):
                 if abs(jet.eta) < 2.5 and jet.pt > 100:
                     self.h_ak8Mass.Fill(jet.mass)
                 jetID = jet.jetId == 6 #2 = pass tight ID but fail tight lepton veto, 6 = pass both
-                jetID = jetID and (jet.mass >= 61.0 and jet.mass <= 121.0)
+                jetID = jetID and (jet.mass >= 61.0 and jet.mass <= 151.0) #High range will be tightened later after reclustering
                 jetID = jetID and (abs(jet.eta) < 2.5 and jet.pt > 100)
                 jetID = jetID and jet.btagDeepB < 0.7 # Require no b-tag
                 
@@ -221,7 +221,7 @@ class ZProducer(Module):
             #    Z_phi = theJet.phi
 
         Z_isCand = Z_dm == 0 or Z_dm == 1 or Z_dm==2 #Z->jets, ee, mumu
-        Z_isCand = Z_isCand and (Z_mass > 61 and Z_mass < 141) #Mass range
+        Z_isCand = Z_isCand and (Z_mass > 61 and Z_mass < 151) #Mass range
         Z_isCand = Z_isCand and Z_dauDR < 1
 
 
