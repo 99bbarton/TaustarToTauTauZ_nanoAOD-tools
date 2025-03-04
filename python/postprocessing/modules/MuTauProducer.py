@@ -29,6 +29,8 @@ class MuTauProducer(Module):
         self.out.branch("MuTau_haveTrip", "O") #"True if have a good mu, tau, and Z"
         self.out.branch("MuTau_minCollM", "F") #"The smaller collinear mass of e+nu+Z or tau+nu+z"
         self.out.branch("MuTau_maxCollM", "F") #"The larger collinear mass of either mu+nu+Z or tau+nu+Z"
+        self.out.branch("MuTau_highPtGenMatch", "O") #"True if the higher pt tau decay matched to the GEN taustar tau"
+        self.out.branch("MuTau_highPtCollM", "F") #"Either the min or max coll m, whichever was from the higher pt tau decay"
         self.out.branch("MuTau_isCand", "O") #"True if the event is good mu+tau+Z event"
 
     def analyze(self, event):
@@ -43,6 +45,8 @@ class MuTauProducer(Module):
         haveTrip = False
         maxCollM = -999.99
         minCollM = -999.99
+        highPtGenMatch = False
+        highPtCollM = -999.99
         isCand = False
         
         taus = Collection(event, "Tau")
@@ -123,6 +127,9 @@ class MuTauProducer(Module):
                 nuTau.SetPtEtaPhiM(nuTau_mag, theTau.eta, theTau.phi, 0.)
                 nuMu.SetPtEtaPhiM(nuMu_mag, theMu.eta, theMu.phi, 0.)
 
+                fullMuDecay = theMu.p4() + nuMu
+                fullTauDecay = theTau.p4() + nuTau
+
                 theZ = TLorentzVector()
                 if event.ZReClJ_mass > 0:
                     theZ.SetPtEtaPhiM(event.ZReClJ_pt, event.ZReClJ_eta, event.ZReClJ_phi, event.ZReClJ_mass)
@@ -134,6 +141,13 @@ class MuTauProducer(Module):
                 minCollM = min(collM_tauZ, collM_muZ)
                 maxCollM = max(collM_tauZ, collM_muZ)
 
+                if fullMuDecay.Pt() > fullTauDecay.Pt():
+                    highPtCollM = collM_muZ
+                    highPtGenMatch = (event.Gen_tsTauIdx == theMu.genPartIdx)
+                else:
+                    highPtCollM = collM_tauZ
+                    highPtGenMatch = (event.Gen_tsTauIdx == theTau.genPartIdx)
+
                 isCand = haveTrip #A good triplet
                 isCand = isCand and event.Trig_tau  #Appropriate trigger
                 isCand = isCand and abs(theMu.DeltaR(theTau)) > 0.5 #Separation of mu and tau
@@ -143,14 +157,6 @@ class MuTauProducer(Module):
                 isCand = isCand and isBetween(theTau.phi, theMu.phi, event.MET_phi) #MET is in small angle between tau & mu
                 isCand = isCand and minCollM > visM # Collinear mass should be greater than visible mass
 
-                if False and isCand and maxCollM < 1000 and minCollM < 1000:
-                    print("MuTau event")
-                    print("\tmin coll mass = " + str(minCollM))
-                    print("\tmax coll mass = " + str(maxCollM))
-                    print("\tvis_m = " + str(visM))
-                    print("\tnuTau_mag = " + str(nuTau_mag))
-                    print("\tnuMu_mag = " + str(nuMu_mag))
-                    print("\tMet_pt = " + str(event.MET_pt))
 
         self.out.fillBranch("MuTau_muIdx", muIdx) 
         self.out.fillBranch("MuTau_tauIdx", tauIdx)
@@ -162,6 +168,8 @@ class MuTauProducer(Module):
         self.out.fillBranch("MuTau_haveTrip", haveTrip) 
         self.out.fillBranch("MuTau_minCollM", minCollM)
         self.out.fillBranch("MuTau_maxCollM", maxCollM)
+        self.out.fillBranch("MuTau_highPtGenMatch", highPtGenMatch)
+        self.out.fillBranch("MuTau_highPtCollM", highPtCollM)
         self.out.fillBranch("MuTau_isCand", isCand) 
 
         return True

@@ -29,11 +29,15 @@ class ETauProducer(Module):
         self.out.branch("ETau_ETauDPhi", "F") #"Delta phi between the electron and tau"
         #self.out.branch("ETau_ETauCos2DPhi", "F") #"cos^2(tau.phi-e.phi)"
         self.out.branch("ETau_visM", "F") #"Visible mass of the e+tau pair"
+        self.out.branch("ETau_highPtGenMatch", "O") #"True if the higher pt tau decay matched to the GEN taustar tau"
+        self.out.branch("ETau_highPtCollM", "F") #"Either the min or max coll m, whichever was from the higher pt tau decay"
         
         #e+tau+Z
         self.out.branch("ETau_haveTrip", "O") #"True if have a good e, tau, and Z"
         self.out.branch("ETau_minCollM", "F") #"The smaller collinear mass of either e+nu+Z or tau+nu+Z"
         self.out.branch("ETau_maxCollM", "F") #"The larger collinear mass of either e+nu+Z or tau+nu+Z"
+
+
         self.out.branch("ETau_isCand", "O") #"True if the event is good e+tau+Z event"
 
     def analyze(self, event):
@@ -48,6 +52,8 @@ class ETauProducer(Module):
         haveTrip = False
         maxCollM = -999.99
         minCollM = -999.99
+        highPtGenMatch = False
+        highPtCollM = -999.99
         isCand = False
 
         taus = Collection(event, "Tau")
@@ -129,6 +135,9 @@ class ETauProducer(Module):
                 nuTau.SetPtEtaPhiM(nuTau_mag, theTau.eta, theTau.phi, 0.)
                 nuEl.SetPtEtaPhiM(nuEl_mag, theEl.eta, theEl.phi, 0.)
 
+                fullElDecay = theEl.p4() + nuEl
+                fullTauDecay = theTau.p4() + nuTau
+
                 theZ = TLorentzVector()
                 if event.ZReClJ_mass > 0:
                     theZ.SetPtEtaPhiM(event.ZReClJ_pt, event.ZReClJ_eta, event.ZReClJ_phi, event.ZReClJ_mass)
@@ -139,6 +148,13 @@ class ETauProducer(Module):
                 collM_elZ = (theEl.p4() + nuEl + theZ).M()
                 minCollM = min(collM_tauZ, collM_elZ)
                 maxCollM = max(collM_tauZ, collM_elZ)
+
+                if fullElDecay.Pt() > fullTauDecay.Pt():
+                    highPtCollM = collM_elZ
+                    highPtGenMatch = (event.Gen_tsTauIdx == theEl.genPartIdx)
+                else:
+                    highPtCollM = collM_tauZ
+                    highPtGenMatch = (event.Gen_tsTauIdx == theTau.genPartIdx)
 
                 isCand = haveTrip #A good triplet
                 isCand = isCand and event.Trig_tau  #Appropriate trigger
@@ -160,6 +176,8 @@ class ETauProducer(Module):
         self.out.fillBranch("ETau_haveTrip", haveTrip) 
         self.out.fillBranch("ETau_minCollM", minCollM)
         self.out.fillBranch("ETau_maxCollM", maxCollM)
+        self.out.fillBranch("ETau_highPtGenMatch", highPtGenMatch)
+        self.out.fillBranch("ETau_highPtCollM", highPtCollM)
         self.out.fillBranch("ETau_isCand", isCand) 
 
         return True

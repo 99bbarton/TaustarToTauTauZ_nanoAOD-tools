@@ -30,6 +30,8 @@ class TauTauProducer(Module):
         self.out.branch("TauTau_haveTrip", "O") #"True if have two good taus and a Z"
         self.out.branch("TauTau_minCollM", "F") #"The smaller collinear mass of tau1+nu+Z or tau2+nu+Z"
         self.out.branch("TauTau_maxCollM", "F") #"The larger collinear mass of either tau1+nu+Z or tau2+nu+Z"
+        self.out.branch("TauTau_highPtGenMatch", "O") #"True if the higher pt tau decay matched to the GEN taustar tau"
+        self.out.branch("TauTau_highPtCollM", "F") #"Either the min or max coll m, whichever was from the higher pt tau decay"
         self.out.branch("TauTau_isCand", "O") #"True if the event is good tau+tau+Z event"
 
         self.out.branch("TauTau_trigMatchTau", "O") #"True if the event passes the single tau trigger and one tau matches to the trigObj"
@@ -49,6 +51,8 @@ class TauTauProducer(Module):
         haveTrip = False
         maxCollM = -999.99
         minCollM = -999.99
+        highPtGenMatch = False
+        highPtCollM = -999.99
         isCand = False
         
         taus = Collection(event, "Tau")
@@ -130,6 +134,9 @@ class TauTauProducer(Module):
                 nuTau1.SetPtEtaPhiM(nuTau1_mag, tau1.eta, tau1.phi, 0.)
                 nuTau2.SetPtEtaPhiM(nuTau2_mag, tau2.eta, tau2.phi, 0.)
 
+                fullTau1Decay = tau1.p4() + nuTau1
+                fullTau2Decay = tau2.p4() + nuTau2
+
                 theZ = TLorentzVector()
                 if event.ZReClJ_mass > 0:
                     theZ.SetPtEtaPhiM(event.ZReClJ_pt, event.ZReClJ_eta, event.ZReClJ_phi, event.ZReClJ_mass)
@@ -141,6 +148,13 @@ class TauTauProducer(Module):
                 minCollM = min(collM_tau1Z, collM_tau2Z)
                 maxCollM = max(collM_tau1Z, collM_tau2Z)
                 
+                if fullTau1Decay.Pt() > fullTau2Decay.Pt():
+                    highPtCollM = collM_tau1Z
+                    highPtGenMatch = (event.Gen_tsTauIdx == tau1.genPartIdx)
+                else:
+                    highPtCollM = collM_tau2Z
+                    highPtGenMatch = (event.Gen_tsTauIdx == tau2.genPartIdx)
+
                 isCand = haveTrip #A good triplet
                 isCand = isCand and (event.Trig_tau or event.Trig_tauTau)  #Appropriate trigger
                 isCand = isCand and abs(tau2.DeltaR(tau1)) > 0.5 #Separation of two taus
@@ -162,6 +176,8 @@ class TauTauProducer(Module):
         self.out.fillBranch("TauTau_haveTrip", haveTrip)
         self.out.fillBranch("TauTau_minCollM", minCollM)
         self.out.fillBranch("TauTau_maxCollM", maxCollM)
+        self.out.fillBranch("TauTau_highPtGenMatch", highPtGenMatch)
+        self.out.fillBranch("TauTau_highPtCollM", highPtCollM)
         self.out.fillBranch("TauTau_isCand", isCand)
 
         return True
