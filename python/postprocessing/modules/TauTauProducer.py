@@ -34,8 +34,8 @@ class TauTauProducer(Module):
         self.out.branch("TauTau_highPtCollM", "F") #"Either the min or max coll m, whichever was from the higher pt tau decay"
         self.out.branch("TauTau_isCand", "O") #"True if the event is good tau+tau+Z event"
 
-        self.out.branch("TauTau_trigMatchTau", "O") #"True if the event passes the single tau trigger and one tau matches to the trigObj"
-        self.out.branch("TauTau_trigMatchTauTau", "O") #"True if the event passes the d-tau trigger and both taus matche to the trigObj"
+        #self.out.branch("TauTau_trigMatchTau", "O") #"True if the event passes the single tau trigger and one tau matches to the trigObj"
+        #self.out.branch("TauTau_trigMatchTauTau", "O") #"True if the event passes the d-tau trigger and both taus matche to the trigObj"
         
 
     def analyze(self, event):
@@ -53,6 +53,10 @@ class TauTauProducer(Module):
         minCollM = -999.99
         highPtGenMatch = False
         highPtCollM = -999.99
+
+        trigMatchTau = False
+        trigMatchTauTau = False
+
         isCand = False
         
         taus = Collection(event, "Tau")
