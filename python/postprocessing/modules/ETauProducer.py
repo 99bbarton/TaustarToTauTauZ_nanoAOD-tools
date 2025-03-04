@@ -5,6 +5,7 @@ from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection
 import PhysicsTools.NanoAODTools.postprocessing.framework.datamodel as datamodel
 from PhysicsTools.NanoAODTools.postprocessing.utils.Tools import deltaPhi, deltaR, isBetween
+from PhysicsTools.NanoAODTools.postprocessing.utils.GenTools import prodChainContains, getProdChain
 
 from ROOT import TLorentzVector
 from math import cos
@@ -149,12 +150,18 @@ class ETauProducer(Module):
                 minCollM = min(collM_tauZ, collM_elZ)
                 maxCollM = max(collM_tauZ, collM_elZ)
 
+                genParts = Collection(event, "GenPart")
                 if fullElDecay.Pt() > fullTauDecay.Pt():
                     highPtCollM = collM_elZ
-                    highPtGenMatch = (event.Gen_tsTauIdx == theEl.genPartIdx)
-                else:
+                    prodChain = getProdChain(theEl.genPartIdx, genParts)
+                    highPtGenMatch = prodChainContains(prodChain, idx=event.Gen_tsTauIdx)
+                elif theTau.genPartIdx >= 0:
                     highPtCollM = collM_tauZ
-                    highPtGenMatch = (event.Gen_tsTauIdx == theTau.genPartIdx)
+                    prodChain = getProdChain(event.GenVisTau_genPartIdxMother[theTau.genPartIdx], genParts)
+                    highPtGenMatch = prodChainContains(prodChain, idx=event.Gen_tsTauIdx)
+                else:
+                    #print("In ETau tau.genPartIdx is negative!")
+                    pass
 
                 isCand = haveTrip #A good triplet
                 isCand = isCand and event.Trig_tau  #Appropriate trigger

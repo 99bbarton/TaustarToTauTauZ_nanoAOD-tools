@@ -5,6 +5,7 @@ from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection
 import PhysicsTools.NanoAODTools.postprocessing.framework.datamodel as datamodel
 from PhysicsTools.NanoAODTools.postprocessing.utils.Tools import deltaPhi, deltaR, isBetween
+from PhysicsTools.NanoAODTools.postprocessing.utils.GenTools import prodChainContains, getProdChain
 
 from ROOT import TLorentzVector
 from math import cos
@@ -151,13 +152,19 @@ class TauTauProducer(Module):
                 collM_tau2Z= (tau2.p4() + nuTau2 + theZ).M()
                 minCollM = min(collM_tau1Z, collM_tau2Z)
                 maxCollM = max(collM_tau1Z, collM_tau2Z)
-                
-                if fullTau1Decay.Pt() > fullTau2Decay.Pt():
+
+                genParts = Collection(event, "GenPart")
+                if fullTau1Decay.Pt() > fullTau2Decay.Pt() and tau1.genPartIdx >= 0:
                     highPtCollM = collM_tau1Z
-                    highPtGenMatch = (event.Gen_tsTauIdx == tau1.genPartIdx)
-                else:
+                    prodChain = getProdChain(event.GenVisTau_genPartIdxMother[tau1.genPartIdx], genParts)
+                    highPtGenMatch = prodChainContains(prodChain, idx=event.Gen_tsTauIdx)
+                elif tau2.genPartIdx >= 0:
                     highPtCollM = collM_tau2Z
-                    highPtGenMatch = (event.Gen_tsTauIdx == tau2.genPartIdx)
+                    prodChain = getProdChain(event.GenVisTau_genPartIdxMother[tau2.genPartIdx], genParts)
+                    highPtGenMatch = prodChainContains(prodChain, idx=event.Gen_tsTauIdx)
+                else:
+                    pass
+                    #print("In TauTau tau1 or tau2 .genPartIdx is negative!")
 
                 isCand = haveTrip #A good triplet
                 isCand = isCand and (event.Trig_tau or event.Trig_tauTau)  #Appropriate trigger

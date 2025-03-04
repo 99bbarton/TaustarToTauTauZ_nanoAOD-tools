@@ -11,7 +11,7 @@ def parseArgs():
     argparser.add_argument("-a", "--action", action="store", required=True, choices=["GEN", "GEN_SUB", "SUB"], help="Whether to generate, generate and submit, or only submit configs")
     argparser.add_argument("-t", "--type", action="store", choices=["SIG", "MC", "DATA"], help="Whether to run on signal MC, background MC, or data. Required if action includes generating configs")
     argparser.add_argument("-y", "--year", action="append", choices=["RUN2", "RUN3", "2016", "2016post", "2017", "2018", "2022", "2022post", "2023", "2023post"], help="A year or run period to process")
-    argparser.add_argument("-d", "--dataset", action="append", choices=["SIG", "M250", "M500", "M750", "M1000", "M1250", "M1500", "M1750", "M2000", "M2500", "M3000", "M3500", "M4000", "M4500", "M5000", "DY"], help="A specific dataset to process. Must also provide one or more years. Dataset takes precedent of --inFiles")
+    argparser.add_argument("-d", "--dataset", action="append", choices=["SIG", "M250", "M500", "M750", "M1000", "M1500", "M2000", "M2500", "M3000", "M3500", "M4000", "M4500", "M5000", "DY"], help="A specific dataset to process. Must also provide one or more years. Dataset takes precedent of --inFiles")
     argparser.add_argument("-e", "--executable", action="store", help="The executable script to use. Otherwise will use crab_script.py and crab_script_YEAR_.sh")
     argparser.add_argument("-i", "--inFiles", action="append", help="A file to use as input. Multiple files can be specified. If action=GEN/GEN_SUB, these should be the input root files. If action=SUB, this should be directory/file to submit")
     argparser.add_argument("-p", "--usePFNano", action="store_true", help="If specified, uses input files which have been processed through btvnano-prod first")
@@ -73,7 +73,7 @@ def parseArgs():
             
         if args["ERA"] == 3: 
             if "SIG" in raw_args.dataset or "ALL" in raw_args.dataset:
-                masses = ["M250","M500", "M750", "M1000", "M1250", "M1500", "M1750", "M2000", "M2500", "M3000", "M3500", "M4000", "M4500", "M5000"]
+                masses = ["M250","M500", "M750", "M1000", "M1500", "M2000", "M2500", "M3000", "M3500", "M4000", "M4500", "M5000"]
             else:
                 masses = raw_args.dataset
             
@@ -117,7 +117,7 @@ def parseArgs():
                 print("WARNING: could not find file or directory: " + fil)
     elif raw_args.type == "SIG" and raw_args.dataset and args["ERA"] == 2: #Run2 MC was private production so not a DAS dataset
         if "SIG" in raw_args.dataset or "ALL" in raw_args.dataset:
-            masses = ["M250"," M500", "M750", "M1000", "M1250", "M1500", "M1750", "M2000", "M2500", "M3000", "M3500", "M4000", "M4500", "M5000"]
+            masses = ["M250","M500", "M750", "M1000", "M1500", "M2000", "M2500", "M3000", "M3500", "M4000", "M4500", "M5000"]
         else:
             masses = raw_args.dataset
         

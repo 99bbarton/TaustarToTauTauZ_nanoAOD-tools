@@ -5,6 +5,8 @@
 # genParts : the GenPart collection object
 def getProdChain(idx, genParts):
 
+    if idx < 0 or idx >= len(genParts):
+        return []
     part = genParts[idx]
     chain = [(idx, part.pdgId)] 
     mothIdx = part.genPartIdxMother

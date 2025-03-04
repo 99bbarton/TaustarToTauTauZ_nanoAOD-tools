@@ -27,10 +27,10 @@ for mass in masses:
     #files = [baseDir + decay +"/taustarTo" + decay + "_m" + mass + "_" + year + ".root"]
     #files = [testFile]
     if decay == "TauZ":
-        #modules = [genProducerConstr(era), trigProducerConstr(year), zProducerConstr(era), eTauProducerConstr(era), muTauProducerConstr(era), tauTauProducerConstr(era)]
+        modules = [genProducerConstr(era), trigProducerConstr(year), zProducerConstr(era), zJetReclusterProducerConstr(), eTauProducerConstr(era), muTauProducerConstr(era), tauTauProducerConstr(era)]
         #modules = [tauProducerConstr(era)]
         #modules = [genProducerConstr(era)]
-        modules = [genProducerConstr(era), zProducerConstr(era), zJetReclusterProducerConstr()]
+        #modules = [genProducerConstr(era), zProducerConstr(era), zJetReclusterProducerConstr()]
     #elif decay == "WNu":
     #    modules = [genProducerWNuConstr(), tauProducerConstr()]
     else: 
