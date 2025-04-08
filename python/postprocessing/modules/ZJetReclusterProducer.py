@@ -15,15 +15,20 @@ from ROOT import TLorentzVector, TVector3
 #R is the radius, p the power (not including the "2") which the momentum is raised two
 def distance(obj1, obj2, p, R):
     p = 2 * p
-    return min(obj1.Pt()**p, obj2.Pt()**p) * (obj1.DeltaR(obj2)**2) / (R**2)
+    return min(obj1.P()**p, obj2.P()**p) * (obj1.DeltaR(obj2)**2) / (R**2)
 
 #Recluster the PF candidate four-vectors pfCands after boosting by the boost TLorentzVector
 #p=-1 => anti-kt, p=0 => cambridge/aachen, p=1 =>inclusive kt
 #R is the jet cone radius i.e. 0.4 = AK4, 0.8 = AK8, etc.
 #Returns a list of four vectors representing the reclustered jets
-def recluster(pfCands, p, R):
+def recluster(pfCands, p, R, momCut=0, nPFCsPerJetCut=0):
 
     reClJets = []
+
+    #Keeps track of how many PFCs are merged
+    nPFCsPerJ = []
+    for i in range(len(pfCands)):
+        nPFCsPerJ.append(1)
     
     while len(pfCands) > 0:
         minDist = 9999999
@@ -32,7 +37,6 @@ def recluster(pfCands, p, R):
         minBDistIdx = -1
 
         for pfcN1, pfc1 in enumerate(pfCands):
-            
             #Find them minimum distance between pfc1 and all other PFCs
             for pfcN2 in range(pfcN1+1, len(pfCands)):
                 pfc2 = pfCands[pfcN2]
@@ -46,14 +50,31 @@ def recluster(pfCands, p, R):
             if bDist < minBDist:
                 minBDist = bDist
                 minBDistIdx = pfcN1
-            
+
         #If two PFCs are the closest pairing, combine them into the first and delete the second from the list
         if minDist < minBDist and minPairIdxs is not None:
-            pfCands[minPairIdxs[0]] += pfCands[minPairIdxs[1]] 
+            pfCands[minPairIdxs[0]] += pfCands[minPairIdxs[1]]
+            nPFCsPerJ[minPairIdxs[0]] += nPFCsPerJ[minPairIdxs[1]]
             del pfCands[minPairIdxs[1]]
+            
         else: #If beam distance is minimum, call that a reclustered jet
+
+            #Check if the "jet" has a minmimum number of PFCs within it (if specified)
+            if nPFCsPerJetCut > 0 and nPFCsPerJ[minBDistIdx] < nPFCsPerJetCut:
+                del pfCands[minBDistIdx]
+                del nPFCsPerJ[minBDistIdx]
+                continue
+
+            #Require jet to have a certain momentum (if specified)
+            if momCut > 0 and pfCands[minBDistIdx].P() < momCut:
+                del pfCands[minBDistIdx]
+                del nPFCsPerJ[minBDistIdx]
+                continue
+
             reClJets.append(pfCands[minBDistIdx])
             del pfCands[minBDistIdx]
+            del nPFCsPerJ[minBDistIdx]
+            #print("Adding as a jet")
 
     return reClJets
 
@@ -63,17 +84,9 @@ def recluster(pfCands, p, R):
 
 #Return the boost vector which makes the two four vectors closest to being back-to-back as possible
 def getBoost(p1, p2):
-
-    pTot3Vec = p1.Vect() + p2.Vect()
-
-    #beta = pTot3Vec / pTot3Vec.Mag()
-
-    boost3Vec = TVector3(pTot3Vec.X() / pTot3Vec.Mag(), pTot3Vec.Y() / pTot3Vec.Mag(), pTot3Vec.Z() / pTot3Vec.Mag())
-    
-    boost = TLorentzVector()
-    boost.SetVectM(boost3Vec, 0)
-
-    return boost
+    pTot = p1 + p2
+    beta = pTot.BoostVector()
+    return -beta
 
 # ----------------------------------------------------------------------------------------------------------------------------- #
 # ----------------------------------------------------------------------------------------------------------------------------- #
@@ -127,22 +140,24 @@ class ZJetReclusterProducer(Module):
             zSJ1 = subJets[event.Z_sJIdx1].p4()
             zSJ2 = subJets[event.Z_sJIdx2].p4()
             boost = getBoost(zSJ1, zSJ2)
-
+            
             zJetPFCs = []
             for fjPFCand in fjPFCands:
                 if fjPFCand.jetIdx == event.Z_jetIdxAK8:
                     pfCand = pfCands[fjPFCand.pFCandsIdx].p4()
-                    zJetPFCs.append(pfCand + boost)
-            
+                    pfCand.Boost(boost)
+                    zJetPFCs.append(pfCand)
+                    
             if len(zJetPFCs) < 2:
                 print("WARNING: Did not find at least 2 PFCs matching to Z AK8 jet!")
             else:
-                reClAK4Jets = recluster(pfCands=zJetPFCs, p=power, R=0.4)
-
+                reClAK4Jets = recluster(pfCands=zJetPFCs, p=power, R=0.4, momCut=1, nPFCsPerJetCut=0)
+                
                 reClAK8Jet = TLorentzVector()
 
-                for reClAK4Jet in reClAK4Jets:
-                    reClAK4Jet -= boost #Boost back to the lab frame
+
+                for jetN, reClAK4Jet in enumerate(reClAK4Jets):
+                    reClAK4Jet.Boost(-boost)  #Boost back to the lab frame
 
                     nSJs += 1
                     sjPt.append(reClAK4Jet.Pt())

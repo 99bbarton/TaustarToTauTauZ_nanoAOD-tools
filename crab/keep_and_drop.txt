@@ -3,7 +3,6 @@ drop BeamSpot_*
 drop CaloMET_*
 drop ChsMET_*
 drop CorrT1METJet_*
-drop DeepMETResolutionTune
 drop DeepMETResponseTune*
 drop FsrPhoton*
 drop GenDressedLepton*
@@ -17,13 +16,11 @@ drop HTXS*
 drop L1*
 drop L1Reco*
 drop L1simulation*
-drop LHE*
 drop LowPtElectron*
 drop OtherPV*
 drop OtherPV*
 drop Photon*
 drop PuppiMET*
 drop RawMET*
-drop RawPuppiMet*
 drop TkMET*
 drop bunchCrossing*

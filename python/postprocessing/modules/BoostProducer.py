@@ -26,23 +26,23 @@ class BoostProducer(Module):
     def analyze(self, event):
         Boost_n = 3
         Boost_pt = [0, -999, -999]
-        Boost_eta = [-999, -999, -999]
-        Boost_phi = [-999, -999, -999]
+        Boost_eta = [0, -999, -999]
+        Boost_phi = [0, -999, -999]
         Boost_dR = -999
         Boost_dPhi = -999
 
-        if event.Z_dm == 0 and event.Z_sJIdx1 >= 0 and event.Z_sjIdx2 >=0:
+        if event.Z_dm == 0 and event.Z_sJIdx1 >= 0 and event.Z_sJIdx2 >=0:
             zFatJet = datamodel.Object(event, "FatJet", event.Z_jetIdxAK8).p4()
-            zSubJet1 = datamodel.Object(event, "SubJet", event.Z_sjIdx1).p4()
-            zSubJet2 = datamodel.Object(event, "SubJet", event.Z_sjIdx2).p4()
+            zSubJet1 = datamodel.Object(event, "SubJet", event.Z_sJIdx1).p4()
+            zSubJet2 = datamodel.Object(event, "SubJet", event.Z_sJIdx2).p4()
 
             boostVec = zFatJet.BoostVector()
 
-            zFatJet_boosted = TLorentzVector(zFatJet)
-            zFatJet_boosted.Boost(-boostVec)
-            Boost_pt[0] = zFatJet_boosted.Pt()
-            Boost_eta[0] = zFatJet_boosted.Eta()
-            Boost_phi[0] = zFatJet_boosted.Phi()
+            #zFatJet_boosted = TLorentzVector(zFatJet)
+            #zFatJet_boosted.Boost(-boostVec)
+            #Boost_pt[0] = zFatJet_boosted.Pt()
+            #Boost_eta[0] = zFatJet_boosted.Eta()
+            #Boost_phi[0] = zFatJet_boosted.Phi()
 
             zSubJet1_boosted = TLorentzVector(zSubJet1)
             zSubJet1_boosted.Boost(-boostVec)
@@ -67,3 +67,8 @@ class BoostProducer(Module):
         self.out.fillBranch("Boost_dPhi", Boost_dPhi)
 
         return True
+
+
+# -----------------------------------------------------------------------------------------------------------------------------
+
+boostProducerConstr = lambda : BoostProducer()
