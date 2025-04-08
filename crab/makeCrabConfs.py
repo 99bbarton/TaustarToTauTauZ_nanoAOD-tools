@@ -4,6 +4,8 @@ import argparse
 import datetime
 import os 
 
+from nanoDatasets import datasets as mcDSs
+
 ## ---------------------------------------------------------------------------------------------------------------------------- ##
 
 def parseArgs():
@@ -11,7 +13,7 @@ def parseArgs():
     argparser.add_argument("-a", "--action", action="store", required=True, choices=["GEN", "GEN_SUB", "SUB"], help="Whether to generate, generate and submit, or only submit configs")
     argparser.add_argument("-t", "--type", action="store", choices=["SIG", "MC", "DATA"], help="Whether to run on signal MC, background MC, or data. Required if action includes generating configs")
     argparser.add_argument("-y", "--year", action="append", choices=["RUN2", "RUN3", "2016", "2016post", "2017", "2018", "2022", "2022post", "2023", "2023post"], help="A year or run period to process")
-    argparser.add_argument("-d", "--dataset", action="append", choices=["SIG", "M250", "M500", "M750", "M1000", "M1500", "M2000", "M2500", "M3000", "M3500", "M4000", "M4500", "M5000", "DY"], help="A specific dataset to process. Must also provide one or more years. Dataset takes precedent of --inFiles")
+    argparser.add_argument("-d", "--dataset", action="append", choices=["SIG", "M250", "M500", "M750", "M1000", "M1500", "M2000", "M2500", "M3000", "M3500", "M4000", "M4500", "M5000", "MC", "MCnoQCD", "ZZ", "WZ", "WW", "WJets", "DY", "TT", "ST", "QCD"], help="A specific dataset to process. Must also provide one or more years. Dataset takes precedent of --inFiles")
     argparser.add_argument("-e", "--executable", action="store", help="The executable script to use. Otherwise will use crab_script.py and crab_script_YEAR_.sh")
     argparser.add_argument("-i", "--inFiles", action="append", help="A file to use as input. Multiple files can be specified. If action=GEN/GEN_SUB, these should be the input root files. If action=SUB, this should be directory/file to submit")
     argparser.add_argument("-p", "--usePFNano", action="store_true", help="If specified, uses input files which have been processed through btvnano-prod first")
@@ -91,10 +93,14 @@ def parseArgs():
             args["DATASETS"] = []
     elif raw_args.dataset and not raw_args.usePFNano:
         if raw_args.type == "MC":
+            if raw_args.dataset == "MC":
+                raw_args.dataset = ["ZZ", "WZ", "WW", "WJets", "DY", "TT", "ST", "QCD"]
+            elif raw_args.dataset == "MCnoQCD":
+                raw_args.dataset = ["ZZ", "WZ", "WW", "WJets", "DY", "TT", "ST"]
+
             for year in args["YEARS"]:
-                if year == "2018":
-                    if "DY" in raw_args.dataset or "MC" in raw_args.dataset:
-                        args["DATASETS"].append("/DYJetsToLL_M-10to50_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM")
+                for ds in raw_args.dataset:
+                    args["DATASETS"].extend(mcDSs[year][ds])
         elif raw_args.type == "DATA":
             args["DATASETS"] = []
 
@@ -288,12 +294,12 @@ def datasetToName(dataset):
     if dataset.startswith("/TaustarToTauZ"):
         name = "taustarToTauZ_" + dataset.split("_")[1] + "_" + year
         return name, year
-    elif dataset.startswith("/DYJetsToLL_M-10to50"):
-        name = "DYm10To50_" + year
-        return name, year
     else:
-        print("WARNING: Unrecognized dataset!")
-        return dataset
+        name = dataset[1:dataset.find("_TuneCP5")].replace("-", "") + "_" + year
+        return name, year
+    #else:
+    #    print("WARNING: Unrecognized dataset!")
+    #   return dataset
 
 ## ---------------------------------------------------------------------------------------------------------------------------- ##
 
