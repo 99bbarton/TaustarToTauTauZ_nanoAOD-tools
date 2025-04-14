@@ -15,6 +15,7 @@ from PhysicsTools.NanoAODTools.postprocessing.modules.ZJetReclusterProducer impo
 from PhysicsTools.NanoAODTools.postprocessing.modules.ETauProducer import eTauProducerConstr
 from PhysicsTools.NanoAODTools.postprocessing.modules.MuTauProducer import muTauProducerConstr
 from PhysicsTools.NanoAODTools.postprocessing.modules.TauTauProducer import tauTauProducerConstr
+from PhysicsTools.NanoAODTools.postprocessing.modules.FinalProducer import finalProducerConstr
 
 
 if len(sys.argv) == 3:
@@ -31,8 +32,15 @@ else:
     exit(1)
 
 outDir = "./"
-preSelection = "1>0"
-modules = [genProducerConstr(era), trigProducerConstr(year), zProducerConstr(era), boostProducerConstr(), zJetReclusterProducerConstr(), eTauProducerConstr(era), muTauProducerConstr(era), tauTauProducerConstr(era)]
+
+cut_etau   = "(Sum$(TMath::Abs(Electron_eta)<2.5 && Electron_pt>=20. && (Electron_mvaFall17V2Iso_WP90||Electron_mvaFall17V2noIso_WP90) && (TMath::Abs(Electron_eta+Electron_deltaEtaSC)>=1.566||TMath::Abs(Electron_eta+Electron_deltaEtaSC)<1.444))>0 && Sum$(Tau_pt>=30. && TMath::Abs(Tau_eta)<2.1 && TMath::Abs(Tau_dz)<0.2 && Tau_decayMode!=5 && Tau_decayMode!=6 && Tau_decayMode!=7 && (4&Tau_idDeepTau2017v2p1VSjet) && (4&Tau_idDeepTau2017v2p1VSmu) && (2&Tau_idDeepTau2017v2p1VSe))>0)"
+cut_mutau  = "(Sum$(TMath::Abs(Muon_eta)<2.4 && Muon_pt>=20. && Muon_mediumId)>0 && Sum$(Tau_pt>=27. && TMath::Abs(Tau_eta)<2.1 && TMath::Abs(Tau_dz)<0.2 && Tau_decayMode!=5 && Tau_decayMode!=6 && Tau_decayMode!=7 && (4&Tau_idDeepTau2017v2p1VSjet) && (4&Tau_idDeepTau2017v2p1VSmu) && (2&Tau_idDeepTau2017v2p1VSe))>0)"
+cut_tautau = "(Sum$(Tau_pt>=35. && TMath::Abs(Tau_eta)<2.1 && TMath::Abs(Tau_dz)<0.2 && Tau_decayMode!=5 && Tau_decayMode!=6 && Tau_decayMode!=7 && (4&Tau_idDeepTau2017v2p1VSjet) && (4&Tau_idDeepTau2017v2p1VSmu) && (2&Tau_idDeepTau2017v2p1VSe))>=2)"
+cut_Z = "(nFatJet > 0 || nElectron >= 2 || nMuon >= 2)"
+
+preSelection = "(" + cut_Z + "&&(" + cut_tautau + "||" + cut_etau + "||" + cut_mutau + "))"
+
+modules = [genProducerConstr(era), trigProducerConstr(year), zProducerConstr(era), boostProducerConstr(), zJetReclusterProducerConstr(), eTauProducerConstr(era), muTauProducerConstr(era), tauTauProducerConstr(era), finalProducerConstr()]
 #modules = [exampleModuleConstr()]
 ############################## TODO add era argument to constructors for z and tau, in .sh and config maker
 
