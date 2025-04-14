@@ -37,6 +37,7 @@ class ZProducer(Module):
         self.out.branch("Z_eta", "F") #"Eta of the overall Z candidate"
         self.out.branch("Z_phi", "F") #"Phi of the overall Z candidate"
         self.out.branch("Z_jetIdxAK8", "I") #"Idx to FatJet collection of the most Z-like AK8 jet (using particle net). if Z_dm=0"
+        self.out.branch("Z_nJetCands", "I") #"Count of number of FatJets passing cuts"
         self.out.branch("Z_sJIdx1", "I") #"Idx to SubJet collection of the higher pt subjet deltaR matching to the Z FatJet. if Z_dm=0"
         self.out.branch("Z_sJIdx2", "I") #"Idx to SubJet collection of the lower pt subjet deltaR matching to the Z FatJet. if Z_dm=0"
         #self.out.branch("Z_jetIdxAK4", "I") #"Idx to Jet collection of the most Z-like AK4 jet (using particle net). if Z_dm=0"
@@ -57,6 +58,7 @@ class ZProducer(Module):
         Z_dauDR = 0
         Z_dauID = False
         Z_jetIdxAK8 = -1
+        Z_nJetCands = 0
         Z_sJIdx1 = -1
         Z_sJIdx2 = -1
         #Z_jetIdxAK4 = -1
@@ -147,6 +149,7 @@ class ZProducer(Module):
 
                 if jetID:
                     self.h_ak8MassCuts.Fill(jet.mass)
+                    Z_nJetCands += 1
                     if abs(jet.mass - 91.18) < abs(Z_mass - 91.18):
                         Z_mass = jet.mass 
                         Z_jetIdxAK8 = jetIdx
@@ -236,6 +239,7 @@ class ZProducer(Module):
         self.out.fillBranch("Z_dauDR", Z_dauDR)
         self.out.fillBranch("Z_dauID", Z_dauID)
         self.out.fillBranch("Z_jetIdxAK8", Z_jetIdxAK8)
+        self.out.fillBranch("Z_nJetCands", Z_nJetCands)
         self.out.fillBranch("Z_sJIdx1", Z_sJIdx1)
         self.out.fillBranch("Z_sJIdx2", Z_sJIdx2)
         #self.out.fillBranch("Z_jetIdxAK4", Z_jetIdxAK4)
