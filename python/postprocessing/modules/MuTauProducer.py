@@ -163,7 +163,8 @@ class MuTauProducer(Module):
                 isCand = isCand and abs(deltaR(theZ.Eta(), theZ.Phi(), theMu.eta, theMu.phi)) > 0.5 #Separation of the Z and mu
                 isCand = isCand and isBetween(theTau.phi, theMu.phi, event.MET_phi) #MET is in small angle between tau & mu
                 isCand = isCand and minCollM > visM # Collinear mass should be greater than visible mass
-
+                isCand = isCand and not event.ETau_isCand
+                
 
         self.out.fillBranch("MuTau_muIdx", muIdx) 
         self.out.fillBranch("MuTau_tauIdx", tauIdx)

@@ -174,6 +174,7 @@ class TauTauProducer(Module):
                 isCand = isCand and abs(deltaR(theZ.Eta(), theZ.Phi(), tau2.eta, tau2.phi)) > 0.5 #Separation of the Z and tau2
                 isCand = isCand and isBetween(tau1.phi, tau2.phi, event.MET_phi) #MET in small angle between taus
                 isCand = isCand and minCollM > visM # Collinear mass should be greater than visible mass
+                isCand = isCand and not (event.ETau_isCand or event.MuTau_isCand)
 
 
         self.out.fillBranch("TauTau_tau1Idx", tau1Idx)
