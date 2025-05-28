@@ -4,18 +4,36 @@ from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import Pos
 from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection
 import PhysicsTools.NanoAODTools.postprocessing.framework.datamodel as datamodel
-from PhysicsTools.NanoAODTools.postprocessing.utils.Tools import deltaPhi, deltaR, isBetween
+from PhysicsTools.NanoAODTools.postprocessing.utils.Tools import deltaPhi, deltaR, isBetween, getSFFile
 from PhysicsTools.NanoAODTools.postprocessing.utils.GenTools import prodChainContains, getProdChain
 
+from correctionlib import _core as corrLib
+import gzip
 from ROOT import TLorentzVector
 from math import cos
 
 # ----------------------------------------------------------------------------------------------------------------------------
-
 class MuTauProducer(Module):
 
-    def __init__(self, era):
-        self.era = era
+    def __init__(self, year):
+        self.year = year
+        if year in ["2016", "2016post", "2017", "2018"]:
+            self.era = 2
+        elif year in ["2022", "2022post", "2023", "2023post"]:
+            self.era = 2
+        else:
+            print("ERROR: Unrecognized year passed to MuTauProducer!")  
+            exit(1)
+
+        sfFileName = getSFFile(year=year, pog="MUO")
+        with gzip.open(sfFileName,'rt') as fil:
+            unzipped = fil.read().strip()
+        self.muSFs = corrLib.CorrectionSet.from_file(unzipped)
+
+        getSFFile(year=year, pog="TAU")
+        with gzip.open(sfFileName,'rt') as fil:
+            unzipped = fil.read().strip()
+        self.tauSFs = corrLib.CorrectionSet.from_file(unzipped)
     
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.out = wrappedOutputTree
@@ -32,6 +50,16 @@ class MuTauProducer(Module):
         self.out.branch("MuTau_maxCollM", "F") #"The larger collinear mass of either mu+nu+Z or tau+nu+Z"
         self.out.branch("MuTau_highPtGenMatch", "O") #"True if the higher pt tau decay matched to the GEN taustar tau"
         self.out.branch("MuTau_highPtCollM", "F") #"Either the min or max coll m, whichever was from the higher pt tau decay"
+        #Scale factors
+        self.out.branch("MuTau_tauESCorr" , "F", 3) #"The energy scale correction applied to the tau [down, nom, up]"
+        self.out.branch("MuTau_tauVsESF", "F", 3) #"DeepTau tau vs e SFs [down, nom, up]"
+        self.out.branch("MuTau_tauVsMuSF", "F", 3) #"DeepTau tau vs mu SFs [down, nom, up]"
+        self.out.branch("MuTau_tauVsJetSF", "F", 3) #"DeepTau tau vs jet SFs [down, nom, up]"
+        self.out.branch("MuTau_muIDSF", "F", 3) #"Muon ID SFs [down, nom, up]"
+        #Trigger matching
+        self.out.branch("MuTau_trigMatchTau", "O") #"True if the tau was the object that fired the single-tau trigger"
+        self.out.branch("MuTau_trigMatchMuTau", "O") #"True if the tau and muon were the objects that fired the mu+tau trigger"
+
         self.out.branch("MuTau_isCand", "O") #"True if the event is good mu+tau+Z event"
 
     def analyze(self, event):
@@ -49,6 +77,14 @@ class MuTauProducer(Module):
         highPtGenMatch = False
         highPtCollM = -999.99
         isCand = False
+        trigMatchTau = False
+        trigMatchMuTau = False
+
+        tauESCorr = [1, 1, 1]
+        tauVsESF = [1, 1, 1] 
+        tauVsJetSF = [1, 1, 1]
+        tauVsMuSF = [1, 1, 1]
+        muIDSF = [1, 1, 1]
         
         taus = Collection(event, "Tau")
         muons = Collection(event, "Muon")
@@ -60,7 +96,9 @@ class MuTauProducer(Module):
             if self.era == 2: #TODO
                 print("ERROR: run2 tauID not implemented in mutau producer!")
             elif self.era == 3:
-                tauID = tau.pt > 27 and abs(tau.eta) < 2.1 and abs(tau.dz) < 0.2 
+                esCorr = self.tauSFs["tau_energy_scale"].evaluate(tau.pt, abs(tau.eta), tau.decayMode, tau.genPartFlav, "Loose", "VVLoose", "nom")
+                tauCorrPt = tau.pt * esCorr
+                tauID = tauCorrPt > 27 and abs(tau.eta) < 2.1 and abs(tau.dz) < 0.2 
                 #WPs chosen based on existing tau pog SFs
                 tauID = tauID and tau.idDeepTau2018v2p5VSjet >= 4 #4= loose
                 tauID = tauID and tau.idDeepTau2018v2p5VSmu >= 4 #4= tight
@@ -71,11 +109,14 @@ class MuTauProducer(Module):
 
             if tauID and tau.idDeepTau2018v2p5VSjet >= currTauVsJet:
                 if tau.idDeepTau2018v2p5VSjet == currTauVsJet:
-                    if tau.pt < currTauPt:
+                    if tauCorrPt < currTauPt:
                         continue
                 tauIdx = tauI
                 theTau = tau
-                currTauPt = tau.pt
+                tauCorr =  self.tauSFs["tau_energy_scale"].evaluate(theTau.pt, abs(theTau.eta), theTau.decayMode, theTau.genPartFlav, "Loose", "VVLoose", "nom")
+                theTau.pt = theTau.pt * tauCorr
+                theTau.mass = theTau.mass * tauCorr
+                currTauPt = theTau.pt
                 currTauVsJet = tau.idDeepTau2018v2p5VSjet
         
         if theTau != None:
@@ -105,6 +146,14 @@ class MuTauProducer(Module):
             muTauDPhi = deltaPhi(theTau.phi, theMu.phi)
             muPlusTau = theTau.p4() + theMu.p4()
             visM = muPlusTau.M()
+
+            for i, syst in enumerate(["down", "nom", "up"]):
+                tauESCorr[i] = self.tauSFs["tau_energy_scale"].evaluate(theTau.pt, abs(theTau.eta), theTau.decayMode, theTau.genPartFlav, "Loose", "VVLoose", syst)
+                tauVsESF[i] = self.tauSFs["DeepTau2017v2p1VSe"].evaluate(abs(theTau.eta), theTau.decayMode, theTau.genPartFlav, "VVLoose", syst)
+                tauVsMuSF[i] = self.tauSFs["DeepTau2017v2p1VSmu"].evaluate(abs(theTau.eta), theTau.decayMode, theTau.genPartFlav, "Tight", syst)
+                tauVsJetSF[i] = self.tauSFs["DeepTau2017v2p1VSjet"].evaluate(abs(theTau.eta), theTau.decayMode, theTau.genPartFlav, "Loose", syst)
+            for i, syst in enumerate(["systdown", "nominal", "systup"]):
+                muIDSF[i] = self.muSFs["NUM_MediumID_DEN_TrackerMuons"].evaluate(abs(theMu.eta), theMu.pt, syst)
 
             #If the event also has a good Z candidate, we can calculate collinear mass
             if event.Z_dm >= 0 and event.Z_dm <= 2:
@@ -178,10 +227,17 @@ class MuTauProducer(Module):
         self.out.fillBranch("MuTau_maxCollM", maxCollM)
         self.out.fillBranch("MuTau_highPtGenMatch", highPtGenMatch)
         self.out.fillBranch("MuTau_highPtCollM", highPtCollM)
+        self.out.fillBranch("MuTau_tauESCorr", tauESCorr)
+        self.out.fillBranch("MuTau_tauVsESF",tauVsESF)
+        self.out.fillBranch("MuTau_tauVsMuSF", tauVsMuSF)
+        self.out.fillBranch("MuTau_tauVsJetSF", tauVsJetSF)
+        self.out.fillBranch("MuTau_muIDSF", muIDSF)
+        self.out.fillBranch("MuTau_trigMatchTau", trigMatchTau)
+        self.out.fillBranch("MuTau_trigMatchETau", trigMatchMuTau)
         self.out.fillBranch("MuTau_isCand", isCand) 
 
         return True
     
 # ----------------------------------------------------------------------------------------------------------------------------
     
-muTauProducerConstr = lambda era: MuTauProducer(era = era)
+muTauProducerConstr = lambda year: MuTauProducer(year= year)

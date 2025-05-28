@@ -77,3 +77,78 @@ def isBetween(phiA, phiB, phiTest):
 
 
     
+#----------------------------------------------------------------------------------------------------------
+
+def getSFFile(year, pog, type=""):
+    filename = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/"
+    filename += pog + "/"
+
+    if year == "2016":
+        filename += "2016preVFP_UL/"
+    elif year == "2016post":
+        filename += "2016postVFP_UL/"
+    elif year == "2017":
+        filename += "2017_UL/"
+    elif year == "2018":
+        filename += "2018_UL/"
+    elif year == "2022":
+        filename += "2022_Summer22/"
+    elif year == "2022post":
+        filename += "2022_Summer22EE/"
+    elif year == "2023":
+        filename += "2023_Summer23/"
+    elif year == "2023post":
+        filename += "2023_Summer23BPix/"
+    else:
+        print("ERROR: Unrecognized YEAR was provided to getSFFile")
+        exit(2)
+    
+    if pog == "EGM":
+        filename += "electron.json.gz"
+    elif pog == "JME":
+        if type == "ID":
+            if year in ["2016", "2016post", "2017", "2018"]:
+                filename += "jmar.json.gz"
+            else:
+                filename += "jetid.json.gz"
+        elif type == "MET":
+            filename += "met.json.gz"
+        elif type == "JERC":
+            filename += "fatJet_jerc.json.gz" 
+        elif type == "VETO":
+            filename += "jetvetomaps.json.gz"
+        else:
+            print("ERROR: No type for JME SF was provided")
+            exit(2)
+    elif pog == "MUO":
+        filename += "muon_Z.json.gz"
+    elif pog == "LUM":
+        filename += "puWeights.json.gz"
+    elif pog == "TAU":
+        if year in ["2016", "2016post", "2017", "2018"]:
+            filename += "tau.json.gz"
+        else:
+            if year == "2022":
+                filename += "tau_DeepTau2018v2p5_2022_preEE.json.gz"
+            elif year == "2022post":
+                filename += "tau_DeepTau2018v2p5_2022_postEE.json.gz"
+            elif year == "2023":
+                filename += 'tau_DeepTau2018v2p5_2023_preBPix.json.gz'
+            elif year == "2023post":
+                filename += 'tau_DeepTau2018v2p5_2023_postBPix.json.gz'
+    else:
+        print("ERROR: Unrecognized POG was provided to getSFFile")
+        exit(2)
+
+#--------------------------------------------------------------------------------------
+
+yearToEGMSfYr = {
+    "2016" : "2016preVFP",
+    "2016post" : "2016postVFP",
+    "2017" : "2017",
+    "2018" : "2018",
+    "2022" : "2022Re-recoBCD",
+    "2022post" : "2022Re-recoE+PromptFG",
+    "2023" : "2023PromptC",
+    "2023post" : "2023PromptD"
+}
