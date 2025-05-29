@@ -49,5 +49,5 @@ for mass in masses:
     #    modules = [genProducerWNuConstr(), tauProducerConstr()]
     else: 
         modules = []
-    p = PostProcessor("data", testFiles, cut=preSelection, branchsel="crab/keep_and_drop.txt", postfix="", modules=modules, histFileName="hists.root", histDirName="Hists")
+    p = PostProcessor("data", testFiles, cut=preSelection, branchsel="crab/keep_and_drop.txt", postfix="", modules=modules)#, histFileName="hists.root", histDirName="Hists")
     p.run()

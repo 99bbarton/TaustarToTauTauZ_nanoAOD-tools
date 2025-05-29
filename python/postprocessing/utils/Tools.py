@@ -79,7 +79,7 @@ def isBetween(phiA, phiB, phiTest):
     
 #----------------------------------------------------------------------------------------------------------
 
-def getSFFile(year, pog, type=""):
+def getSFFile(year, pog, typ=""):
     filename = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/"
     filename += pog + "/"
 
@@ -106,16 +106,16 @@ def getSFFile(year, pog, type=""):
     if pog == "EGM":
         filename += "electron.json.gz"
     elif pog == "JME":
-        if type == "ID":
+        if typ == "ID":
             if year in ["2016", "2016post", "2017", "2018"]:
                 filename += "jmar.json.gz"
             else:
                 filename += "jetid.json.gz"
-        elif type == "MET":
+        elif typ == "MET":
             filename += "met.json.gz"
-        elif type == "JERC":
+        elif typ == "JERC":
             filename += "fatJet_jerc.json.gz" 
-        elif type == "VETO":
+        elif typ == "VETO":
             filename += "jetvetomaps.json.gz"
         else:
             print("ERROR: No type for JME SF was provided")
@@ -151,4 +151,15 @@ yearToEGMSfYr = {
     "2022post" : "2022Re-recoE+PromptFG",
     "2023" : "2023PromptC",
     "2023post" : "2023PromptD"
+}
+
+yearToJetVeto = {
+    "2016" : "Summer19UL16_V1",
+    "2016post" : "Summer19UL16_V1",
+    "2017" : "Summer19UL17_V1",
+    "2018" : "Summer19UL18_V1",
+    "2022" : "Summer22_23Sep2023_RunCD_V1",
+    "2022post" : "Summer22EE_23Sep2023_RunEFG_V1",
+    "2023" : "Summer23Prompt23_RunC_V1",
+    "2023post" : "Summer23BPixPrompt23_RunD_V1"
 }

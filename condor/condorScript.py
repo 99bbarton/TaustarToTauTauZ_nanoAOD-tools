@@ -44,5 +44,6 @@ cayMode!=6 && Tau_decayMode!=7 && (Tau_idDeepTau2018v2p5VSjet>=4) && (Tau_idDeep
 preSelection = "(" + cut_Z + "&&(" + cut_tautau + "||" + cut_etau + "||" + cut_mutau + "))"
 
 
-p = PostProcessor("outputs", inputFiles, cut=preSelection, branchsel="../crab/keep_and_drop.txt", postfix="output", modules=modules, histFileName="hists.root", histDirName="Hists", fwkJobReport=True)
+#p = PostProcessor("outputs", inputFiles, cut=preSelection, branchsel="../crab/keep_and_drop.txt", postfix="output", modules=modules, histFileName="hists.root", histDirName="Hists", fwkJobReport=True)
+p = PostProcessor("outputs", inputFiles, cut=preSelection, branchsel="../crab/keep_and_drop.txt", postfix="output", modules=modules, fwkJobReport=True)
 p.run()

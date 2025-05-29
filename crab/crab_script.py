@@ -48,7 +48,8 @@ modules = [genProducerConstr(era), trigProducerConstr(year), zProducerConstr(era
 #files=["root://cmsxrootd.fnal.gov//store/user/bbarton/TaustarToTauTauZ/SignalMC/TauZ/taustarToTauZ_m250_2018.root"]
 
 #NB: Despite not being in most of the supposedly working examples and defaulting to False, both fwkJObReport and provenance must be True for jobs to succeed fully.
-p = PostProcessor(outDir, inputFiles(), cut=preSelection, modules=modules, haddFileName="tree.root", fwkJobReport=True, provenance=True, histFileName="hists.root", histDirName="Hists", outputbranchsel="keep_and_drop.txt" )
+#p = PostProcessor(outDir, inputFiles(), cut=preSelection, modules=modules, haddFileName="tree.root", fwkJobReport=True, provenance=True, histFileName="hists.root", histDirName="Hists", outputbranchsel="keep_and_drop.txt" )
+p = PostProcessor(outDir, inputFiles(), cut=preSelection, modules=modules, haddFileName="tree.root", fwkJobReport=True, provenance=True, outputbranchsel="keep_and_drop.txt" )
 p.run()
 
 print("DONE")
