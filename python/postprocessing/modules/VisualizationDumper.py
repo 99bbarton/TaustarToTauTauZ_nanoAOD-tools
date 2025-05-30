@@ -23,7 +23,7 @@ class VisualizationDumper(Module):
         self.evtNum += 1
         evtNumStr = str(self.evtNum)
 
-        if not (event.Gen_isCand and event.Z_isCand):
+        if not (event.Z_isCand):
             return True
         
         #Print the Z and any of it's decay products
@@ -111,6 +111,8 @@ visualizationDumperConstr = lambda hasPFInfo: VisualizationDumper(hasPFInfo=hasP
 from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import PostProcessor
 from PhysicsTools.NanoAODTools.postprocessing.modules.VisualizationDumper import visualizationDumperConstr
 
-files = ["root://cmsxrootd.fnal.gov//store/user/bbarton/TaustarToTauTauZ/SignalMC/TauZ/27Feb2025/taustarToTauZ_m3000_2022.root"]
-p = PostProcessor(outputDir="data", inputFiles=files, maxEntries=1000,cut="Gen_isCand&&Z_isCand&&(ETau_isCand||MuTau_isCand||TauTau_isCand)", branchsel=None, postfix="", modules=[visualizationDumperConstr(True)] )
+#files = ["root://cmsxrootd.fnal.gov//store/user/bbarton/TaustarToTauTauZ/SignalMC/TauZ/27Feb2025/taustarToTauZ_m3000_2022.root"]
+#p = PostProcessor(outputDir="data", inputFiles=files, maxEntries=1000,cut="Gen_isCand&&Z_isCand&&(ETau_isCand||MuTau_isCand||TauTau_isCand)", branchsel=None, postfix="", modules=[visualizationDumperConstr(True)] )
+files = [os.environ["BKGD_2022"] + "/ZZto2L2Q_2022.root"]
+p = PostProcessor(".", files, cut="Z_isCand&&(ETau_isCand||MuTau_isCand||TauTau_isCand)", branchsel=None, postfix="", modules=[visualizationDumperConstr(hasPFInfo=True)] )
 p.run()
