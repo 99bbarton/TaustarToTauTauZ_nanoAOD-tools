@@ -18,14 +18,14 @@ class GenProducer(Module):
 
     def __init__(self, era):
         self.era = era
-        #self.writeHistFile = True
+        self.writeHistFile = True
     
-    def beginJob(self, histFile=None, histDirName=None):
+    def beginJob(self, histFile, histDirName):
         Module.beginJob(self, histFile, histDirName)
-        #self.h_genAk4Mass = TH1F('h_genAk4Mass', 'Mass of GEN AK4 ;Mass [GeV];# of Jets', 75, 0, 150)
-        #self.addObject(self.h_genAk4Mass)
-        #self.h_genAk8Mass = TH1F('h_genAk8Mass', 'Mass of GEN AK8 Jets;Mass [GeV];# of Jets', 75, 0, 150)
-        #self.addObject(self.h_genAk8Mass)
+        self.h_genAk4Mass = TH1F('h_genAk4Mass', 'Mass of GEN AK4 ;Mass [GeV];# of Jets', 75, 0, 150)
+        self.addObject(self.h_genAk4Mass)
+        self.h_genAk8Mass = TH1F('h_genAk8Mass', 'Mass of GEN AK8 Jets;Mass [GeV];# of Jets', 75, 0, 150)
+        self.addObject(self.h_genAk8Mass)
 
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.out = wrappedOutputTree
@@ -447,3 +447,8 @@ class GenProducer(Module):
 
 genProducerConstr = lambda era: GenProducer(era)
 
+# -----------------------------------------------------------------------------------------------------------------------------
+
+#files = ["root://cmsxrootd.fnal.gov//store/user/bbarton/TaustarToTauTauZ/SignalMC/TauZ/taustarToTauZ_m3000_2018.root"]
+#p = PostProcessor(".", files, cut="1>0", branchsel=None, modules=[genProducerZTauConstr()] )
+#p.run()
