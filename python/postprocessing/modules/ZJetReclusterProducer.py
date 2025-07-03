@@ -5,7 +5,8 @@
 from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection
 
-from ROOT import TLorentzVector, TVector3
+from ROOT import TLorentzVector, TVector3, TH1F
+from math import pi, cos
 
 # ----------------------------------------------------------------------------------------------------------------------------- #
 # ----------------------------------------------------------------------------------------------------------------------------- #
@@ -24,6 +25,7 @@ def distance(obj1, obj2, p, R):
 def recluster(pfCands, p, R, momCut=0, nPFCsPerJetCut=0):
 
     reClJets = []
+    removedPFCIdxs = []
 
     #Keeps track of how many PFCs are merged
     nPFCsPerJ = []
@@ -63,12 +65,14 @@ def recluster(pfCands, p, R, momCut=0, nPFCsPerJetCut=0):
             if nPFCsPerJetCut > 0 and nPFCsPerJ[minBDistIdx] < nPFCsPerJetCut:
                 del pfCands[minBDistIdx]
                 del nPFCsPerJ[minBDistIdx]
+                removedPFCIdxs.append(minBDistIdx)
                 continue
 
             #Require jet to have a certain momentum (if specified)
             if momCut > 0 and pfCands[minBDistIdx].P() < momCut:
                 del pfCands[minBDistIdx]
                 del nPFCsPerJ[minBDistIdx]
+                removedPFCIdxs.append(minBDistIdx)
                 continue
 
             reClJets.append(pfCands[minBDistIdx])
@@ -76,7 +80,7 @@ def recluster(pfCands, p, R, momCut=0, nPFCsPerJetCut=0):
             del nPFCsPerJ[minBDistIdx]
             #print("Adding as a jet")
 
-    return reClJets
+    return reClJets, removedPFCIdxs
 
 
 # ----------------------------------------------------------------------------------------------------------------------------- #
@@ -94,11 +98,15 @@ def getBoost(p1, p2):
 class ZJetReclusterProducer(Module):
 
     def __init__(self):
-        pass
+        self.writeHistFile = True
     # ----------------------------------------------------------------------------------------------------------------------------- #
 
     def beginJob(self, histFile=None, histDirName=None):
         Module.beginJob(self, histFile, histDirName)
+        self.h_cosThetaBoostPFCs_bef = TH1F("cosThetaBoostPFCs_bef", "Angular Separation Before Reclustering: Z-Boost and Z PFCs; cos(#Delta#Theta); # PFCs / Event", 8, -1, 1)
+        self.addObject(self.h_cosThetaBoostPFCs_bef)
+        self.h_cosThetaBoostPFCs_aft = TH1F("cosThetaBoostPFCs_aft", "Angular Separation After Reclustering: Z-Boost and Z PFCs; cos(#Delta#Theta); # PFCs / Event", 8, -1, 1)
+        self.addObject(self.h_cosThetaBoostPFCs_aft)
     
     # ----------------------------------------------------------------------------------------------------------------------------- #
 
@@ -140,21 +148,34 @@ class ZJetReclusterProducer(Module):
             zSJ1 = subJets[event.Z_sJIdx1].p4()
             zSJ2 = subJets[event.Z_sJIdx2].p4()
             boost = getBoost(zSJ1, zSJ2)
+            boostTheta = boost.Theta()
             
             zJetPFCs = []
             for fjPFCand in fjPFCands:
                 if fjPFCand.jetIdx == event.Z_jetIdxAK8:
                     pfCand = pfCands[fjPFCand.pFCandsIdx].p4()
                     pfCand.Boost(boost)
+                    dTheta = pfCand.Theta() - boostTheta
+                    if dTheta < 0:
+                        dTheta += 2*pi
+                    self.h_cosThetaBoostPFCs_bef.Fill(cos(dTheta))
                     zJetPFCs.append(pfCand)
                     
             if len(zJetPFCs) < 2:
                 print("WARNING: Did not find at least 2 PFCs matching to Z AK8 jet!")
             else:
-                reClAK4Jets = recluster(pfCands=zJetPFCs, p=power, R=0.4, momCut=1, nPFCsPerJetCut=0)
+                reClAK4Jets, removedPFCIdxs = recluster(pfCands=zJetPFCs, p=power, R=0.4, momCut=1, nPFCsPerJetCut=0)
                 
-                reClAK8Jet = TLorentzVector()
+                #Record the 
+                for pfcIdx, pfc in enumerate(zJetPFCs):
+                    if pfcIdx not in removedPFCIdxs:
+                        dTheta = pfc.Theta() - boostTheta
+                        if dTheta < 0:
+                            dTheta += 2*pi
+                        self.h_cosThetaBoostPFCs_aft.Fill(cos(dTheta))
 
+
+                reClAK8Jet = TLorentzVector()
 
                 for jetN, reClAK4Jet in enumerate(reClAK4Jets):
                     reClAK4Jet.Boost(-boost)  #Boost back to the lab frame
@@ -189,3 +210,19 @@ class ZJetReclusterProducer(Module):
     # ----------------------------------------------------------------------------------------------------------------------------- #
 
 zJetReclusterProducerConstr = lambda : ZJetReclusterProducer()
+
+# ----------------------------------------------------------------------------------------------------------------------------- #
+
+from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import PostProcessor
+import os
+files = []
+#masses = ["250","500","750","1000","1500","2000","2500","3000","3500","4000","4500","5000"]
+masses = ["3000"]
+years = ["2022", "2022post", "2023", "2023post"]
+#years = ["2022"]
+files = []
+for year in years:
+    for mass in masses:
+        files.append(os.environ["SIG_R3"] + "taustarToTauZ_m" + mass + "_" + year + ".root")
+p = PostProcessor(".", files, cut="", branchsel=None, postfix="", modules=[zJetReclusterProducerConstr()], histFileName="hists.root", histDirName="Hists")
+p.run()
