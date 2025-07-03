@@ -21,9 +21,9 @@ class TauPythiaBugSearcher(Module):
 
     def beginJob(self, histFile=None, histDirName=None):
         Module.beginJob(self, histFile, histDirName)
-        self.h_visEFrac_plus = TH1F("h_visEFrac_plus", "Visible Energy Fraction in DM=0 Tau Decays;Energy Fraction;Events", 20, 0, 100)
+        self.h_visEFrac_plus = TH1F("h_visEFrac_plus", "Visible Energy Fraction in DM=0 Tau Decays;Energy Fraction;Events", 20, 0, 1)
         self.addObject(self.h_visEFrac_plus)
-        self.h_visEFrac_neg = TH1F("h_visEFrac_neg", "Visible Energy Fraction in DM=0 Tau Decays;Energy Fraction;Events", 20, 0, 100)
+        self.h_visEFrac_neg = TH1F("h_visEFrac_neg", "Visible Energy Fraction in DM=0 Tau Decays;Energy Fraction;Events", 20, 0, 1)
         self.addObject(self.h_visEFrac_neg)   
 
     # ----------------------------------------------------------------------------------------------------------------------------- #
@@ -41,6 +41,8 @@ class TauPythiaBugSearcher(Module):
 
             if abs(genPart.pdgId) == 15:
                 decChain = getDecayChain(gpIdx, genParts)
+                
+                
                 if len(decChain) == 2:
                     tauP4 = TLorentzVector()
                     tauP4.SetPtEtaPhiM(genPart.pt, genPart.eta, genPart.phi, 1.776) 
@@ -50,16 +52,19 @@ class TauPythiaBugSearcher(Module):
                     elif abs(genParts[decChain[1]].pdgId) == 211:
                         pion = genParts[decChain[1]]
                     else:
-                        print("Warning: Neither tau decay product was a charged pion!")
+                        #print("Warning: Neither tau decay product was a charged pion!")
                         continue
 
                     piP4 = TLorentzVector()
                     piP4.SetPtEtaPhiM(pion.pt, pion.eta, pion.phi, 0.1395)
-                    
+
+        
+                    visEFrac = piP4.E() / tauP4.E()
+                    #print("visible enegy fraction=", visEFrac)
                     if pion.pdgId > 0:
-                        self.h_visEFrac_plus.Fill(piP4.E() / tauP4.E())
+                        self.h_visEFrac_plus.Fill(visEFrac)
                     else:
-                        self.h_visEFrac_neg.Fill(piP4.E() / tauP4.E())
+                        self.h_visEFrac_neg.Fill(visEFrac)
         
         return False #We only care about the hist file, not the output tree
     
@@ -76,12 +81,13 @@ import os
 
 
 masses = ["250","500","750","1000","1500","2000","2500","3000","3500","4000","4500","5000"]
+#masses = ["3000"]
 years = ["2022", "2022post", "2023", "2023post"]
+#years = ["2022"]
 files = []
 for year in years:
     for mass in masses:
         files.append(os.environ["SIG_R3"] + "taustarToTauZ_m" + mass + "_" + year + ".root")
 
-files = [os.environ["SIG_R3"] + ""]
 p = PostProcessor(".", files, cut="", branchsel=None, postfix="", modules=[tauPythiaBugSearcherConstr()], histFileName="hists.root", histDirName="Hists")
 p.run()
