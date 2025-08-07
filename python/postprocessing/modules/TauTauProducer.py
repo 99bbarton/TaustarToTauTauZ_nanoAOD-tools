@@ -133,13 +133,13 @@ class TauTauProducer(Module):
                 tau2.pt = tau2.pt * tau2Corr
                 tau2.mass = tau2.mass * tau2Corr
             
-            if tau1.decayMode <= 2 and tau1.decayMode > 0:
+            if tau1.decayMode >= 0 and tau1.decayMode <= 2:
                 tau1Prongs = 1
-            elif tau1.decayMode >= 10:
+            elif tau1.decayMode == 10 or tau1.decayMode == 11:
                 tau1Prongs = 3
-            if tau2.decayMode <= 2 and tau2.decayMode > 0:
+            if tau2.decayMode >= 0 and tau2.decayMode <= 2:
                 tau2Prongs = 1
-            elif tau2.decayMode >= 10:
+            elif tau2.decayMode == 10 or tau2.decayMode == 11:
                 tau2Prongs = 3
 
 
@@ -219,6 +219,19 @@ class TauTauProducer(Module):
                 isCand = isCand and minCollM > visM # Collinear mass should be greater than visible mass
                 isCand = isCand and not (event.ETau_isCand or event.MuTau_isCand)
 
+            trigObjs = Collection(event, "TrigObj")
+            tau1Match = False
+            tau2Match = False
+            for trigObj in trigObjs:
+                if abs(trigObj.id) == 15:
+                    if trigObj.filterBits & (2**3) and trigObj.filterBits & (2**10) and (trigObj.deltaR(tau1) < 0.1 or trigObj.deltaR(tau2) < 0.1):
+                        trigMatchTau = True
+                    elif trigObj.filterBits & (2**3) and trigObj.filterBits & (2**7) and trigObj.deltaR(tau1) < 0.1:
+                        tau1Match = True
+                    elif trigObj.filterBits & (2**3) and trigObj.filterBits & (2**7) and trigObj.deltaR(tau2) < 0.1:
+                        tau2Match = True
+            trigMatchTauTau = tau1Match and tau2Match
+
 
         self.out.fillBranch("TauTau_tau1Idx", tau1Idx)
         self.out.fillBranch("TauTau_tau2Idx", tau2Idx)
@@ -238,7 +251,7 @@ class TauTauProducer(Module):
         self.out.fillBranch("TauTau_tauVsMuSF", tauVsMuSF)
         self.out.fillBranch("TauTau_tauVsJetSF", tauVsJetSF)
         self.out.fillBranch("TauTau_trigMatchTau", trigMatchTau)
-        self.out.fillBranch("TauTau_trigMatchETau", trigMatchTauTau)
+        self.out.fillBranch("TauTau_trigMatchTauTau", trigMatchTauTau)
         self.out.fillBranch("TauTau_isCand", isCand) 
 
         return True

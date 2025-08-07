@@ -128,9 +128,9 @@ class ETauProducer(Module):
                 currTauPt = theTau.pt
                 currTauVsJet = tau.idDeepTau2018v2p5VSjet
         if theTau != None:
-            if theTau.decayMode <= 2 and theTau.decayMode > 0:
+            if theTau.decayMode >= 0 and theTau.decayMode <= 2:
                 tauProngs = 1
-            elif theTau.decayMode >= 10:
+            elif theTau.decayMode == 10 or theTau.decayMode == 11:
                 tauProngs = 3
         #Choose the best electron, if multiple good ID's electrons, chooses the hightes pt candidate
         currElPt = 0
@@ -223,17 +223,19 @@ class ETauProducer(Module):
                 isCand = isCand and isBetween(theTau.phi, theEl.phi, event.MET_phi) #MET is in small angle between tau & el
                 isCand = isCand and minCollM > visM # Collinear mass should be greater than visible mass
 
-        #TODO Get POG recommendations for trigMatching
-        #trigObjs = Collection(event, "TrigObj")
-        #tauLeg = False
-        #eLeg = True
-        #for trigObj in trigObjs:
-        #    if trigObj.id == 15:
-        #        if trigObj.filterBits & (2**10) and trigObj.deltaR(theTau) < 0.1:
-        #            trigMatchTau = True
-        #        elif trigObj.filterBits & (2**8) and trigObj.deltaR(theTau) < 0.1:
-        #            tauLeg = True
-        #    elif trigObj.id == 11 :
+        trigObjs = Collection(event, "TrigObj")
+        tauLeg = False
+        eLeg = False
+        for trigObj in trigObjs:
+            if abs(trigObj.id) == 15:
+                if trigObj.filterBits & (2**3) and trigObj.filterBits & (2**10) and trigObj.deltaR(theTau) < 0.1:
+                    trigMatchTau = True
+                elif trigObj.filterBits & (2**3) and trigObj.filterBits & (2**8) and trigObj.deltaR(theTau) < 0.1:
+                    tauLeg = True
+            elif abs(trigObj.id) == 11: #TODO verify, these are educated guesses for trig bits
+                if trigObj.filterBits & (2**3) and trigObj.filterBits & (2**6) and trigObj.deltaR(theEl) < 0.1:
+                    eLeg  = True
+        trigMatchETau = tauLeg and eLeg
                 
 
         self.out.fillBranch("ETau_eIdx", eIdx) 
