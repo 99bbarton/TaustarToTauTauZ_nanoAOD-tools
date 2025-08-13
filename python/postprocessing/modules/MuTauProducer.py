@@ -79,9 +79,9 @@ class MuTauProducer(Module):
                 currTauVsJet = tau.idDeepTau2018v2p5VSjet
         
         if theTau != None:
-            if theTau.decayMode <= 2 and theTau.decayMode > 0:
+            if theTau.decayMode >= 0 and theTau.decayMode <= 2:
                 tauProngs = 1
-            elif theTau.decayMode >= 10:
+            elif theTau.decayMode == 10 or theTau.decayMode == 11:
                 tauProngs = 3
         
         currMuPt = 0
@@ -164,6 +164,20 @@ class MuTauProducer(Module):
                 isCand = isCand and isBetween(theTau.phi, theMu.phi, event.MET_phi) #MET is in small angle between tau & mu
                 isCand = isCand and minCollM > visM # Collinear mass should be greater than visible mass
                 isCand = isCand and not event.ETau_isCand
+
+        trigObjs = Collection(event, "TrigObj")
+        tauLeg = False
+        muLeg = False
+        for trigObj in trigObjs:
+            if abs(trigObj.id) == 15:
+                if trigObj.filterBits & (2**3) and trigObj.filterBits & (2**10) and trigObj.deltaR(theTau) < 0.1:
+                    trigMatchTau = True
+                elif trigObj.filterBits & (2**3) and trigObj.filterBits & (2**9) and trigObj.deltaR(theTau) < 0.1:
+                    tauLeg = True
+            elif abs(trigObj.id) == 13: #TODO verify, these are educated guesses for trig bits
+                if trigObj.filterBits & (2**2) and trigObj.filterBits & (2**6) and trigObj.deltaR(theMu) < 0.1: 
+                    muLeg  = True
+        trigMatchMuTau = tauLeg and muLeg
                 
 
         self.out.fillBranch("MuTau_muIdx", muIdx) 
@@ -178,6 +192,13 @@ class MuTauProducer(Module):
         self.out.fillBranch("MuTau_maxCollM", maxCollM)
         self.out.fillBranch("MuTau_highPtGenMatch", highPtGenMatch)
         self.out.fillBranch("MuTau_highPtCollM", highPtCollM)
+        self.out.fillBranch("MuTau_tauESCorr", tauESCorr)
+        self.out.fillBranch("MuTau_tauVsESF",tauVsESF)
+        self.out.fillBranch("MuTau_tauVsMuSF", tauVsMuSF)
+        self.out.fillBranch("MuTau_tauVsJetSF", tauVsJetSF)
+        self.out.fillBranch("MuTau_muIDSF", muIDSF)
+        self.out.fillBranch("MuTau_trigMatchTau", trigMatchTau)
+        self.out.fillBranch("MuTau_trigMatchMuTau", trigMatchMuTau)
         self.out.fillBranch("MuTau_isCand", isCand) 
 
         return True
