@@ -34,9 +34,8 @@ class TauTauProducer(Module):
         self.out.branch("TauTau_highPtGenMatch", "O") #"True if the higher pt tau decay matched to the GEN taustar tau"
         self.out.branch("TauTau_highPtCollM", "F") #"Either the min or max coll m, whichever was from the higher pt tau decay"
         self.out.branch("TauTau_isCand", "O") #"True if the event is good tau+tau+Z event"
-
-        #self.out.branch("TauTau_trigMatchTau", "O") #"True if the event passes the single tau trigger and one tau matches to the trigObj"
-        #self.out.branch("TauTau_trigMatchTauTau", "O") #"True if the event passes the d-tau trigger and both taus matche to the trigObj"
+        self.out.branch("TauTau_trigMatchTau", "O") #"True if the event passes the single tau trigger and one tau matches to the trigObj"
+        self.out.branch("TauTau_trigMatchTauTau", "O") #"True if the event passes the d-tau trigger and both taus matche to the trigObj"
         
 
     def analyze(self, event):
@@ -176,20 +175,23 @@ class TauTauProducer(Module):
                 isCand = isCand and minCollM > visM # Collinear mass should be greater than visible mass
                 isCand = isCand and not (event.ETau_isCand or event.MuTau_isCand)
 
-            trigObjs = Collection(event, "TrigObj")
-            tau1Match = False
-            tau2Match = False
-            for trigObj in trigObjs:
-                if abs(trigObj.id) == 15:
-                    if trigObj.filterBits & (2**3) and trigObj.filterBits & (2**10) and (trigObj.deltaR(tau1) < 0.1 or trigObj.deltaR(tau2) < 0.1):
-                        trigMatchTau = True
-                    elif trigObj.filterBits & (2**3) and trigObj.filterBits & (2**7) and trigObj.deltaR(tau1) < 0.1:
-                        tau1Match = True
-                    elif trigObj.filterBits & (2**3) and trigObj.filterBits & (2**7) and trigObj.deltaR(tau2) < 0.1:
-                        tau2Match = True
-            trigMatchTauTau = tau1Match and tau2Match
+            if isCand:
+                trigObjs = Collection(event, "TrigObj")
+                tau1Match = False
+                tau2Match = False
+                for trigObj in trigObjs:
+                    if abs(trigObj.id) == 15:
+                        if trigObj.filterBits & (2**3) and trigObj.filterBits & (2**10) and (deltaR(trigObj, tau1) < 0.1 or deltaR(trigObj, tau2) < 0.1):
+                            trigMatchTau = True
+                        elif trigObj.filterBits & (2**3) and trigObj.filterBits & (2**7) and deltaR(trigObj, tau1) < 0.1:
+                            tau1Match = True
+                        elif trigObj.filterBits & (2**3) and trigObj.filterBits & (2**7) and deltaR(trigObj, tau2) < 0.1:
+                            tau2Match = True
+                trigMatchTauTau = tau1Match and tau2Match
 
+                #print("matchTau =", trigMatchTau, " : matchTauTau =", trigMatchTauTau, " : tau1 =", tau1Match, " : tau2 =",  tau2Match)
 
+            
         self.out.fillBranch("TauTau_tau1Idx", tau1Idx)
         self.out.fillBranch("TauTau_tau2Idx", tau2Idx)
         self.out.fillBranch("TauTau_tau1Prongs", tau1Prongs)
@@ -203,10 +205,10 @@ class TauTauProducer(Module):
         self.out.fillBranch("TauTau_maxCollM", maxCollM)
         self.out.fillBranch("TauTau_highPtGenMatch", highPtGenMatch)
         self.out.fillBranch("TauTau_highPtCollM", highPtCollM)
-        self.out.fillBranch("TauTau_tauESCorr", tauESCorr)
-        self.out.fillBranch("TauTau_tauVsESF",tauVsESF)
-        self.out.fillBranch("TauTau_tauVsMuSF", tauVsMuSF)
-        self.out.fillBranch("TauTau_tauVsJetSF", tauVsJetSF)
+        #self.out.fillBranch("TauTau_tauESCorr", tauESCorr)
+        #self.out.fillBranch("TauTau_tauVsESF",tauVsESF)
+        #self.out.fillBranch("TauTau_tauVsMuSF", tauVsMuSF)
+        #self.out.fillBranch("TauTau_tauVsJetSF", tauVsJetSF)
         self.out.fillBranch("TauTau_trigMatchTau", trigMatchTau)
         self.out.fillBranch("TauTau_trigMatchTauTau", trigMatchTauTau)
         self.out.fillBranch("TauTau_isCand", isCand) 

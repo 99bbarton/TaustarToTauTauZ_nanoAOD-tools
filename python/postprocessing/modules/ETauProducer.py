@@ -39,8 +39,10 @@ class ETauProducer(Module):
         self.out.branch("ETau_maxCollM", "F") #"The larger collinear mass of either e+nu+Z or tau+nu+Z"
 
 
+        self.out.branch("ETau_trigMatchTau", "O") #"True if the tau matches the single-tau trigger obj"
+        self.out.branch("ETau_trigMatchETau", "O") #True if the reco el and tau fired the e-tau cross trigger"
         self.out.branch("ETau_isCand", "O") #"True if the event is good e+tau+Z event"
-
+        
     def analyze(self, event):
         eIdx = -1
         tauIdx = -1
@@ -57,6 +59,9 @@ class ETauProducer(Module):
         highPtCollM = -999.99
         isCand = False
 
+        trigMatchTau = False
+        trigMatchETau = False
+        
         taus = Collection(event, "Tau")
         electrons = Collection(event, "Electron")
 
@@ -172,19 +177,22 @@ class ETauProducer(Module):
                 isCand = isCand and isBetween(theTau.phi, theEl.phi, event.MET_phi) #MET is in small angle between tau & el
                 isCand = isCand and minCollM > visM # Collinear mass should be greater than visible mass
 
-        trigObjs = Collection(event, "TrigObj")
-        tauLeg = False
-        eLeg = False
-        for trigObj in trigObjs:
-            if abs(trigObj.id) == 15:
-                if trigObj.filterBits & (2**3) and trigObj.filterBits & (2**10) and trigObj.deltaR(theTau) < 0.1:
-                    trigMatchTau = True
-                elif trigObj.filterBits & (2**3) and trigObj.filterBits & (2**8) and trigObj.deltaR(theTau) < 0.1:
-                    tauLeg = True
-            elif abs(trigObj.id) == 11: #TODO verify, these are educated guesses for trig bits
-                if trigObj.filterBits & (2**3) and trigObj.filterBits & (2**6) and trigObj.deltaR(theEl) < 0.1:
-                    eLeg  = True
-        trigMatchETau = tauLeg and eLeg
+        if isCand:
+            trigObjs = Collection(event, "TrigObj")
+            tauLeg = False
+            eLeg = False
+            for trigObj in trigObjs:
+                if abs(trigObj.id) == 15:
+                    if trigObj.filterBits & (2**3) and trigObj.filterBits & (2**10) and deltaR(trigObj, theTau) < 0.1:
+                        trigMatchTau = True
+                    elif trigObj.filterBits & (2**3) and trigObj.filterBits & (2**8) and deltaR(trigObj, theTau) < 0.1:
+                        tauLeg = True
+                elif abs(trigObj.id) == 11: #TODO verify, these are educated guesses for trig bits
+                    if trigObj.filterBits & (2**3) and trigObj.filterBits & (2**6) and deltaR(trigObj, theEl) < 0.1:
+                        eLeg  = True
+                        
+            #print("matchTau =", trigMatchTau, " : matchETau =", (tauLeg and eLeg), " : tauLeg =", tauLeg, " : eLeg =",  eLeg)
+            trigMatchETau = tauLeg and eLeg
                 
 
         self.out.fillBranch("ETau_eIdx", eIdx) 
@@ -199,6 +207,8 @@ class ETauProducer(Module):
         self.out.fillBranch("ETau_maxCollM", maxCollM)
         self.out.fillBranch("ETau_highPtGenMatch", highPtGenMatch)
         self.out.fillBranch("ETau_highPtCollM", highPtCollM)
+        self.out.fillBranch("ETau_trigMatchTau", trigMatchTau)
+        self.out.fillBranch("ETau_trigMatchETau", trigMatchETau)
         self.out.fillBranch("ETau_isCand", isCand) 
 
         return True

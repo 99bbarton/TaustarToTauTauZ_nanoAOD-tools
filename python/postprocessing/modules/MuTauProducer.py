@@ -32,6 +32,8 @@ class MuTauProducer(Module):
         self.out.branch("MuTau_maxCollM", "F") #"The larger collinear mass of either mu+nu+Z or tau+nu+Z"
         self.out.branch("MuTau_highPtGenMatch", "O") #"True if the higher pt tau decay matched to the GEN taustar tau"
         self.out.branch("MuTau_highPtCollM", "F") #"Either the min or max coll m, whichever was from the higher pt tau decay"
+        self.out.branch("MuTau_trigMatchTau", "O") #"True if the tau matches the single-tau trigger obj"
+        self.out.branch("MuTau_trigMatchMuTau", "O") #True if the reco mu and tau fired the mu-tau cross trigger"
         self.out.branch("MuTau_isCand", "O") #"True if the event is good mu+tau+Z event"
 
     def analyze(self, event):
@@ -49,6 +51,8 @@ class MuTauProducer(Module):
         highPtGenMatch = False
         highPtCollM = -999.99
         isCand = False
+        trigMatchTau = False
+        trigMatchMuTau = False
         
         taus = Collection(event, "Tau")
         muons = Collection(event, "Muon")
@@ -165,20 +169,22 @@ class MuTauProducer(Module):
                 isCand = isCand and minCollM > visM # Collinear mass should be greater than visible mass
                 isCand = isCand and not event.ETau_isCand
 
-        trigObjs = Collection(event, "TrigObj")
-        tauLeg = False
-        muLeg = False
-        for trigObj in trigObjs:
-            if abs(trigObj.id) == 15:
-                if trigObj.filterBits & (2**3) and trigObj.filterBits & (2**10) and trigObj.deltaR(theTau) < 0.1:
-                    trigMatchTau = True
-                elif trigObj.filterBits & (2**3) and trigObj.filterBits & (2**9) and trigObj.deltaR(theTau) < 0.1:
-                    tauLeg = True
-            elif abs(trigObj.id) == 13: #TODO verify, these are educated guesses for trig bits
-                if trigObj.filterBits & (2**2) and trigObj.filterBits & (2**6) and trigObj.deltaR(theMu) < 0.1: 
-                    muLeg  = True
-        trigMatchMuTau = tauLeg and muLeg
-                
+        if isCand:
+            trigObjs = Collection(event, "TrigObj")
+            tauLeg = False
+            muLeg = False
+            for trigObj in trigObjs:
+                if abs(trigObj.id) == 15:
+                    if trigObj.filterBits & (2**3) and trigObj.filterBits & (2**10) and deltaR(trigObj, theTau) < 0.1:
+                        trigMatchTau = True
+                    elif trigObj.filterBits & (2**3) and trigObj.filterBits & (2**9) and deltaR(trigObj, theTau) < 0.1:
+                        tauLeg = True
+                elif abs(trigObj.id) == 13: #TODO verify, these are educated guesses for trig bits
+                    if trigObj.filterBits & (2**2) and trigObj.filterBits & (2**6) and deltaR(trigObj, theMu) < 0.1: 
+                        muLeg  = True
+            trigMatchMuTau = tauLeg and muLeg
+
+            #print("matchTau =", trigMatchTau, " : matchMuTau =", (tauLeg and muLeg), " : tauLeg =", tauLeg, " : muLeg =",  muLeg)
 
         self.out.fillBranch("MuTau_muIdx", muIdx) 
         self.out.fillBranch("MuTau_tauIdx", tauIdx)
@@ -192,11 +198,11 @@ class MuTauProducer(Module):
         self.out.fillBranch("MuTau_maxCollM", maxCollM)
         self.out.fillBranch("MuTau_highPtGenMatch", highPtGenMatch)
         self.out.fillBranch("MuTau_highPtCollM", highPtCollM)
-        self.out.fillBranch("MuTau_tauESCorr", tauESCorr)
-        self.out.fillBranch("MuTau_tauVsESF",tauVsESF)
-        self.out.fillBranch("MuTau_tauVsMuSF", tauVsMuSF)
-        self.out.fillBranch("MuTau_tauVsJetSF", tauVsJetSF)
-        self.out.fillBranch("MuTau_muIDSF", muIDSF)
+        #self.out.fillBranch("MuTau_tauESCorr", tauESCorr)
+        #self.out.fillBranch("MuTau_tauVsESF",tauVsESF)
+        #self.out.fillBranch("MuTau_tauVsMuSF", tauVsMuSF)
+        #self.out.fillBranch("MuTau_tauVsJetSF", tauVsJetSF)
+        #self.out.fillBranch("MuTau_muIDSF", muIDSF)
         self.out.fillBranch("MuTau_trigMatchTau", trigMatchTau)
         self.out.fillBranch("MuTau_trigMatchMuTau", trigMatchMuTau)
         self.out.fillBranch("MuTau_isCand", isCand) 
