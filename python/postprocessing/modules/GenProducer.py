@@ -18,14 +18,14 @@ class GenProducer(Module):
 
     def __init__(self, era):
         self.era = era
-        self.writeHistFile = True
+        #self.writeHistFile = True
     
-    def beginJob(self, histFile, histDirName):
+    def beginJob(self, histFile=None, histDirName=None):
         Module.beginJob(self, histFile, histDirName)
-        self.h_genAk4Mass = TH1F('h_genAk4Mass', 'Mass of GEN AK4 ;Mass [GeV];# of Jets', 75, 0, 150)
-        self.addObject(self.h_genAk4Mass)
-        self.h_genAk8Mass = TH1F('h_genAk8Mass', 'Mass of GEN AK8 Jets;Mass [GeV];# of Jets', 75, 0, 150)
-        self.addObject(self.h_genAk8Mass)
+        #self.h_genAk4Mass = TH1F('h_genAk4Mass', 'Mass of GEN AK4 ;Mass [GeV];# of Jets', 75, 0, 150)
+        #self.addObject(self.h_genAk4Mass)
+        #self.h_genAk8Mass = TH1F('h_genAk8Mass', 'Mass of GEN AK8 Jets;Mass [GeV];# of Jets', 75, 0, 150)
+        #self.addObject(self.h_genAk8Mass)
 
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.out = wrappedOutputTree

@@ -1,28 +1,45 @@
-from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import PostProcessor
 from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection
 import PhysicsTools.NanoAODTools.postprocessing.framework.datamodel as datamodel
+from PhysicsTools.NanoAODTools.postprocessing.utils.Tools import getSFFile, yearToJetVeto
 
 from ROOT import TH1F
+from correctionlib import _core as corrLib
+import gzip
+from ROOT import TH1F
+from math import pi
 
 # ----------------------------------------------------------------------------------------------------------------------------- #
 
 class ZProducer(Module):
 
-    def __init__(self, era):
-        self.era = era
-        self.writeHistFile = True
+    def __init__(self, year):
+        self.year = year
+
+        if year in ["2016", "2016post", "2017", "2018"]:
+            self.era = 2
+        elif year in ["2022", "2022post", "2023", "2023post"]:
+            self.era = 3
+        else:
+            print("ERROR: Unrecognized year passed to ETauProducer!")  
+            exit(1)
+
+        with gzip.open(getSFFile(year=year, pog="JME", typ="VETO"),'rt') as fil:
+            unzipped = fil.read().strip()
+        self.jetVetoMap = corrLib.CorrectionSet.from_file(unzipped)
+        
+        #self.writeHistFile = True
 
     def beginJob(self, histFile=None, histDirName=None):
         Module.beginJob(self, histFile, histDirName)
-        self.h_ak4Mass = TH1F('h_ak4Mass', 'Mass of AK4 ;Mass [GeV];# of Jets', 75, 0, 150)
-        self.addObject(self.h_ak4Mass)
-        self.h_ak4MassCuts = TH1F('h_ak4MassCuts', 'Mass of AK4 Jets Passing ID Reqs.;Mass [GeV];# of Jets', 30, 60, 120)
-        self.addObject(self.h_ak4MassCuts)
-        self.h_ak8Mass = TH1F('h_ak8Mass', 'Mass of AK8 Jets;Mass [GeV];# of Jets', 75, 0, 150)
-        self.addObject(self.h_ak8Mass)
-        self.h_ak8MassCuts = TH1F('h_ak8MassCuts', 'Mass of AK8 Jets Passing ID Reqs;Mass [GeV];# of Jets', 30, 60, 120)
-        self.addObject(self.h_ak8MassCuts)
+        #self.h_ak4Mass = TH1F('h_ak4Mass', 'Mass of AK4 ;Mass [GeV];# of Jets', 75, 0, 150)
+        #self.addObject(self.h_ak4Mass)
+        #self.h_ak4MassCuts = TH1F('h_ak4MassCuts', 'Mass of AK4 Jets Passing ID Reqs.;Mass [GeV];# of Jets', 30, 60, 120)
+        #self.addObject(self.h_ak4MassCuts)
+        #self.h_ak8Mass = TH1F('h_ak8Mass', 'Mass of AK8 Jets;Mass [GeV];# of Jets', 75, 0, 150)
+        #self.addObject(self.h_ak8Mass)
+        #self.h_ak8MassCuts = TH1F('h_ak8MassCuts', 'Mass of AK8 Jets Passing ID Reqs;Mass [GeV];# of Jets', 30, 60, 120)
+        #self.addObject(self.h_ak8MassCuts)
 
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.out = wrappedOutputTree
@@ -147,6 +164,14 @@ class ZProducer(Module):
                 elif self.era == 3:
                     jetID = jetID and jet.particleNetWithMass_ZvsQCD > 0.9
 
+                #Apply jet veto maps phi must be in [-pi, pi]
+                phiAdj = jet.phi
+                if phiAdj > pi:
+                    phiAdj -= 2*pi
+                elif phiAdj < -pi:
+                    phiAdj += 2*pi
+                jetID = jetID and self.jetVetoMap[yearToJetVeto[self.year]].evaluate("jetvetomap", jet.eta, phiAdj) == 0
+
                 if jetID:
                     self.h_ak8MassCuts.Fill(jet.mass)
                     Z_nJetCands += 1
@@ -252,7 +277,7 @@ class ZProducer(Module):
     
     # -----------------------------------------------------------------------------------------------------------------------------
 
-zProducerConstr = lambda era: ZProducer(era = era)
+zProducerConstr = lambda era: ZProducer(year = year)
 
 #from PhysicsTools.NanoAODTools.postprocessing.modules.GenProducerZTau import genProducerZTauConstr
 
