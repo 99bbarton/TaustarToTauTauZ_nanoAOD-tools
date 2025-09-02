@@ -98,7 +98,18 @@ class TauTauProducer(Module):
         for tauI, tau in enumerate(taus):
             
             if self.era == 2:#TODO
-                print("ERROR: run2 tauID not implemented in tautau producer!")
+                esCorr = self.tauSFs["tau_energy_scale"].evaluate(tau.pt, abs(tau.eta), tau.decayMode, tau.genPartFlav, "Loose", "VVLoose", "nom")
+                tauCorrPt = tau.pt * esCorr 
+                tauID = tauCorrPt> 20 and abs(tau.eta) < 2.3 and abs(tau.dz) < 0.2 
+                #WPs chosen to match run3 choices which were based on existing tau pog SFs
+                tauID = tauID and tau.idDeepTau2017v2p1VSjet & 2**8 #bit 8= loose
+                tauID = tauID and tau.idDeepTau2017v2p1VSmu & 2**8 #bit 8= tight
+                tauID = tauID and tau.idDeepTau2017v2p1VSe & 2**2 #bit 2= VVLoose
+
+                tauID = tauID and tau.decayMode != 5 and tau.decayMode != 6 
+
+                if tauID:
+                    goodTaus.append((tauI, tau.idDeepTau2017v2p1VSjet, tauCorrPt))
             elif self.era == 3:
                 #Tau POG recommendations https://twiki.cern.ch/twiki/bin/view/CMS/TauIDRecommendationForRun3
                 esCorr = 1.00
@@ -125,7 +136,9 @@ class TauTauProducer(Module):
 
             tau1Idx = goodTaus[0][0]
             tau1 = taus[tau1Idx]
-            if self.era == 3:
+            if self.era == 2:
+                tau1Corr =  self.tauSFs["tau_energy_scale"].evaluate(tau1.pt, abs(tau1.eta), tau1.decayMode, tau1.genPartFlav, "Loose", "VVLoose", "nom")
+            elif self.era == 3:
                 tau1Corr = 1.0
                 #tau1Corr =  self.tauSFs["tau_energy_scale"].evaluate(tau1.pt, abs(tau1.eta), tau1.decayMode, tau1.genPartFlav, "Loose", "VVLoose", "nom")
             tau1.pt = tau1.pt * tau1Corr
@@ -133,7 +146,9 @@ class TauTauProducer(Module):
             
             for i in range(1, len(goodTaus)):
                 tau2 = taus[goodTaus[i][0]]
-                if self.era == 3:
+                if self.era == 2:
+                    tau2Corr =  self.tauSFs["tau_energy_scale"].evaluate(tau2.pt, abs(tau2.eta), tau2.decayMode, tau2.genPartFlav, "Loose", "VVLoose", "nom")
+                elif self.era == 3:
                     tau2Corr = 1.0  
                     #tau2Corr =  self.tauSFs["tau_energy_scale"].evaluate(tau2.pt, abs(tau2.eta), tau2.decayMode, tau2.genPartFlav, "Loose", "VVLoose", "nom")
                 tau2.pt = tau2.pt * tau2Corr
@@ -161,18 +176,19 @@ class TauTauProducer(Module):
             tauPlusTau = tau1.p4() + tau2.p4()
             visM = tauPlusTau.M()
 
-            # if self.era == 3:
-            #     for i, syst in enumerate(["down", "nom", "up", "down", "nom", "up"]):
-            #         if i < 3:
-            #             tauESCorr[i] = self.tauSFs["tau_energy_scale"].evaluate(tau1.pt, abs(tau1.eta), tau1.decayMode, tau1.genPartFlav, "Loose", "VVLoose", syst)
-            #             tauVsESF[i] = self.tauSFs["DeepTau2017v2p1VSe"].evaluate(abs(tau1.eta), tau1.decayMode, tau1.genPartFlav, "VVLoose", syst)
-            #             tauVsMuSF[i] = self.tauSFs["DeepTau2017v2p1VSmu"].evaluate(abs(tau1.eta), tau1.decayMode, tau1.genPartFlav, "Tight", syst)
-            #             tauVsJetSF[i] = self.tauSFs["DeepTau2017v2p1VSjet"].evaluate(abs(tau1.eta), tau1.decayMode, tau1.genPartFlav, "Loose", syst)
-            #         else:
-            #             tauESCorr[i] = self.tauSFs["tau_energy_scale"].evaluate(tau2.pt, abs(tau2.eta), tau2.decayMode, tau2.genPartFlav, "Loose", "VVLoose", syst)
-            #             tauVsESF[i] = self.tauSFs["DeepTau2017v2p1VSe"].evaluate(abs(tau2.eta), tau2.decayMode, tau2.genPartFlav, "VVLoose", syst)
-            #             tauVsMuSF[i] = self.tauSFs["DeepTau2017v2p1VSmu"].evaluate(abs(tau2.eta), tau2.decayMode, tau2.genPartFlav, "Tight", syst)
-            #             tauVsJetSF[i] = self.tauSFs["DeepTau2017v2p1VSjet"].evaluate(abs(tau2.eta), tau2.decayMode, tau2.genPartFlav, "Loose", syst)
+            #Pythia bug means we have to use placeholder SFs for run3
+            if self.era == 2:
+                for i, syst in enumerate(["down", "nom", "up", "down", "nom", "up"]):
+                    if i < 3:
+                        tauESCorr[i] = self.tauSFs["tau_energy_scale"].evaluate(tau1.pt, abs(tau1.eta), tau1.decayMode, tau1.genPartFlav, "Loose", "VVLoose", syst)
+                        tauVsESF[i] = self.tauSFs["DeepTau2017v2p1VSe"].evaluate(abs(tau1.eta), tau1.decayMode, tau1.genPartFlav, "VVLoose", syst)
+                        tauVsMuSF[i] = self.tauSFs["DeepTau2017v2p1VSmu"].evaluate(abs(tau1.eta), tau1.decayMode, tau1.genPartFlav, "Tight", syst)
+                        tauVsJetSF[i] = self.tauSFs["DeepTau2017v2p1VSjet"].evaluate(abs(tau1.eta), tau1.decayMode, tau1.genPartFlav, "Loose", syst)
+                    else:
+                        tauESCorr[i] = self.tauSFs["tau_energy_scale"].evaluate(tau2.pt, abs(tau2.eta), tau2.decayMode, tau2.genPartFlav, "Loose", "VVLoose", syst)
+                        tauVsESF[i] = self.tauSFs["DeepTau2017v2p1VSe"].evaluate(abs(tau2.eta), tau2.decayMode, tau2.genPartFlav, "VVLoose", syst)
+                        tauVsMuSF[i] = self.tauSFs["DeepTau2017v2p1VSmu"].evaluate(abs(tau2.eta), tau2.decayMode, tau2.genPartFlav, "Tight", syst)
+                        tauVsJetSF[i] = self.tauSFs["DeepTau2017v2p1VSjet"].evaluate(abs(tau2.eta), tau2.decayMode, tau2.genPartFlav, "Loose", syst)
 
             #If the event also has a good Z candidate, we can calculate collinear mass
             if event.Z_dm >= 0 and event.Z_dm <= 2:

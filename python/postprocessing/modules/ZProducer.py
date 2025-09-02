@@ -92,14 +92,14 @@ class ZProducer(Module):
                     cuts = (e1.charge * e2.charge) < 0 #Opposite charge
                     cuts = cuts and ((abs(e1.eta + e1.deltaEtaSC) >= 1.566 and abs(e1.eta + e1.deltaEtaSC) < 2.5) or abs( e1.eta + e1.deltaEtaSC) < 1.444)#Fiducial
                     cuts = cuts and ((abs(e2.eta + e2.deltaEtaSC) >= 1.566 and abs(e1.eta + e1.deltaEtaSC) < 2.5) or abs(e2.eta + e2.deltaEtaSC) < 1.444)
-                    #cuts = cuts and (e1.pt >= 20.0 and abs(e1.eta + e1.deltaEtaSC) < 2.5 and e1.mvaFall17V2noIso_WP80) #ID
-                    #cuts = cuts and (e2.pt >= 20.0 and abs(e2.eta + e2.deltaEtaSC) < 2.5 and e2.mvaFall17V2noIso_WP80)
+                    cuts = cuts and (e1.pt >= 20.0 and abs(e1.eta + e1.deltaEtaSC) < 2.5 and e1.mvaFall17V2noIso_WP80) #ID
+                    cuts = cuts and (e2.pt >= 20.0 and abs(e2.eta + e2.deltaEtaSC) < 2.5 and e2.mvaFall17V2noIso_WP80)
                 elif self.era == 3:
                     cuts = (e1.charge * e2.charge) < 0 #Opposite charge
                     cuts = cuts and ((abs(e1.eta + e1.deltaEtaSC) >= 1.566 and abs(e1.eta + e1.deltaEtaSC) < 2.5) or abs( e1.eta + e1.deltaEtaSC) < 1.444) #Fiducial
                     cuts = cuts and ((abs(e2.eta + e2.deltaEtaSC) >= 1.566 and abs(e1.eta + e1.deltaEtaSC) < 2.5) or abs(e2.eta + e2.deltaEtaSC) < 1.444)
-                    #cuts = cuts and (e1.pt >= 20.0 and abs(e1.eta + e1.deltaEtaSC) < 2.5 and e1.mvaNoIso_WP80 ) #ID (basic)
-                    #cuts = cuts and (e2.pt >= 20.0 and abs(e2.eta + e2.deltaEtaSC) < 2.5 and e2.mvaNoIso_WP80) #ID (basic)
+                    cuts = cuts and e1.pt >= 32.0 and e1.cutBased >= 3
+                    cuts = cuts and e2.pt >= 32.0 and e2.cutBased >= 3
 
                 if cuts:
                     Z_nEE += 1
