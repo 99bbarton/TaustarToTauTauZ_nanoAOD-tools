@@ -254,7 +254,7 @@ class ETauProducer(Module):
                 isCand = isCand and isBetween(theTau.phi, theEl.phi, event.MET_phi) #MET is in small angle between tau & el
                 isCand = isCand and minCollM > visM # Collinear mass should be greater than visible mass
 
-        if isCand:
+        if isCand and self.era == 3:
             trigObjs = Collection(event, "TrigObj")
             tauLeg = False
             eLeg = False
@@ -264,9 +264,12 @@ class ETauProducer(Module):
                         trigMatchTau = True
                     elif trigObj.filterBits & (2**3) and trigObj.filterBits & (2**8) and deltaR(trigObj, theTau) < 0.1:
                         tauLeg = True
-                elif abs(trigObj.id) == 11: #TODO verify, these are educated guesses for trig bits
+                elif abs(trigObj.id) == 11:
                     if trigObj.filterBits & (2**3) and trigObj.filterBits & (2**6) and deltaR(trigObj, theEl) < 0.1:
                         eLeg  = True
+        elif isCand and self.era == 2:
+            #NB: For run2 where the MET trigger is used, no trigger matching can actually be performed. The variable is used for easier run2+run3 combined cuts
+            trigMatchTau = True
                         
             #print("matchTau =", trigMatchTau, " : matchETau =", (tauLeg and eLeg), " : tauLeg =", tauLeg, " : eLeg =",  eLeg)
             trigMatchETau = tauLeg and eLeg

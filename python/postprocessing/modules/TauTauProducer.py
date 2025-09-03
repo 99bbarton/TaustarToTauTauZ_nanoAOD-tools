@@ -249,7 +249,7 @@ class TauTauProducer(Module):
                 isCand = isCand and minCollM > visM # Collinear mass should be greater than visible mass
                 isCand = isCand and not (event.ETau_isCand or event.MuTau_isCand)
 
-            if isCand:
+            if isCand and self.era == 3:
                 trigObjs = Collection(event, "TrigObj")
                 tau1Match = False
                 tau2Match = False
@@ -262,10 +262,12 @@ class TauTauProducer(Module):
                         elif trigObj.filterBits & (2**3) and trigObj.filterBits & (2**7) and deltaR(trigObj, tau2) < 0.1:
                             tau2Match = True
                 trigMatchTauTau = tau1Match and tau2Match
+            elif isCand and self.era == 2:
+                #NB: For run2 where the MET trigger is used, no trigger matching can actually be performed. The variable is used for easier run2+run3 combined cuts
+                trigMatchTau = True
 
-                #print("matchTau =", trigMatchTau, " : matchTauTau =", trigMatchTauTau, " : tau1 =", tau1Match, " : tau2 =",  tau2Match)
+            isCand = isCand and trigMatchTau
 
-            
         self.out.fillBranch("TauTau_tau1Idx", tau1Idx)
         self.out.fillBranch("TauTau_tau2Idx", tau2Idx)
         self.out.fillBranch("TauTau_tau1Prongs", tau1Prongs)
