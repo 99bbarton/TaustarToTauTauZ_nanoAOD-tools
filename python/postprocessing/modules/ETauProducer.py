@@ -135,7 +135,7 @@ class ETauProducer(Module):
                 esCorr = 1.00
                 #esCorr = self.tauSFs["tau_energy_scale"].evaluate(tau.pt, abs(tau.eta), tau.decayMode, tau.genPartFlav, "Loose", "VVLoose", "nom")
                 tauCorrPt = tau.pt * esCorr 
-                tauID = tau.corrPt > 30 and abs(tau.eta) < 2.1 and abs(tau.dz) < 0.2 
+                tauID = tau.corrPt > 20 and abs(tau.eta) < 2.5 and abs(tau.dz) < 0.2 
 
                 #WPs chosen based on existing tau pog SFs
                 tauID = tauID and tau.idDeepTau2018v2p5VSjet >= 4 #4= loose
