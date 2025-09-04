@@ -59,7 +59,7 @@ class MuTauProducer(Module):
         self.out.branch("MuTau_muIDSF", "F", 3) #"Muon ID SFs [down, nom, up]"
         #Trigger matching
         self.out.branch("MuTau_trigMatchTau", "O") #"True if the tau matches the single-tau trigger obj"
-        self.out.branch("MuTau_trigMatchMuTau", "O") #True if the reco mu and tau fired the mu-tau cross trigger"
+        self.out.branch("MuTau_trigMatchMuTau", "O") #"True if the reco mu and tau fired the mu-tau cross trigger"
         self.out.branch("MuTau_isCand", "O") #"True if the event is good mu+tau+Z event"
 
     def analyze(self, event):

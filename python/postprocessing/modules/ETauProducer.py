@@ -66,7 +66,7 @@ class ETauProducer(Module):
         self.out.branch("ETau_eIDSF", "F", 3) #"Electron ID SFs [down, nom, up]"
 
         self.out.branch("ETau_trigMatchTau", "O") #"True if the tau matches the single-tau trigger obj"
-        self.out.branch("ETau_trigMatchETau", "O") #True if the reco el and tau fired the e-tau cross trigger"
+        self.out.branch("ETau_trigMatchETau", "O") #"True if the reco el and tau fired the e-tau cross trigger"
         self.out.branch("ETau_isCand", "O") #"True if the event is good e+tau+Z event"
         
     def analyze(self, event):
