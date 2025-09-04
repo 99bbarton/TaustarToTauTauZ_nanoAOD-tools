@@ -22,7 +22,7 @@ def distance(obj1, obj2, p, R):
 #p=-1 => anti-kt, p=0 => cambridge/aachen, p=1 =>inclusive kt
 #R is the jet cone radius i.e. 0.4 = AK4, 0.8 = AK8, etc.
 #Returns a list of four vectors representing the reclustered jets
-def recluster(pfCands, p, R, momCut=0, nPFCsPerJetCut=0):
+def recluster(pfCands, p, R, momCut=0, nPFCsPerJetCut=0, remPFCsCut=0):
 
     reClJets = []
     removedPFCIdxs = []
@@ -32,7 +32,7 @@ def recluster(pfCands, p, R, momCut=0, nPFCsPerJetCut=0):
     for i in range(len(pfCands)):
         nPFCsPerJ.append(1)
     
-    while len(pfCands) > 0:
+    while len(pfCands) > remPFCsCut:
         minDist = 9999999
         minPairIdxs = None
         minBDist = 9999999
@@ -46,20 +46,25 @@ def recluster(pfCands, p, R, momCut=0, nPFCsPerJetCut=0):
                 if dist < minDist:
                     minDist = dist
                     minPairIdxs = (pfcN1, pfcN2)
-            
+
+                #print("d(",pfcN1,",", pfcN2,") = ", dist)
             #Find the minimum "beam distance"
             bDist = pfc1.Pt()**(2*p)
             if bDist < minBDist:
                 minBDist = bDist
                 minBDistIdx = pfcN1
+            #print("bDist(",pfcN1,") =", bDist)
+
 
         #If two PFCs are the closest pairing, combine them into the first and delete the second from the list
         if minDist < minBDist and minPairIdxs is not None:
             pfCands[minPairIdxs[0]] += pfCands[minPairIdxs[1]]
             nPFCsPerJ[minPairIdxs[0]] += nPFCsPerJ[minPairIdxs[1]]
             del pfCands[minPairIdxs[1]]
-            
+
+            #print("Min dist was identified to be between", minPairIdxs[0],",",minPairIdxs[1])
         else: #If beam distance is minimum, call that a reclustered jet
+            #print("Min dist was identified to be bDist for", minBDistIdx)
 
             #Check if the "jet" has a minmimum number of PFCs within it (if specified)
             if nPFCsPerJetCut > 0 and nPFCsPerJ[minBDistIdx] < nPFCsPerJetCut:
@@ -79,6 +84,7 @@ def recluster(pfCands, p, R, momCut=0, nPFCsPerJetCut=0):
             del pfCands[minBDistIdx]
             del nPFCsPerJ[minBDistIdx]
             #print("Adding as a jet")
+#    wait = input("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!DONE WITH EVENT")
 
     return reClJets, removedPFCIdxs
 
@@ -127,7 +133,7 @@ class ZJetReclusterProducer(Module):
 
     def analyze(self, event):
         #POWER=-1 => anti-kt, POWER=0 => cambridge/aachen, POWER=1 =>inclusive kt
-        power = 0
+        power = -1
         pt = -999.99
         eta = -999.99
         phi = -999.99
@@ -144,10 +150,14 @@ class ZJetReclusterProducer(Module):
             fjPFCands = Collection(event, "FatJetPFCands")
             pfCands = Collection(event, "PFCands")
             subJets = Collection(event, "SubJet")
+
             
             zSJ1 = subJets[event.Z_sJIdx1].p4()
             zSJ2 = subJets[event.Z_sJIdx2].p4()
-            boost = getBoost(zSJ1, zSJ2)
+            jets = Collection(event, "FatJet")
+            zJet = jets[event.Z_jetIdxAK8].p4()
+            boost = -1* zJet.BoostVector()
+            #boost = getBoost(zSJ1, zSJ2)
             boostTheta = boost.Theta()
             
             zJetPFCs = []
@@ -164,7 +174,7 @@ class ZJetReclusterProducer(Module):
             if len(zJetPFCs) < 2:
                 print("WARNING: Did not find at least 2 PFCs matching to Z AK8 jet!")
             else:
-                reClAK4Jets, removedPFCIdxs = recluster(pfCands=zJetPFCs, p=power, R=0.4, momCut=1, nPFCsPerJetCut=0)
+                reClAK4Jets, removedPFCIdxs = recluster(pfCands=zJetPFCs, p=power, R=0.4, momCut=0, nPFCsPerJetCut=0, remPFCsCut=0)
                 
                 #Record the 
                 for pfcIdx, pfc in enumerate(zJetPFCs):
@@ -215,14 +225,15 @@ zJetReclusterProducerConstr = lambda : ZJetReclusterProducer()
 
 from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import PostProcessor
 import os
-files = []
+#files = []
 #masses = ["250","500","750","1000","1500","2000","2500","3000","3500","4000","4500","5000"]
-masses = ["3000"]
-years = ["2022", "2022post", "2023", "2023post"]
+#masses = ["3000"]
+#years = ["2022", "2022post", "2023", "2023post"]
 #years = ["2022"]
-files = []
-for year in years:
-    for mass in masses:
-        files.append(os.environ["SIG_R3"] + "taustarToTauZ_m" + mass + "_" + year + ".root")
-p = PostProcessor(".", files, cut="", branchsel=None, postfix="", modules=[zJetReclusterProducerConstr()], histFileName="hists.root", histDirName="Hists")
+#files = ["root://cmsxrootd.fnal.gov//store/user/bbarton/TaustarToTauTauZ/BackgroundMC/PFNano/2023post/V0/DYto2L-2Jets_MLL-50_2023post.root"]
+files = [os.environ["SIG_R3"] + "taustarToTauZ_m3000_2023post.root"]
+#for year in years:
+#    for mass in masses:
+#        files.append(os.environ["SIG_R3"] + "taustarToTauZ_m" + mass + "_" + year + ".root")
+p = PostProcessor(".", files, cut="Z_isCand&&Z_dm==0", branchsel=None, postfix="", modules=[zJetReclusterProducerConstr()], histFileName="hists.root", histDirName="Hists")
 p.run()

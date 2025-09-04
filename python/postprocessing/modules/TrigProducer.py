@@ -43,26 +43,26 @@ class TrigProducer(Module):
         Trig_eIso = False
         Trig_muIso = False
 
-        if self.year == "2016" or self.year == "2016post":
-            Trig_eTau = False
-            Trig_muTau = False
-            Trig_tauTau = False
+        if self.year == "2016" or self.year == "2016post": #TODO for data, maybe have to add in ORs for earlier runs
+            Trig_eTau = event.HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20_SingleL1
+            Trig_muTau = event.HLT_IsoMu19_eta2p1_LooseIsoPFTau20_SingleL1
+            Trig_tauTau = event.HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_Reg
             Trig_tau = False #No single-tau trig for Run2
             Trig_tauOR = Trig_eTau or Trig_muTau or Trig_tauTau
-            Trig_MET = False
+            Trig_MET = event.HLT_PFMET170_HBHE_BeamHaloCleaned
             Trig_eIso = event.HLT_Ele27_WPTight_Gsf or event.HLT_Photon175
             Trig_muIso = event.HLT_IsoMu24 or event.HLT_IsoTkMu24
         elif self.year == "2017":
-            Trig_eTau = False
+            Trig_eTau = event.HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTau30_eta2p1_CrossL1
             Trig_muTau = False
-            Trig_tauTau = False
+            Trig_tauTau = event.HLT_DoubleTightChargedIsoPFTau35_Trk1_TightID_eta2p1_Reg or event.HLT_DoubleTightChargedIsoPFTau40_Trk1_eta2p1_Reg or event.HLT_DoubleMediumChargedIsoPFTau40_Trk1_TightID_eta2p1_Reg            
             Trig_tau = False #No single-tau trig for Run2
             Trig_tauOR = Trig_eTau or Trig_muTau or Trig_tauTau
-            Trig_MET = False
+            Trig_MET = event.HLT_PFMET200_HBHE_BeamHaloCleaned
             Trig_eIso = event.HLT_Ele35_WPTight_Gsf or event.HLT_Photon200
             Trig_muIso = event.HLT_IsoMu27
-        elif self.year == "2018":
-            Trig_eTau = event.HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTauHPS30_eta2p1_CrossL1
+        elif self.year == "2018":#TODO for data, maybe have to add in ORs for earlier runs
+            Trig_eTau = event.HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTauHPS30_eta2p1_CrossL1 
             Trig_muTau = event.HLT_IsoMu20_eta2p1_LooseChargedIsoPFTauHPS27_eta2p1_TightID_CrossL1
             Trig_tauTau = event.HLT_DoubleMediumChargedIsoPFTauHPS35_Trk1_eta2p1_Reg
             Trig_tau = False #No single-tau trig for Run2

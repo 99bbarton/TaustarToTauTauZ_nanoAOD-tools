@@ -447,3 +447,8 @@ class GenProducer(Module):
 
 genProducerConstr = lambda era: GenProducer(era)
 
+# -----------------------------------------------------------------------------------------------------------------------------
+
+#files = ["root://cmsxrootd.fnal.gov//store/user/bbarton/TaustarToTauTauZ/SignalMC/TauZ/taustarToTauZ_m3000_2018.root"]
+#p = PostProcessor(".", files, cut="1>0", branchsel=None, modules=[genProducerZTauConstr()] )
+#p.run()

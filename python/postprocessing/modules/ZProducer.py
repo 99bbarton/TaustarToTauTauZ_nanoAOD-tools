@@ -1,8 +1,9 @@
 from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection
 import PhysicsTools.NanoAODTools.postprocessing.framework.datamodel as datamodel
-from PhysicsTools.NanoAODTools.postprocessing.utils.Tools import getSFFile, yearToJetVeto
+from PhysicsTools.NanoAODTools.postprocessing.utils.Tools import getSFFile, yearToJetVeto, yearToEGMSfYr
 
+from ROOT import TH1F
 from correctionlib import _core as corrLib
 import gzip
 from ROOT import TH1F
@@ -14,10 +15,11 @@ class ZProducer(Module):
 
     def __init__(self, year):
         self.year = year
+
         if year in ["2016", "2016post", "2017", "2018"]:
             self.era = 2
         elif year in ["2022", "2022post", "2023", "2023post"]:
-            self.era = 2
+            self.era = 3
         else:
             print("ERROR: Unrecognized year passed to ETauProducer!")  
             exit(1)
@@ -26,6 +28,16 @@ class ZProducer(Module):
             unzipped = fil.read().strip()
         self.jetVetoMap = corrLib.CorrectionSet.from_file(unzipped)
 
+        sfFileName = getSFFile(year=year, pog="EGM")
+        with gzip.open(sfFileName,'rt') as fil:
+            unzipped = fil.read().strip()
+        self.egmSFs = corrLib.CorrectionSet.from_file(unzipped)
+
+        sfFileName = getSFFile(year=year, pog="MUO")
+        with gzip.open(sfFileName,'rt') as fil:
+            unzipped = fil.read().strip()
+        self.muSFs = corrLib.CorrectionSet.from_file(unzipped)
+        
         #self.writeHistFile = True
 
     def beginJob(self, histFile=None, histDirName=None):
@@ -60,6 +72,8 @@ class ZProducer(Module):
         self.out.branch("Z_nEE", "I") #"Number of candidate ee pairs found"
         self.out.branch("Z_nMuMu", "I") #"Number of candidate mumu pairs found"
         self.out.branch("Z_isCand", "O") #"True if Z is a good candidate (DM, mass, etc)"
+        self.out.branch("Z_eIDSFs", "F", 6) #"[down1, nom1, up1, down2, nom2, up2] SFs for Z daughter el ID if DM==1"
+        self.out.branch("Z_muIDSFs", "F", 6) #"[down1, nom1, up1, down2, nom2, up2] SFs for Z daughter mu ID if DM==2"   
 
     def analyze(self, event):
         Z_dm = -1
@@ -81,6 +95,9 @@ class ZProducer(Module):
         Z_nEE = 0
         Z_nMuMu = 0
         Z_isCand = False
+        Z_eIDSFs = [1, 1, 1, 1, 1, 1]
+        Z_muIDSFs = [1, 1, 1, 1, 1, 1]
+
 
         electrons = Collection(event, "Electron")
         for e1Idx, e1 in enumerate(electrons):
@@ -90,14 +107,14 @@ class ZProducer(Module):
                     cuts = (e1.charge * e2.charge) < 0 #Opposite charge
                     cuts = cuts and ((abs(e1.eta + e1.deltaEtaSC) >= 1.566 and abs(e1.eta + e1.deltaEtaSC) < 2.5) or abs( e1.eta + e1.deltaEtaSC) < 1.444)#Fiducial
                     cuts = cuts and ((abs(e2.eta + e2.deltaEtaSC) >= 1.566 and abs(e1.eta + e1.deltaEtaSC) < 2.5) or abs(e2.eta + e2.deltaEtaSC) < 1.444)
-                    #cuts = cuts and (e1.pt >= 20.0 and abs(e1.eta + e1.deltaEtaSC) < 2.5 and e1.mvaFall17V2noIso_WP80) #ID
-                    #cuts = cuts and (e2.pt >= 20.0 and abs(e2.eta + e2.deltaEtaSC) < 2.5 and e2.mvaFall17V2noIso_WP80)
+                    cuts = cuts and (e1.pt >= 20.0 and abs(e1.eta + e1.deltaEtaSC) < 2.5 and e1.mvaFall17V2noIso_WP80) #ID
+                    cuts = cuts and (e2.pt >= 20.0 and abs(e2.eta + e2.deltaEtaSC) < 2.5 and e2.mvaFall17V2noIso_WP80)
                 elif self.era == 3:
                     cuts = (e1.charge * e2.charge) < 0 #Opposite charge
                     cuts = cuts and ((abs(e1.eta + e1.deltaEtaSC) >= 1.566 and abs(e1.eta + e1.deltaEtaSC) < 2.5) or abs( e1.eta + e1.deltaEtaSC) < 1.444) #Fiducial
                     cuts = cuts and ((abs(e2.eta + e2.deltaEtaSC) >= 1.566 and abs(e1.eta + e1.deltaEtaSC) < 2.5) or abs(e2.eta + e2.deltaEtaSC) < 1.444)
-                    #cuts = cuts and (e1.pt >= 20.0 and abs(e1.eta + e1.deltaEtaSC) < 2.5 and e1.mvaNoIso_WP80 ) #ID (basic)
-                    #cuts = cuts and (e2.pt >= 20.0 and abs(e2.eta + e2.deltaEtaSC) < 2.5 and e2.mvaNoIso_WP80) #ID (basic)
+                    cuts = cuts and e1.pt >= 32.0 and e1.cutBased >= 3
+                    cuts = cuts and e2.pt >= 32.0 and e2.cutBased >= 3
 
                 if cuts:
                     Z_nEE += 1
@@ -117,11 +134,12 @@ class ZProducer(Module):
                             Z_dauID = (e1.pt >= 20.0 and abs(e1.eta + e1.deltaEtaSC) < 2.5 and e1.mvaFall17V2noIso_WP80)
                             Z_dauID = Z_dauID and (e2.pt >= 20.0 and abs(e2.eta + e2.deltaEtaSC) < 2.5 and e2.mvaFall17V2noIso_WP80)
                         elif self.era == 3: 
-                            #NB: A bug means that the "non-iso" el IDs require isolation! 
+                            #NB: A bug means that the "non-iso" MVA el IDs require isolation! 
                             #The reconstruction efficiency when requiring the ID is therefore much lower than expected and not recommended
                             # see https://twiki.cern.ch/twiki/bin/view/CMS/MultivariateElectronIdentificationRun3
-                            Z_dauID = (e1.pt >= 20.0 and abs(e1.eta + e1.deltaEtaSC) < 2.5 and e1.mvaNoIso_WP80 )
-                            Z_dauID = Z_dauID and (e2.pt >= 20.0 and abs(e2.eta + e2.deltaEtaSC) < 2.5 and e2.mvaNoIso_WP80)
+                            # Instead we use cut based ID (medium WP)
+                            Z_dauID = (e1.pt >= 20.0 and abs(e1.eta + e1.deltaEtaSC) < 2.5 and e1.cutBased >= 3 )
+                            Z_dauID = Z_dauID and (e2.pt >= 20.0 and abs(e2.eta + e2.deltaEtaSC) < 2.5 and e2.cutBased >= 3)
         
         muons = Collection(event, "Muon")
         for mu1Idx, mu1 in enumerate(muons):
@@ -144,7 +162,6 @@ class ZProducer(Module):
                             Z_d2Idx = mu2Idx if mu1.pt >= mu2.pt else mu1Idx
                             Z_dauDR = mu1.DeltaR(mu2)
                             Z_dauID = True # ID is applied for muons, just not electrons due to a bug with isolation
-
         
         if Z_dm < 0:
             ak8Jets = Collection(event, "FatJet")            
@@ -156,6 +173,11 @@ class ZProducer(Module):
                 jetID = jetID and (jet.mass >= 61.0 and jet.mass <= 151.0) #High range will be tightened later after reclustering
                 jetID = jetID and (abs(jet.eta) < 2.5 and jet.pt > 100)
                 jetID = jetID and jet.btagDeepB < 0.7 # Require no b-tag
+                
+                if self.era == 2:
+                    jetID = jetID and jet.particleNet_ZvsQCD > 0.9
+                elif self.era == 3:
+                    jetID = jetID and jet.particleNetWithMass_ZvsQCD > 0.9
 
                 #Apply jet veto maps phi must be in [-pi, pi]
                 phiAdj = jet.phi
@@ -164,11 +186,6 @@ class ZProducer(Module):
                 elif phiAdj < -pi:
                     phiAdj += 2*pi
                 jetID = jetID and self.jetVetoMap[yearToJetVeto[self.year]].evaluate("jetvetomap", jet.eta, phiAdj) == 0
-                
-                if self.era == 2:
-                    jetID = jetID and jet.particleNet_ZvsQCD > 0.9
-                elif self.era == 3:
-                    jetID = jetID and jet.particleNetWithMass_ZvsQCD > 0.9
 
                 if jetID:
                     self.h_ak8MassCuts.Fill(jet.mass)
@@ -246,9 +263,32 @@ class ZProducer(Module):
             #    Z_eta = theJet.eta
             #    Z_phi = theJet.phi
 
+
+        #Fill ID SFs for Z daughters
+        if Z_dm == 1:
+            for i, syst in enumerate(["sfdown", "sf", "sfup", "sfdown", "sf", "sfup"]):
+                if i < 3:
+                    if self.era == 2:
+                        Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp80noiso", electrons[Z_d1Idx].eta + electrons[Z_d1Idx].deltaEtaSC, electrons[Z_d1Idx].pt)
+                    else:
+                        Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "Medium", electrons[Z_d1Idx].eta + electrons[Z_d1Idx].deltaEtaSC, electrons[Z_d1Idx].pt)
+                else:
+                    if self.era == 2:
+                        Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp80noiso", electrons[Z_d2Idx].eta + electrons[Z_d2Idx].deltaEtaSC, electrons[Z_d2Idx].pt)
+                    else:
+                        Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "Medium", electrons[Z_d2Idx].eta + electrons[Z_d2Idx].deltaEtaSC, electrons[Z_d2Idx].pt)
+        elif Z_dm == 2:
+            for i, syst in enumerate(["systdown", "nominal", "systup", "systdown", "nominal", "systup"]):
+                if i < 3:
+                    Z_muIDSFs[i] = self.muSFs["NUM_MediumID_DEN_TrackerMuons"].evaluate(abs(muons[Z_d1Idx].eta), muons[Z_d1Idx].pt, syst)
+                else:
+                    Z_muIDSFs[i] = self.muSFs["NUM_MediumID_DEN_TrackerMuons"].evaluate(abs(muons[Z_d2Idx].eta), muons[Z_d2Idx].pt, syst)
+
+
+
         Z_isCand = Z_dm == 0 or Z_dm == 1 or Z_dm==2 #Z->jets, ee, mumu
         Z_isCand = Z_isCand and (Z_mass > 61 and Z_mass < 151) #Mass range
-        Z_isCand = Z_isCand and Z_dauDR < 1
+        Z_isCand = Z_isCand and Z_dauDR < 0.5
 
 
         self.out.fillBranch("Z_dm", Z_dm)
@@ -270,9 +310,17 @@ class ZProducer(Module):
         self.out.fillBranch("Z_nEE", Z_nEE)
         self.out.fillBranch("Z_nMuMu", Z_nMuMu)
         self.out.fillBranch("Z_isCand", Z_isCand)
+        self.out.fillBranch("Z_eIDSFs", Z_eIDSFs)
+        self.out.fillBranch("Z_muIDSFs", Z_muIDSFs)
 
         return True
     
     # -----------------------------------------------------------------------------------------------------------------------------
 
 zProducerConstr = lambda year: ZProducer(year = year)
+
+#from PhysicsTools.NanoAODTools.postprocessing.modules.GenProducerZTau import genProducerZTauConstr
+
+#files = ["root://cmsxrootd.fnal.gov//store/user/bbarton/TaustarToTauTauZ/SignalMC/TauZ/taustarToTauZ_m500_2018.root"]
+#p = PostProcessor(".", files, cut="1>0", branchsel=None, postfix="", modules=[genProducerZTauConstr(), zProducerConstr()] )
+#p.run()
