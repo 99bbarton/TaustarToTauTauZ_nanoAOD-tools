@@ -2,7 +2,6 @@ keep *
 drop HTXS*
 drop BeamSpot_*
 drop boostedTau_*
-drop nBoostedTau
 drop CaloMET_*
 drop ChsMET_*
 drop nCorrT1METJet
@@ -14,7 +13,6 @@ drop FatJetSVs_*
 drop DeepMETResponseTune*
 drop nFsrPhoton
 drop FsrPhoton*
-drop nDressedLepton
 drop GenDressedLepton*
 drop GenIsolatedPhoton*
 drop GenProton*

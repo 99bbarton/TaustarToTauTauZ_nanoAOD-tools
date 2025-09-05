@@ -31,7 +31,7 @@ for fN, inpFile in enumerate(files):
 
 print("\n\ncondorScript found the following input ROOT files:", inputFiles)
         
-modules = [genProducerConstr(era), trigProducerConstr(year), zProducerConstr(era), zJetReclusterProducerConstr(), eTauProducerConstr(era), muTauProducerConstr(era), tauTauProducerConstr(era), objCounterConstr()]
+modules = [genProducerConstr(era), trigProducerConstr(year), zProducerConstr(year), zJetReclusterProducerConstr(), eTauProducerConstr(year), muTauProducerConstr(year), tauTauProducerConstr(year), objCounterConstr()]
 
 if era ==2:
     cut_etau = "(Sum$(TMath::Abs(Electron_eta)<2.5 && Electron_pt>=24. && Electron_mvaFall17V2Iso_WP80 && (TMath::Abs(Electron_eta+Electron_deltaEtaSC)>=1.566||TMath::Abs(Electron_eta+Electron_deltaEtaSC)<1.444))>0 && Sum$(Tau_pt>20. && TMath::Abs(Tau_eta)<2.3 && TMath::Abs(Tau_dz)<0.2 && Tau_decayMode!=5 && Tau_decayMode!=6 && Tau_decayMode!=7)"
@@ -48,5 +48,5 @@ elif era == 3:
 preSelection = "(" + cut_Z + "&&(" + cut_tautau + "||" + cut_etau + "||" + cut_mutau + "))"
 
 
-p = PostProcessor("outputs", inputFiles, cut=preSelection, branchsel="../crab/keep_and_drop.txt", postfix="output", modules=modules, histFileName="hists.root", histDirName="Hists", fwkJobReport=True)
+p = PostProcessor("outputs", inputFiles, cut=preSelection, branchsel="../keep_and_drop.txt", postfix="output", modules=modules, fwkJobReport=True)
 p.run()

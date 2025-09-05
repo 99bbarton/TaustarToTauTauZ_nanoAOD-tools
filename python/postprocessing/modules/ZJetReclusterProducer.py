@@ -104,15 +104,15 @@ def getBoost(p1, p2):
 class ZJetReclusterProducer(Module):
 
     def __init__(self):
-        self.writeHistFile = True
+        self.writeHistFile = False
     # ----------------------------------------------------------------------------------------------------------------------------- #
 
     def beginJob(self, histFile=None, histDirName=None):
         Module.beginJob(self, histFile, histDirName)
-        self.h_cosThetaBoostPFCs_bef = TH1F("cosThetaBoostPFCs_bef", "Angular Separation Before Reclustering: Z-Boost and Z PFCs; cos(#Delta#Theta); # PFCs / Event", 8, -1, 1)
-        self.addObject(self.h_cosThetaBoostPFCs_bef)
-        self.h_cosThetaBoostPFCs_aft = TH1F("cosThetaBoostPFCs_aft", "Angular Separation After Reclustering: Z-Boost and Z PFCs; cos(#Delta#Theta); # PFCs / Event", 8, -1, 1)
-        self.addObject(self.h_cosThetaBoostPFCs_aft)
+        #self.h_cosThetaBoostPFCs_bef = TH1F("cosThetaBoostPFCs_bef", "Angular Separation Before Reclustering: Z-Boost and Z PFCs; cos(#Delta#Theta); # PFCs / Event", 8, -1, 1)
+        #self.addObject(self.h_cosThetaBoostPFCs_bef)
+        #self.h_cosThetaBoostPFCs_aft = TH1F("cosThetaBoostPFCs_aft", "Angular Separation After Reclustering: Z-Boost and Z PFCs; cos(#Delta#Theta); # PFCs / Event", 8, -1, 1)
+        #self.addObject(self.h_cosThetaBoostPFCs_aft)
     
     # ----------------------------------------------------------------------------------------------------------------------------- #
 
@@ -223,17 +223,17 @@ zJetReclusterProducerConstr = lambda : ZJetReclusterProducer()
 
 # ----------------------------------------------------------------------------------------------------------------------------- #
 
-from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import PostProcessor
-import os
+#from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import PostProcessor
+#import os
 #files = []
 #masses = ["250","500","750","1000","1500","2000","2500","3000","3500","4000","4500","5000"]
 #masses = ["3000"]
 #years = ["2022", "2022post", "2023", "2023post"]
 #years = ["2022"]
 #files = ["root://cmsxrootd.fnal.gov//store/user/bbarton/TaustarToTauTauZ/BackgroundMC/PFNano/2023post/V0/DYto2L-2Jets_MLL-50_2023post.root"]
-files = [os.environ["SIG_R3"] + "taustarToTauZ_m3000_2023post.root"]
+#files = [os.environ["SIG_R3"] + "taustarToTauZ_m3000_2023post.root"]
 #for year in years:
 #    for mass in masses:
 #        files.append(os.environ["SIG_R3"] + "taustarToTauZ_m" + mass + "_" + year + ".root")
-p = PostProcessor(".", files, cut="Z_isCand&&Z_dm==0", branchsel=None, postfix="", modules=[zJetReclusterProducerConstr()], histFileName="hists.root", histDirName="Hists")
-p.run()
+#p = PostProcessor(".", files, cut="Z_isCand&&Z_dm==0", branchsel=None, postfix="", modules=[zJetReclusterProducerConstr()], histFileName="hists.root", histDirName="Hists")
+#p.run()

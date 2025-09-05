@@ -24,7 +24,10 @@ class ZProducer(Module):
             print("ERROR: Unrecognized year passed to ETauProducer!")  
             exit(1)
 
-        with gzip.open(getSFFile(year=year, pog="JME", typ="VETO"),'rt') as fil:
+        sfFileName = getSFFile(year=year, pog="JME", typ="VETO")
+        print(sfFileName)
+        print(type(sfFileName))
+        with gzip.open(sfFileName,'rt') as fil:
             unzipped = fil.read().strip()
         self.jetVetoMap = corrLib.CorrectionSet.from_file(unzipped)
 

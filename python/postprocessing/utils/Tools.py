@@ -80,7 +80,7 @@ def isBetween(phiA, phiB, phiTest):
 #----------------------------------------------------------------------------------------------------------
 
 def getSFFile(year, pog, typ=""):
-    filename = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/"
+    filename = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/"
     filename += pog + "/"
 
     if year == "2016":
@@ -139,6 +139,8 @@ def getSFFile(year, pog, typ=""):
     else:
         print("ERROR: Unrecognized POG was provided to getSFFile")
         exit(2)
+
+    return filename
 
 #--------------------------------------------------------------------------------------
 
