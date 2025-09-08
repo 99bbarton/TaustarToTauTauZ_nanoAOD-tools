@@ -8,7 +8,7 @@
 # Mu : https://twiki.cern.ch/twiki/bin/view/CMS/MuonHLT#Details_for_each_year
 
 
-from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import PostProcessor
+#from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import PostProcessor
 from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection
 import PhysicsTools.NanoAODTools.postprocessing.framework.datamodel as datamodel

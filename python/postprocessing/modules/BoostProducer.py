@@ -1,6 +1,6 @@
 #Producer to store information of the Z->jet events in the Z rest frame
 
-from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import PostProcessor
+#from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import PostProcessor
 from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection
 import PhysicsTools.NanoAODTools.postprocessing.framework.datamodel as datamodel

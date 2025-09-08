@@ -2,7 +2,7 @@
 #This producer is only intented to be run over signal MC for that decay channel
 
 
-from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import PostProcessor
+#from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import PostProcessor
 from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection
 import PhysicsTools.NanoAODTools.postprocessing.framework.datamodel as datamodel

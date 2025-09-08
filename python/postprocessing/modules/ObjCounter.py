@@ -75,10 +75,10 @@ class ObjCounter(Module):
 
 objCounterConstr = lambda: ObjCounter()
 
-from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import PostProcessor
-from PhysicsTools.NanoAODTools.postprocessing.modules.ObjCounter import objCounterConstr
+#from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import PostProcessor
+#from PhysicsTools.NanoAODTools.postprocessing.modules.ObjCounter import objCounterConstr
 
 #files = ["root://cmsxrootd.fnal.gov//store/user/bbarton/TaustarToTauTauZ/BackgroundMC/PFNano/2022post/V0/TTto2L2Nu_2022post.root"]
-files = ["root://cmsxrootd.fnal.gov//store/user/bbarton/TaustarToTauTauZ/SignalMC/TauZ/27Feb2025/taustarToTauZ_m3000_2022post.root"]
-p = PostProcessor(".", files, cut="", branchsel=None, postfix="", modules=[objCounterConstr()])
-p.run()
+#files = ["root://cmsxrootd.fnal.gov//store/user/bbarton/TaustarToTauTauZ/SignalMC/TauZ/27Feb2025/taustarToTauZ_m3000_2022post.root"]
+#p = PostProcessor(".", files, cut="", branchsel=None, postfix="", modules=[objCounterConstr()])
+#p.run()
