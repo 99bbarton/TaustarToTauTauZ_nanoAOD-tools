@@ -168,7 +168,7 @@ class ZJetReclusterProducer(Module):
                     dTheta = pfCand.Theta() - boostTheta
                     if dTheta < 0:
                         dTheta += 2*pi
-                    self.h_cosThetaBoostPFCs_bef.Fill(cos(dTheta))
+                    #self.h_cosThetaBoostPFCs_bef.Fill(cos(dTheta))
                     zJetPFCs.append(pfCand)
                     
             if len(zJetPFCs) < 2:
@@ -182,7 +182,7 @@ class ZJetReclusterProducer(Module):
                         dTheta = pfc.Theta() - boostTheta
                         if dTheta < 0:
                             dTheta += 2*pi
-                        self.h_cosThetaBoostPFCs_aft.Fill(cos(dTheta))
+                        #self.h_cosThetaBoostPFCs_aft.Fill(cos(dTheta))
 
 
                 reClAK8Jet = TLorentzVector()

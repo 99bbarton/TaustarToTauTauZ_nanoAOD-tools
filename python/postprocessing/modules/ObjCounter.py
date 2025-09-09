@@ -16,8 +16,8 @@ class ObjCounter(Module):
         self.out.branch("ObjCnt_nJetsMatch", "O") #"True if the number of jets in th event matches the channel and Z DM"
 
     def analyze(self, event):
-        if not (event.ETau_isCand or event.MuTau_isCand or event.TauTau_isCand) or not event.Z_isCand:
-            return False
+        #if not (event.ETau_isCand or event.MuTau_isCand or event.TauTau_isCand) or not event.Z_isCand:
+        #    return False
 
         nBTags = 0
         nLMatch = False

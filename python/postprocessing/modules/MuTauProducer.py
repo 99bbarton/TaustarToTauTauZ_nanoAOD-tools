@@ -28,12 +28,12 @@ class MuTauProducer(Module):
         sfFileName = getSFFile(year=year, pog="MUO")
         with gzip.open(sfFileName,'rt') as fil:
             unzipped = fil.read().strip()
-        self.muSFs = corrLib.CorrectionSet.from_file(unzipped)
+        self.muSFs = corrLib.CorrectionSet.from_string(unzipped)
 
         getSFFile(year=year, pog="TAU")
         with gzip.open(sfFileName,'rt') as fil:
             unzipped = fil.read().strip()
-        self.tauSFs = corrLib.CorrectionSet.from_file(unzipped)
+        self.tauSFs = corrLib.CorrectionSet.from_string(unzipped)
         
 
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
@@ -140,9 +140,8 @@ class MuTauProducer(Module):
                             continue
                     tauIdx = tauI
                     theTau = tau
-                    tauCorr =  self.tauSFs["tau_energy_scale"].evaluate(theTau.pt, abs(theTau.eta), theTau.decayMode, theTau.genPartFlav, "Loose", "VVLoose", "nom")
                     theTau.pt = tauCorrPt
-                    theTau.mass = theTau.mass * tauCorr
+                    theTau.mass = theTau.mass * esCorr
                     currTauPt = tauCorrPt
                     currTauVsJet = tau.idDeepTau2018v2p5VSjet
         

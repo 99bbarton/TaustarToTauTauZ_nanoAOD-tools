@@ -30,12 +30,13 @@ class ETauProducer(Module):
         sfFileName = getSFFile(year=year, pog="EGM")
         with gzip.open(sfFileName,'rt') as fil:
             unzipped = fil.read().strip()
-        self.egmSFs = corrLib.CorrectionSet.from_file(unzipped)
+        self.egmSFs = corrLib.CorrectionSet.from_string(unzipped)
 
+        
         getSFFile(year=year, pog="TAU")
         with gzip.open(sfFileName,'rt') as fil:
             unzipped = fil.read().strip()
-        self.tauSFs = corrLib.CorrectionSet.from_file(unzipped)
+        self.tauSFs = corrLib.CorrectionSet.from_string(unzipped)
         
 
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
@@ -135,7 +136,7 @@ class ETauProducer(Module):
                 esCorr = 1.00
                 #esCorr = self.tauSFs["tau_energy_scale"].evaluate(tau.pt, abs(tau.eta), tau.decayMode, tau.genPartFlav, "Loose", "VVLoose", "nom")
                 tauCorrPt = tau.pt * esCorr 
-                tauID = tau.corrPt > 20 and abs(tau.eta) < 2.5 and abs(tau.dz) < 0.2 
+                tauID = tauCorrPt > 20 and abs(tau.eta) < 2.5 and abs(tau.dz) < 0.2 
 
                 #WPs chosen based on existing tau pog SFs
                 tauID = tauID and tau.idDeepTau2018v2p5VSjet >= 4 #4= loose
@@ -193,7 +194,7 @@ class ETauProducer(Module):
                     tauVsMuSF[i] = self.tauSFs["DeepTau2017v2p1VSmu"].evaluate(abs(theTau.eta), theTau.decayMode, theTau.genPartFlav, "Tight", syst)
                     tauVsJetSF[i] = self.tauSFs["DeepTau2017v2p1VSjet"].evaluate(abs(theTau.eta), theTau.decayMode, theTau.genPartFlav, "Loose", syst)
             for i, syst in enumerate(["sfdown", "sf", "sfup"]):
-                eIDSF[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp80iso", theEl.eta + theEl.deltaEtaSC, theEl.pt)
+                eIDSF[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp80iso", theEl.eta + theEl.deltaEtaSC, theEl.pt, theEl.phi)
             
 
             #If the event also has a good Z candidate, we can calculate collinear mass

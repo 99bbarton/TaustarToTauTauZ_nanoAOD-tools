@@ -29,7 +29,7 @@ class TauTauProducer(Module):
 
         with gzip.open(getSFFile(year=year, pog="TAU"),'rt') as fil:
             unzipped = fil.read().strip()
-        self.tauSFs = corrLib.CorrectionSet.from_file(unzipped)
+        self.tauSFs = corrLib.CorrectionSet.from_string(unzipped)
 
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.out = wrappedOutputTree
@@ -51,10 +51,10 @@ class TauTauProducer(Module):
         self.out.branch("TauTau_trigMatchTau", "O") #"True if the event passes the single tau trigger and one tau matches to the trigObj"
         self.out.branch("TauTau_trigMatchTauTau", "O") #"True if the event passes the d-tau trigger and both taus matche to the trigObj"
         #Scale factors
-        self.out.branch("ETau_tauESCorr" , "F", 6) #"The energy scale correction applied to the tau [down1, nom1, up1, down2, nom2, up2]"
-        self.out.branch("ETau_tauVsESF", "F", 6) #"DeepTau tau vs e SFs [down1, nom1, up1, down2, nom2, up2]"
-        self.out.branch("ETau_tauVsMuSF", "F", 6) #"DeepTau tau vs mu SFs [down1, nom1, up1, down2, nom2, up2]"
-        self.out.branch("ETau_tauVsJetSF", "F", 6) #"DeepTau tau vs jet SFs [down1, nom1, up1, down2, nom2, up2]"
+        self.out.branch("TauTau_tauESCorr" , "F", 6) #"The energy scale correction applied to the tau [down1, nom1, up1, down2, nom2, up2]"
+        self.out.branch("TauTau_tauVsESF", "F", 6) #"DeepTau tau vs e SFs [down1, nom1, up1, down2, nom2, up2]"
+        self.out.branch("TauTau_tauVsMuSF", "F", 6) #"DeepTau tau vs mu SFs [down1, nom1, up1, down2, nom2, up2]"
+        self.out.branch("TauTau_tauVsJetSF", "F", 6) #"DeepTau tau vs jet SFs [down1, nom1, up1, down2, nom2, up2]"
 
 
 

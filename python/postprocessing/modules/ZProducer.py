@@ -25,21 +25,19 @@ class ZProducer(Module):
             exit(1)
 
         sfFileName = getSFFile(year=year, pog="JME", typ="VETO")
-        print(sfFileName)
-        print(type(sfFileName))
         with gzip.open(sfFileName,'rt') as fil:
             unzipped = fil.read().strip()
-        self.jetVetoMap = corrLib.CorrectionSet.from_file(unzipped)
+        self.jetVetoMap = corrLib.CorrectionSet.from_string(unzipped)
 
         sfFileName = getSFFile(year=year, pog="EGM")
         with gzip.open(sfFileName,'rt') as fil:
             unzipped = fil.read().strip()
-        self.egmSFs = corrLib.CorrectionSet.from_file(unzipped)
+        self.egmSFs = corrLib.CorrectionSet.from_string(unzipped)
 
         sfFileName = getSFFile(year=year, pog="MUO")
         with gzip.open(sfFileName,'rt') as fil:
             unzipped = fil.read().strip()
-        self.muSFs = corrLib.CorrectionSet.from_file(unzipped)
+        self.muSFs = corrLib.CorrectionSet.from_string(unzipped)
         
         #self.writeHistFile = True
 
@@ -170,8 +168,8 @@ class ZProducer(Module):
             ak8Jets = Collection(event, "FatJet")            
         
             for jetIdx, jet in enumerate(ak8Jets):
-                if abs(jet.eta) < 2.5 and jet.pt > 100:
-                    self.h_ak8Mass.Fill(jet.mass)
+                #if abs(jet.eta) < 2.5 and jet.pt > 100:
+                    #self.h_ak8Mass.Fill(jet.mass)
                 jetID = jet.jetId == 6 #2 = pass tight ID but fail tight lepton veto, 6 = pass both
                 jetID = jetID and (jet.mass >= 61.0 and jet.mass <= 151.0) #High range will be tightened later after reclustering
                 jetID = jetID and (abs(jet.eta) < 2.5 and jet.pt > 100)
@@ -189,9 +187,12 @@ class ZProducer(Module):
                 elif phiAdj < -pi:
                     phiAdj += 2*pi
                 jetID = jetID and self.jetVetoMap[yearToJetVeto[self.year]].evaluate("jetvetomap", jet.eta, phiAdj) == 0
-
+        
+                #jetID = jetID and self.jetVetoMap["jetvetomap"].evaluate(jet.eta, phiAdj) == 0
+                
+                
                 if jetID:
-                    self.h_ak8MassCuts.Fill(jet.mass)
+                    #self.h_ak8MassCuts.Fill(jet.mass)
                     Z_nJetCands += 1
                     if abs(jet.mass - 91.18) < abs(Z_mass - 91.18):
                         Z_mass = jet.mass 
@@ -272,14 +273,14 @@ class ZProducer(Module):
             for i, syst in enumerate(["sfdown", "sf", "sfup", "sfdown", "sf", "sfup"]):
                 if i < 3:
                     if self.era == 2:
-                        Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp80noiso", electrons[Z_d1Idx].eta + electrons[Z_d1Idx].deltaEtaSC, electrons[Z_d1Idx].pt)
+                        Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp80noiso", electrons[Z_d1Idx].eta + electrons[Z_d1Idx].deltaEtaSC, electrons[Z_d1Idx].pt, electrons[Z_d1Idx].phi)
                     else:
-                        Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "Medium", electrons[Z_d1Idx].eta + electrons[Z_d1Idx].deltaEtaSC, electrons[Z_d1Idx].pt)
+                        Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "Medium", electrons[Z_d1Idx].eta + electrons[Z_d1Idx].deltaEtaSC, electrons[Z_d1Idx].pt, electrons[Z_d1Idx].phi)
                 else:
                     if self.era == 2:
-                        Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp80noiso", electrons[Z_d2Idx].eta + electrons[Z_d2Idx].deltaEtaSC, electrons[Z_d2Idx].pt)
+                        Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp80noiso", electrons[Z_d2Idx].eta + electrons[Z_d2Idx].deltaEtaSC, electrons[Z_d2Idx].pt, electrons[Z_d1Idx].phi)
                     else:
-                        Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "Medium", electrons[Z_d2Idx].eta + electrons[Z_d2Idx].deltaEtaSC, electrons[Z_d2Idx].pt)
+                        Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "Medium", electrons[Z_d2Idx].eta + electrons[Z_d2Idx].deltaEtaSC, electrons[Z_d2Idx].pt, electrons[Z_d1Idx].phi)
         elif Z_dm == 2:
             for i, syst in enumerate(["systdown", "nominal", "systup", "systdown", "nominal", "systup"]):
                 if i < 3:

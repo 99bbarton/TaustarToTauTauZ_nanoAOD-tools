@@ -241,8 +241,8 @@ class GenProducer(Module):
                         genJetAK8s = Collection(event, "GenJetAK8")
                         nMatches_AK8 = 0
                         for jetIdx, jet in enumerate(genJetAK8s):
-                            if abs(jet.eta) < 2.5 and jet.pt > 100:
-                                self.h_genAk8Mass.Fill(jet.mass)
+                            #if abs(jet.eta) < 2.5 and jet.pt > 100:
+                            #    self.h_genAk8Mass.Fill(jet.mass)
                             if jet.DeltaR(theZ) < 0.1 and abs(jet.pt - theZ.pt) <= 0.1*theZ.pt:# and abs(jet.mass - 91.18) < 9:
                                 nMatches_AK8 += 1
                                 if zGenAK8Idx >= 0:
@@ -257,8 +257,8 @@ class GenProducer(Module):
                         zGenAK4Idx = -1
                         nMatches_AK4 = 0
                         for jetIdx, jet in enumerate(genJetAK4s):
-                            if abs(jet.eta) < 2.5 and jet.pt > 100:
-                                self.h_genAk4Mass.Fill(jet.mass)
+                            #if abs(jet.eta) < 2.5 and jet.pt > 100:
+                            #    self.h_genAk4Mass.Fill(jet.mass)
                             if jet.DeltaR(theZ) < 0.1 and abs(jet.pt - theZ.pt) <= 0.1*theZ.pt:# and abs(jet.mass - 91.18) < 9:
                                 nMatches_AK4 += 1
                                 if zGenAK4Idx >= 0:
