@@ -275,12 +275,18 @@ class ZProducer(Module):
                     if self.era == 2:
                         Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp80noiso", electrons[Z_d1Idx].eta + electrons[Z_d1Idx].deltaEtaSC, electrons[Z_d1Idx].pt, electrons[Z_d1Idx].phi)
                     else:
-                        Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "Medium", electrons[Z_d1Idx].eta + electrons[Z_d1Idx].deltaEtaSC, electrons[Z_d1Idx].pt, electrons[Z_d1Idx].phi)
+                        if self.year == "2022":
+                            Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "Medium", electrons[Z_d1Idx].eta + electrons[Z_d1Idx].deltaEtaSC, electrons[Z_d1Idx].pt)
+                        else: #2023 has phi-dependent SFs
+                            Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "Medium", electrons[Z_d1Idx].eta + electrons[Z_d1Idx].deltaEtaSC, electrons[Z_d1Idx].pt, electrons[Z_d1Idx].phi)
                 else:
                     if self.era == 2:
                         Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp80noiso", electrons[Z_d2Idx].eta + electrons[Z_d2Idx].deltaEtaSC, electrons[Z_d2Idx].pt, electrons[Z_d1Idx].phi)
                     else:
-                        Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "Medium", electrons[Z_d2Idx].eta + electrons[Z_d2Idx].deltaEtaSC, electrons[Z_d2Idx].pt, electrons[Z_d1Idx].phi)
+                        if self.year == "2022":
+                            Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "Medium", electrons[Z_d2Idx].eta + electrons[Z_d2Idx].deltaEtaSC, electrons[Z_d2Idx].pt)
+                        else:
+                            Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "Medium", electrons[Z_d2Idx].eta + electrons[Z_d2Idx].deltaEtaSC, electrons[Z_d2Idx].pt, electrons[Z_d1Idx].phi)
         elif Z_dm == 2:
             for i, syst in enumerate(["systdown", "nominal", "systup", "systdown", "nominal", "systup"]):
                 if i < 3:
