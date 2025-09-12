@@ -51,13 +51,13 @@ class ETauProducer(Module):
         self.out.branch("ETau_ETauDPhi", "F") #"Delta phi between the electron and tau"
         #self.out.branch("ETau_ETauCos2DPhi", "F") #"cos^2(tau.phi-e.phi)"
         self.out.branch("ETau_visM", "F") #"Visible mass of the e+tau pair"
-        self.out.branch("ETau_highPtGenMatch", "O") #"True if the higher pt tau decay matched to the GEN taustar tau"
-        self.out.branch("ETau_highPtCollM", "F") #"Either the min or max coll m, whichever was from the higher pt tau decay"
+        #self.out.branch("ETau_highPtGenMatch", "O") #"True if the higher pt tau decay matched to the GEN taustar tau"
+        #self.out.branch("ETau_highPtCollM", "F") #"Either the min or max coll m, whichever was from the higher pt tau decay"
         
         #e+tau+Z
         self.out.branch("ETau_haveTrip", "O") #"True if have a good e, tau, and Z"
-        self.out.branch("ETau_minCollM", "F") #"The smaller collinear mass of either e+nu+Z or tau+nu+Z"
-        self.out.branch("ETau_maxCollM", "F") #"The larger collinear mass of either e+nu+Z or tau+nu+Z"
+        self.out.branch("ETau_minCollM", "F") #"The smaller collinear mass of either e+nu+Z or tau+nu+Z. Uses best Z of recl vs reco Z mass"
+        self.out.branch("ETau_maxCollM", "F") #"The larger collinear mass of either e+nu+Z or tau+nu+Z. Uses best Z of recl vs reco Z mass"
 
         #Scale factors
         self.out.branch("ETau_tauESCorr" , "F", 3) #"The energy scale correction applied to the tau [down, nom, up]"
@@ -226,7 +226,7 @@ class ETauProducer(Module):
                 fullTauDecay = theTau.p4() + nuTau
 
                 theZ = TLorentzVector()
-                if event.ZReClJ_mass > 0:
+                if abs(event.ZReClJ_mass - 91.19) < abs(event.Z_mass - 91.19) and event.Z_dm == 0: #By default, choose closest mass (reclustered vs reco) to nominal
                     theZ.SetPtEtaPhiM(event.ZReClJ_pt, event.ZReClJ_eta, event.ZReClJ_phi, event.ZReClJ_mass)
                 else:
                     theZ.SetPtEtaPhiM(event.Z_pt, event.Z_eta, event.Z_phi, event.Z_mass)
@@ -236,18 +236,18 @@ class ETauProducer(Module):
                 minCollM = min(collM_tauZ, collM_elZ)
                 maxCollM = max(collM_tauZ, collM_elZ)
 
-                genParts = Collection(event, "GenPart")
-                if fullElDecay.Pt() > fullTauDecay.Pt():
-                    highPtCollM = collM_elZ
-                    prodChain = getProdChain(theEl.genPartIdx, genParts)
-                    highPtGenMatch = prodChainContains(prodChain, idx=event.Gen_tsTauIdx)
-                elif theTau.genPartIdx >= 0:
-                    highPtCollM = collM_tauZ
-                    prodChain = getProdChain(event.GenVisTau_genPartIdxMother[theTau.genPartIdx], genParts)
-                    highPtGenMatch = prodChainContains(prodChain, idx=event.Gen_tsTauIdx)
-                else:
-                    #print("In ETau tau.genPartIdx is negative!")
-                    pass
+                #genParts = Collection(event, "GenPart")
+                #if fullElDecay.Pt() > fullTauDecay.Pt():
+                #    highPtCollM = collM_elZ
+                #    prodChain = getProdChain(theEl.genPartIdx, genParts)
+                #    highPtGenMatch = prodChainContains(prodChain, idx=event.Gen_tsTauIdx)
+                #elif theTau.genPartIdx >= 0:
+                #    highPtCollM = collM_tauZ
+                #    prodChain = getProdChain(event.GenVisTau_genPartIdxMother[theTau.genPartIdx], genParts)
+                #    highPtGenMatch = prodChainContains(prodChain, idx=event.Gen_tsTauIdx)
+                #else:
+                #    #print("In ETau tau.genPartIdx is negative!")
+                #    pass
 
                 isCand = haveTrip #A good triplet
                 isCand = isCand and event.Trig_tau  #Appropriate trigger
@@ -289,8 +289,8 @@ class ETauProducer(Module):
         self.out.fillBranch("ETau_haveTrip", haveTrip) 
         self.out.fillBranch("ETau_minCollM", minCollM)
         self.out.fillBranch("ETau_maxCollM", maxCollM)
-        self.out.fillBranch("ETau_highPtGenMatch", highPtGenMatch)
-        self.out.fillBranch("ETau_highPtCollM", highPtCollM)
+        #self.out.fillBranch("ETau_highPtGenMatch", highPtGenMatch)
+        #self.out.fillBranch("ETau_highPtCollM", highPtCollM)
         self.out.fillBranch("ETau_tauESCorr", tauESCorr)
         self.out.fillBranch("ETau_tauVsESF",tauVsESF)
         self.out.fillBranch("ETau_tauVsMuSF", tauVsMuSF)

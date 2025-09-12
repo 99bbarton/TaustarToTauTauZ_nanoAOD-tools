@@ -43,10 +43,10 @@ class TauTauProducer(Module):
         #self.out.branch("TauTau_TauTauCos2DPhi", "F") #"cos^2(tau1.phi-tau2.phi)"
         self.out.branch("TauTau_visM", "F") #"Visible mass of the tau pair"
         self.out.branch("TauTau_haveTrip", "O") #"True if have two good taus and a Z"
-        self.out.branch("TauTau_minCollM", "F") #"The smaller collinear mass of tau1+nu+Z or tau2+nu+Z"
-        self.out.branch("TauTau_maxCollM", "F") #"The larger collinear mass of either tau1+nu+Z or tau2+nu+Z"
-        self.out.branch("TauTau_highPtGenMatch", "O") #"True if the higher pt tau decay matched to the GEN taustar tau"
-        self.out.branch("TauTau_highPtCollM", "F") #"Either the min or max coll m, whichever was from the higher pt tau decay"
+        self.out.branch("TauTau_minCollM", "F") #"The smaller collinear mass of tau1+nu+Z or tau2+nu+Z. Uses best Z of recl vs reco Z mass"
+        self.out.branch("TauTau_maxCollM", "F") #"The larger collinear mass of either tau1+nu+Z or tau2+nu+Z. Uses best Z of recl vs reco Z mass"
+        #self.out.branch("TauTau_highPtGenMatch", "O") #"True if the higher pt tau decay matched to the GEN taustar tau"
+        #self.out.branch("TauTau_highPtCollM", "F") #"Either the min or max coll m, whichever was from the higher pt tau decay"
         self.out.branch("TauTau_isCand", "O") #"True if the event is good tau+tau+Z event"
         self.out.branch("TauTau_trigMatchTau", "O") #"True if the event passes the single tau trigger and one tau matches to the trigObj"
         self.out.branch("TauTau_trigMatchTauTau", "O") #"True if the event passes the d-tau trigger and both taus matche to the trigObj"
@@ -55,7 +55,6 @@ class TauTauProducer(Module):
         self.out.branch("TauTau_tauVsESF", "F", 6) #"DeepTau tau vs e SFs [down1, nom1, up1, down2, nom2, up2]"
         self.out.branch("TauTau_tauVsMuSF", "F", 6) #"DeepTau tau vs mu SFs [down1, nom1, up1, down2, nom2, up2]"
         self.out.branch("TauTau_tauVsJetSF", "F", 6) #"DeepTau tau vs jet SFs [down1, nom1, up1, down2, nom2, up2]"
-
 
 
     def analyze(self, event):
@@ -97,7 +96,7 @@ class TauTauProducer(Module):
         goodTaus = [] #List of (tauIdx, tau.IDvsJets, tau.pt)
         for tauI, tau in enumerate(taus):
             
-            if self.era == 2:#TODO
+            if self.era == 2:
                 esCorr = self.tauSFs["tau_energy_scale"].evaluate(tau.pt, abs(tau.eta), tau.decayMode, tau.genPartFlav, "Loose", "VVLoose", "nom")
                 tauCorrPt = tau.pt * esCorr 
                 tauID = tauCorrPt> 20 and abs(tau.eta) < 2.3 and abs(tau.dz) < 0.2 
@@ -216,7 +215,7 @@ class TauTauProducer(Module):
                 fullTau2Decay = tau2.p4() + nuTau2
 
                 theZ = TLorentzVector()
-                if event.ZReClJ_mass > 0:
+                if abs(event.ZReClJ_mass - 91.19) < abs(event.Z_mass - 91.19) and event.Z_dm == 0:
                     theZ.SetPtEtaPhiM(event.ZReClJ_pt, event.ZReClJ_eta, event.ZReClJ_phi, event.ZReClJ_mass)
                 else:
                     theZ.SetPtEtaPhiM(event.Z_pt, event.Z_eta, event.Z_phi, event.Z_mass)
@@ -226,18 +225,18 @@ class TauTauProducer(Module):
                 minCollM = min(collM_tau1Z, collM_tau2Z)
                 maxCollM = max(collM_tau1Z, collM_tau2Z)
 
-                genParts = Collection(event, "GenPart")
-                if fullTau1Decay.Pt() > fullTau2Decay.Pt() and tau1.genPartIdx >= 0:
-                    highPtCollM = collM_tau1Z
-                    prodChain = getProdChain(event.GenVisTau_genPartIdxMother[tau1.genPartIdx], genParts)
-                    highPtGenMatch = prodChainContains(prodChain, idx=event.Gen_tsTauIdx)
-                elif tau2.genPartIdx >= 0:
-                    highPtCollM = collM_tau2Z
-                    prodChain = getProdChain(event.GenVisTau_genPartIdxMother[tau2.genPartIdx], genParts)
-                    highPtGenMatch = prodChainContains(prodChain, idx=event.Gen_tsTauIdx)
-                else:
-                    pass
-                    #print("In TauTau tau1 or tau2 .genPartIdx is negative!")
+                #genParts = Collection(event, "GenPart")
+                #if fullTau1Decay.Pt() > fullTau2Decay.Pt() and tau1.genPartIdx >= 0:
+                #    highPtCollM = collM_tau1Z
+                #    prodChain = getProdChain(event.GenVisTau_genPartIdxMother[tau1.genPartIdx], genParts)
+                #    highPtGenMatch = prodChainContains(prodChain, idx=event.Gen_tsTauIdx)
+                #elif tau2.genPartIdx >= 0:
+                #    highPtCollM = collM_tau2Z
+                #    prodChain = getProdChain(event.GenVisTau_genPartIdxMother[tau2.genPartIdx], genParts)
+                #    highPtGenMatch = prodChainContains(prodChain, idx=event.Gen_tsTauIdx)
+                #else:
+                #    pass
+                #    #print("In TauTau tau1 or tau2 .genPartIdx is negative!")
 
                 isCand = haveTrip #A good triplet
                 isCand = isCand and (event.Trig_tau or event.Trig_tauTau)  #Appropriate trigger
@@ -279,8 +278,8 @@ class TauTauProducer(Module):
         self.out.fillBranch("TauTau_haveTrip", haveTrip)
         self.out.fillBranch("TauTau_minCollM", minCollM)
         self.out.fillBranch("TauTau_maxCollM", maxCollM)
-        self.out.fillBranch("TauTau_highPtGenMatch", highPtGenMatch)
-        self.out.fillBranch("TauTau_highPtCollM", highPtCollM)
+        #self.out.fillBranch("TauTau_highPtGenMatch", highPtGenMatch)
+        #self.out.fillBranch("TauTau_highPtCollM", highPtCollM)
         self.out.fillBranch("TauTau_tauESCorr", tauESCorr)
         self.out.fillBranch("TauTau_tauVsESF",tauVsESF)
         self.out.fillBranch("TauTau_tauVsMuSF", tauVsMuSF)
