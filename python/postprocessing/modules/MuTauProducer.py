@@ -30,7 +30,7 @@ class MuTauProducer(Module):
             unzipped = fil.read().strip()
         self.muSFs = corrLib.CorrectionSet.from_string(unzipped)
 
-        getSFFile(year=year, pog="TAU")
+        sfFileName = getSFFile(year=year, pog="TAU")
         with gzip.open(sfFileName,'rt') as fil:
             unzipped = fil.read().strip()
         self.tauSFs = corrLib.CorrectionSet.from_string(unzipped)
@@ -99,16 +99,16 @@ class MuTauProducer(Module):
         currTauPt = 0
         theTau = None
         for tauI, tau in enumerate(taus):
-            if self.era == 2: 
-                esCorr = self.tauSFs["tau_energy_scale"].evaluate(tau.pt, abs(tau.eta), tau.decayMode, tau.genPartFlav, "Loose", "VVLoose", "nom")
+            if self.era == 2:
+                if tau.decayMode == 5 or tau.decayMode == 6:
+                    continue
+                esCorr = self.tauSFs["tau_energy_scale"].evaluate(tau.pt, abs(tau.eta), tau.decayMode, tau.genPartFlav, "DeepTau2017v2p1", "nom")
                 tauCorrPt = tau.pt * esCorr 
                 tauID = tauCorrPt> 20 and abs(tau.eta) < 2.3 and abs(tau.dz) < 0.2 
                 #WPs chosen to match run3 choices which were based on existing tau pog SFs
                 tauID = tauID and tau.idDeepTau2017v2p1VSjet & 2**8 #bit 8= loose
                 tauID = tauID and tau.idDeepTau2017v2p1VSmu & 2**8 #bit 8= tight
                 tauID = tauID and tau.idDeepTau2017v2p1VSe & 2**2 #bit 2= VVLoose
-
-                tauID = tauID and tau.decayMode != 5 and tau.decayMode != 6 
 
                 if tauID and tau.idDeepTau2017v2p1VSjet >= currTauVsJet:
                     if tau.idDeepTau2017v2p1VSjet == currTauVsJet:
@@ -176,7 +176,7 @@ class MuTauProducer(Module):
             #Pythia bug means we have to use placeholder SFs for run3
             if self.era == 2:
                 for i, syst in enumerate(["down", "nom", "up"]):
-                    tauESCorr[i] = self.tauSFs["tau_energy_scale"].evaluate(theTau.pt, abs(theTau.eta), theTau.decayMode, theTau.genPartFlav, "Loose", "VVLoose", syst)
+                    tauESCorr[i] = self.tauSFs["tau_energy_scale"].evaluate(theTau.pt, abs(theTau.eta), theTau.decayMode, theTau.genPartFlav, "DeepTau2017v2p1", syst)
                     tauVsESF[i] = self.tauSFs["DeepTau2017v2p1VSe"].evaluate(abs(theTau.eta), theTau.decayMode, theTau.genPartFlav, "VVLoose", syst)
                     tauVsMuSF[i] = self.tauSFs["DeepTau2017v2p1VSmu"].evaluate(abs(theTau.eta), theTau.decayMode, theTau.genPartFlav, "Tight", syst)
                     tauVsJetSF[i] = self.tauSFs["DeepTau2017v2p1VSjet"].evaluate(abs(theTau.eta), theTau.decayMode, theTau.genPartFlav, "Loose", syst)

@@ -133,6 +133,8 @@ class ZJetReclusterProducer(Module):
 
     def analyze(self, event):
         #POWER=-1 => anti-kt, POWER=0 => cambridge/aachen, POWER=1 =>inclusive kt
+
+        
         power = -1
         pt = -999.99
         eta = -999.99
@@ -144,8 +146,15 @@ class ZJetReclusterProducer(Module):
         sjPhi = []
         sjMass = []
 
+        fileHasPFCInfo = False
+        try:
+            nPFCands = event.nPFCands
+            fileHasPFCInfo = True
+        except:
+            fileHasPFCInfo = False
 
-        if event.Z_jetIdxAK8 >=0 and event.Z_dm == 0 and event.Z_sJIdx1 >=0 and event.Z_sJIdx2 >=0:
+
+        if event.Z_jetIdxAK8 >=0 and event.Z_dm == 0 and event.Z_sJIdx1 >=0 and event.Z_sJIdx2 >=0 and fileHasPFCInfo:
 
             fjPFCands = Collection(event, "FatJetPFCands")
             pfCands = Collection(event, "PFCands")

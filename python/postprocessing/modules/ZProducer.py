@@ -273,7 +273,7 @@ class ZProducer(Module):
             for i, syst in enumerate(["sfdown", "sf", "sfup", "sfdown", "sf", "sfup"]):
                 if i < 3:
                     if self.era == 2:
-                        Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp80noiso", electrons[Z_d1Idx].eta + electrons[Z_d1Idx].deltaEtaSC, electrons[Z_d1Idx].pt, electrons[Z_d1Idx].phi)
+                        Z_eIDSFs[i] = self.egmSFs["UL-Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp80noiso", electrons[Z_d1Idx].eta + electrons[Z_d1Idx].deltaEtaSC, electrons[Z_d1Idx].pt)
                     else:
                         if self.year == "2022":
                             Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "Medium", electrons[Z_d1Idx].eta + electrons[Z_d1Idx].deltaEtaSC, electrons[Z_d1Idx].pt)
@@ -281,7 +281,7 @@ class ZProducer(Module):
                             Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "Medium", electrons[Z_d1Idx].eta + electrons[Z_d1Idx].deltaEtaSC, electrons[Z_d1Idx].pt, electrons[Z_d1Idx].phi)
                 else:
                     if self.era == 2:
-                        Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp80noiso", electrons[Z_d2Idx].eta + electrons[Z_d2Idx].deltaEtaSC, electrons[Z_d2Idx].pt, electrons[Z_d1Idx].phi)
+                        Z_eIDSFs[i] = self.egmSFs["UL-Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp80noiso", electrons[Z_d2Idx].eta + electrons[Z_d2Idx].deltaEtaSC, electrons[Z_d2Idx].pt)
                     else:
                         if self.year == "2022":
                             Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "Medium", electrons[Z_d2Idx].eta + electrons[Z_d2Idx].deltaEtaSC, electrons[Z_d2Idx].pt)

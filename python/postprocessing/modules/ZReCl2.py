@@ -174,18 +174,29 @@ class ZJetReCl2Producer(Module):
                     zJetPFCs.append(pfCand)
                     zJetPFCIdxs.append(fjPFCand.pFCandsIdx)
             
-            print("# of PFcands from AK8 jet:",len(zJetPFCs))
+            #print("# of PFcands from AK8 jet:",len(zJetPFCs))
 
-            for jetPFC in jetPFCands:
-                if jetPFCands.jetIdx == event.Z_sJIdx2 or jetPFCands.jetIdx == event.Z_sJIdx2:
-                    if jetPFC.pFCandsIdx in zJetPFCIdxs: #Avoid adding PFCs already collected from AK8
-                        continue
-                    pfCand = pfCands[jetPFC.pFCandsIdx].p4()
-                    pfCand.Boost(boost)
-                    zJetPFCs.append(pfCand)
-                    zJetPFCIdxs.append(fjPFCand.pFCandsIdx)
+            #for jetPFC in jetPFCands:
+            #    if jetPFC.jetIdx == event.Z_sJIdx1 or jetPFC.jetIdx == event.Z_sJIdx2:
+            #        if jetPFC.pFCandsIdx in zJetPFCIdxs: #Avoid adding PFCs already collected from AK8
+            #            continue
+            #        pfCand = pfCands[jetPFC.pFCandsIdx].p4()
+            #        if pfCand.DeltaR(zJet) > 0.8:
+            #            continue
+            
+            #        pfCand.Boost(boost)
+            #        zJetPFCs.append(pfCand)
+            #        zJetPFCIdxs.append(fjPFCand.pFCandsIdx)
+            for pfcIdx, pfc in enumerate(pfCands):
+                if pfcIdx in zJetPFCIdxs:
+                    continue
+                pfc = pfc.p4()
+                if pfc.DeltaR(zJet) < 0.8:
+                    zJetPFCs.append(pfc)
+                    zJetPFCIdxs.append(pfcIdx)
+                
 
-            print("# of PFcands from AK8+AK4 jets:",len(zJetPFCs))
+            #print("# of PFcands from AK8+AK4 jets:",len(zJetPFCs))
                     
             if len(zJetPFCs) < 2:
                 print("WARNING: Did not find at least 2 PFCs matching to Z AK8 jet!")
