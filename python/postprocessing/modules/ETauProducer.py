@@ -196,7 +196,7 @@ class ETauProducer(Module):
                     tauVsMuSF[i] = self.tauSFs["DeepTau2017v2p1VSmu"].evaluate(abs(theTau.eta), theTau.decayMode, theTau.genPartFlav, "Tight", syst)
                     tauVsJetSF[i] = self.tauSFs["DeepTau2017v2p1VSjet"].evaluate(abs(theTau.eta), theTau.decayMode, theTau.genPartFlav, "Loose", syst)
             for i, syst in enumerate(["sfdown", "sf", "sfup"]):
-                if self.year == "2023": #2023 has phi-dependent SFs
+                if self.year == "2023" or self.year == "2023post": #2023 has phi-dependent SFs
                     eIDSF[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp80iso", theEl.eta + theEl.deltaEtaSC, theEl.pt, theEl.phi)
                 elif self.era == 3:
                     eIDSF[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp80iso", theEl.eta + theEl.deltaEtaSC, theEl.pt)
