@@ -106,9 +106,9 @@ class MuTauProducer(Module):
                 tauCorrPt = tau.pt * esCorr 
                 tauID = tauCorrPt> 20 and abs(tau.eta) < 2.3 and abs(tau.dz) < 0.2 
                 #WPs chosen to match run3 choices which were based on existing tau pog SFs
-                tauID = tauID and tau.idDeepTau2017v2p1VSjet & 2**8 #bit 8= loose
-                tauID = tauID and tau.idDeepTau2017v2p1VSmu & 2**8 #bit 8= tight
-                tauID = tauID and tau.idDeepTau2017v2p1VSe & 2**2 #bit 2= VVLoose
+                tauID = tauID and (tau.idDeepTau2017v2p1VSjet & 8) #8= loose
+                tauID = tauID and (tau.idDeepTau2017v2p1VSmu & 8) #8= tight
+                tauID = tauID and (tau.idDeepTau2017v2p1VSe & 2) #2= VVLoose
 
                 if tauID and tau.idDeepTau2017v2p1VSjet >= currTauVsJet:
                     if tau.idDeepTau2017v2p1VSjet == currTauVsJet:
@@ -177,9 +177,9 @@ class MuTauProducer(Module):
             if self.era == 2:
                 for i, syst in enumerate(["down", "nom", "up"]):
                     tauESCorr[i] = self.tauSFs["tau_energy_scale"].evaluate(theTau.pt, abs(theTau.eta), theTau.decayMode, theTau.genPartFlav, "DeepTau2017v2p1", syst)
-                    tauVsESF[i] = self.tauSFs["DeepTau2017v2p1VSe"].evaluate(abs(theTau.eta), theTau.decayMode, theTau.genPartFlav, "VVLoose", syst)
-                    tauVsMuSF[i] = self.tauSFs["DeepTau2017v2p1VSmu"].evaluate(abs(theTau.eta), theTau.decayMode, theTau.genPartFlav, "Tight", syst)
-                    tauVsJetSF[i] = self.tauSFs["DeepTau2017v2p1VSjet"].evaluate(abs(theTau.eta), theTau.decayMode, theTau.genPartFlav, "Loose", syst)
+                    tauVsESF[i] = self.tauSFs["DeepTau2017v2p1VSe"].evaluate(abs(theTau.eta), theTau.genPartFlav, "VVLoose", syst)
+                    tauVsMuSF[i] = self.tauSFs["DeepTau2017v2p1VSmu"].evaluate(abs(theTau.eta), theTau.genPartFlav, "Tight", syst)
+                    tauVsJetSF[i] = self.tauSFs["DeepTau2017v2p1VSjet"].evaluate(theTau.pt, theTau.decayMode, theTau.genPartFlav, "Loose", "VVLoose", syst, "pt")
             for i, syst in enumerate(["systdown", "nominal", "systup"]):
                 muIDSF[i] = self.muSFs["NUM_MediumID_DEN_TrackerMuons"].evaluate(abs(theMu.eta), theMu.pt, syst)
 
@@ -193,14 +193,15 @@ class MuTauProducer(Module):
                 cos_nuTau_MET = cos(deltaPhi(theTau.phi, event.MET_phi))
                 cos_nuMu_MET = cos(deltaPhi(theMu.phi, event.MET_phi))
                 cos_tau_mu = cos(deltaPhi(theTau.phi, theMu.phi))
-
-                if (1.0 - cos_tau_mu) < 0.001: #Avoid divide by zero issues if tau and el have same phi coord
-                    cos_Tau_mu_div0Safe = 0.999
+                cos_tau_mu_sqrd = cos_tau_mu * cos_tau_mu
+                
+                if cos_tau_mu_sqrd > 0.999: #Avoid divide by zero issues if tau and mu have same phi coord
+                    cos_tau_mu_sqrd_div0Safe = 0.999
                 else:
-                    cos_Tau_mu_div0Safe = cos_tau_mu
+                    cos_tau_mu_sqrd_div0Safe = cos_tau_mu_sqrd
 
-                nuTau_mag = event.MET_pt * (cos_nuTau_MET - (cos_nuMu_MET * cos_Tau_mu_div0Safe)) / (1. - (cos_Tau_mu_div0Safe**2))
-                nuMu_mag = ((event.MET_pt * cos_nuTau_MET) - nuTau_mag) / cos_Tau_mu_div0Safe
+                nuTau_mag = event.MET_pt * (cos_nuTau_MET - (cos_nuMu_MET * cos_tau_mu)) / (1. - cos_tau_mu_sqrd_div0Safe)
+                nuMu_mag = ((event.MET_pt * cos_nuTau_MET) - nuTau_mag) / cos_tau_mu
 
                 nuTau.SetPtEtaPhiM(nuTau_mag, theTau.eta, theTau.phi, 0.)
                 nuMu.SetPtEtaPhiM(nuMu_mag, theMu.eta, theMu.phi, 0.)
@@ -219,19 +220,7 @@ class MuTauProducer(Module):
                 minCollM = min(collM_tauZ, collM_muZ)
                 maxCollM = max(collM_tauZ, collM_muZ)
 
-                #genParts = Collection(event, "GenPart")
-                #if fullMuDecay.Pt() > fullTauDecay.Pt():
-                #    highPtCollM = collM_muZ
-                #    prodChain = getProdChain(theMu.genPartIdx, genParts)
-                #   highPtGenMatch = prodChainContains(prodChain, idx=event.Gen_tsTauIdx)
-                #elif theTau.genPartIdx >= 0:
-                #    highPtCollM = collM_tauZ
-                #    prodChain = getProdChain(event.GenVisTau_genPartIdxMother[theTau.genPartIdx], genParts)
-                #    highPtGenMatch = prodChainContains(prodChain, idx=event.Gen_tsTauIdx)
-                #else:
-                #    #print("In MuTau tau.genPartIdx is negative!")
-                #    pass
-
+                
                 isCand = haveTrip #A good triplet
                 if self.era == 2: #Appropriate trigger
                     isCand = isCand and event.Trig_MET

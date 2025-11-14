@@ -108,8 +108,8 @@ class ZProducer(Module):
                     cuts = (e1.charge * e2.charge) < 0 #Opposite charge
                     cuts = cuts and ((abs(e1.eta + e1.deltaEtaSC) >= 1.566 and abs(e1.eta + e1.deltaEtaSC) < 2.5) or abs( e1.eta + e1.deltaEtaSC) < 1.444)#Fiducial
                     cuts = cuts and ((abs(e2.eta + e2.deltaEtaSC) >= 1.566 and abs(e1.eta + e1.deltaEtaSC) < 2.5) or abs(e2.eta + e2.deltaEtaSC) < 1.444)
-                    cuts = cuts and (e1.pt >= 20.0 and abs(e1.eta + e1.deltaEtaSC) < 2.5 and e1.mvaFall17V2noIso_WP80) #ID
-                    cuts = cuts and (e2.pt >= 20.0 and abs(e2.eta + e2.deltaEtaSC) < 2.5 and e2.mvaFall17V2noIso_WP80)
+                    cuts = cuts and (e1.pt >= 20.0 and abs(e1.eta + e1.deltaEtaSC) < 2.5 and e1.mvaFall17V2noIso_WP90) #ID
+                    cuts = cuts and (e2.pt >= 20.0 and abs(e2.eta + e2.deltaEtaSC) < 2.5 and e2.mvaFall17V2noIso_WP90)
                 elif self.era == 3:
                     cuts = (e1.charge * e2.charge) < 0 #Opposite charge
                     cuts = cuts and ((abs(e1.eta + e1.deltaEtaSC) >= 1.566 and abs(e1.eta + e1.deltaEtaSC) < 2.5) or abs( e1.eta + e1.deltaEtaSC) < 1.444) #Fiducial
@@ -132,8 +132,8 @@ class ZProducer(Module):
                         Z_d2Idx = e2Idx if e1.pt >= e2.pt else e1Idx 
                         Z_dauDR = e1.DeltaR(e2)
                         if self.era == 2:
-                            Z_dauID = (e1.pt >= 20.0 and abs(e1.eta + e1.deltaEtaSC) < 2.5 and e1.mvaFall17V2noIso_WP80)
-                            Z_dauID = Z_dauID and (e2.pt >= 20.0 and abs(e2.eta + e2.deltaEtaSC) < 2.5 and e2.mvaFall17V2noIso_WP80)
+                            Z_dauID = (e1.pt >= 20.0 and abs(e1.eta + e1.deltaEtaSC) < 2.5 and e1.mvaFall17V2noIso_WP90)
+                            Z_dauID = Z_dauID and (e2.pt >= 20.0 and abs(e2.eta + e2.deltaEtaSC) < 2.5 and e2.mvaFall17V2noIso_WP90)
                         elif self.era == 3: 
                             #NB: A bug means that the "non-iso" MVA el IDs require isolation! 
                             #The reconstruction efficiency when requiring the ID is therefore much lower than expected and not recommended
@@ -168,17 +168,14 @@ class ZProducer(Module):
             ak8Jets = Collection(event, "FatJet")            
         
             for jetIdx, jet in enumerate(ak8Jets):
-                #if abs(jet.eta) < 2.5 and jet.pt > 100:
-                    #self.h_ak8Mass.Fill(jet.mass)
                 jetID = jet.jetId == 6 #2 = pass tight ID but fail tight lepton veto, 6 = pass both
-                jetID = jetID and (jet.mass >= 61.0 and jet.mass <= 151.0) #High range will be tightened later after reclustering
+                jetID = jetID and (jet.mass >= 61.0 and jet.mass <= 181.0) #High range will be tightened later after reclustering
                 jetID = jetID and (abs(jet.eta) < 2.5 and jet.pt > 100)
-                jetID = jetID and jet.btagDeepB < 0.7 # Require no b-tag
                 
                 if self.era == 2:
-                    jetID = jetID and jet.particleNet_ZvsQCD > 0.9
+                    jetID = jetID and jet.particleNet_ZvsQCD > 0.8
                 elif self.era == 3:
-                    jetID = jetID and jet.particleNetWithMass_ZvsQCD > 0.9
+                    jetID = jetID and jet.particleNetWithMass_ZvsQCD > 0.8
 
                 #Apply jet veto maps phi must be in [-pi, pi]
                 phiAdj = jet.phi
@@ -187,12 +184,9 @@ class ZProducer(Module):
                 elif phiAdj < -pi:
                     phiAdj += 2*pi
                 jetID = jetID and self.jetVetoMap[yearToJetVeto[self.year]].evaluate("jetvetomap", jet.eta, phiAdj) == 0
-        
-                #jetID = jetID and self.jetVetoMap["jetvetomap"].evaluate(jet.eta, phiAdj) == 0
                 
                 
                 if jetID:
-                    #self.h_ak8MassCuts.Fill(jet.mass)
                     Z_nJetCands += 1
                     if abs(jet.mass - 91.18) < abs(Z_mass - 91.18):
                         Z_mass = jet.mass 
@@ -273,7 +267,7 @@ class ZProducer(Module):
             for i, syst in enumerate(["sfdown", "sf", "sfup", "sfdown", "sf", "sfup"]):
                 if i < 3:
                     if self.era == 2:
-                        Z_eIDSFs[i] = self.egmSFs["UL-Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp80noiso", electrons[Z_d1Idx].eta + electrons[Z_d1Idx].deltaEtaSC, electrons[Z_d1Idx].pt)
+                        Z_eIDSFs[i] = self.egmSFs["UL-Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp90noiso", electrons[Z_d1Idx].eta + electrons[Z_d1Idx].deltaEtaSC, electrons[Z_d1Idx].pt)
                     else:
                         if self.year == "2022" or self.year == "2022post":
                             Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "Medium", electrons[Z_d1Idx].eta + electrons[Z_d1Idx].deltaEtaSC, electrons[Z_d1Idx].pt)
@@ -281,7 +275,7 @@ class ZProducer(Module):
                             Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "Medium", electrons[Z_d1Idx].eta + electrons[Z_d1Idx].deltaEtaSC, electrons[Z_d1Idx].pt, electrons[Z_d1Idx].phi)
                 else:
                     if self.era == 2:
-                        Z_eIDSFs[i] = self.egmSFs["UL-Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp80noiso", electrons[Z_d2Idx].eta + electrons[Z_d2Idx].deltaEtaSC, electrons[Z_d2Idx].pt)
+                        Z_eIDSFs[i] = self.egmSFs["UL-Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp90noiso", electrons[Z_d2Idx].eta + electrons[Z_d2Idx].deltaEtaSC, electrons[Z_d2Idx].pt)
                     else:
                         if self.year == "2022" or self.year == "2022post":
                             Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "Medium", electrons[Z_d2Idx].eta + electrons[Z_d2Idx].deltaEtaSC, electrons[Z_d2Idx].pt)
@@ -298,7 +292,7 @@ class ZProducer(Module):
 
         Z_isCand = Z_dm == 0 or Z_dm == 1 or Z_dm==2 #Z->jets, ee, mumu
         Z_isCand = Z_isCand and (Z_mass > 61 and Z_mass < 151) #Mass range
-        Z_isCand = Z_isCand and Z_dauDR < 0.5
+        Z_isCand = Z_isCand and Z_dauDR < 0.8
 
 
         self.out.fillBranch("Z_dm", Z_dm)

@@ -104,9 +104,9 @@ class TauTauProducer(Module):
                 tauCorrPt = tau.pt * esCorr 
                 tauID = tauCorrPt> 20 and abs(tau.eta) < 2.3 and abs(tau.dz) < 0.2 
                 #WPs chosen to match run3 choices which were based on existing tau pog SFs
-                tauID = tauID and tau.idDeepTau2017v2p1VSjet & 2**8 #bit 8= loose
-                tauID = tauID and tau.idDeepTau2017v2p1VSmu & 2**8 #bit 8= tight
-                tauID = tauID and tau.idDeepTau2017v2p1VSe & 2**2 #bit 2= VVLoose 
+                tauID = tauID and (tau.idDeepTau2017v2p1VSjet & 8) #8= loose
+                tauID = tauID and (tau.idDeepTau2017v2p1VSmu & 8) #8= tight
+                tauID = tauID and (tau.idDeepTau2017v2p1VSe & 2) #2= VVLoose 
 
                 if tauID:
                     goodTaus.append((tauI, tau.idDeepTau2017v2p1VSjet, tauCorrPt))
@@ -127,7 +127,7 @@ class TauTauProducer(Module):
                 
                 if tauID:
                     goodTaus.append((tauI, tau.idDeepTau2018v2p5VSjet, tauCorrPt))
-                            
+
         if len(goodTaus) >= 2:
             havePair = True
             #Sorts by vsJet score, then pt. Then we can find DR separated pairs
@@ -154,44 +154,43 @@ class TauTauProducer(Module):
                 tau2.pt = tau2.pt * tau2Corr
                 tau2.mass = tau2.mass * tau2Corr
                 
-                if abs(tau1.DeltaR(tau2)) < 0.5:
+                if abs(tau1.DeltaR(tau2)) > 0.5:
                     tau2Idx = goodTaus[i][0]
                     break #Since list is sorted, as soon as we find a DR separated tau, we're done
-            if tau2Idx < 0: #No DR separated tau so choose the second best vsJet and pt ranked tau 
-                tau2Idx = goodTaus[1][0]
-                tau2 = taus[tau2Idx]
+            if tau2Idx < 0: #No DR separated second tau so this is not a good candidate event
+                havePair = False
             
-            if tau1.decayMode >= 0 and tau1.decayMode <= 2:
-                tau1Prongs = 1
-            elif tau1.decayMode == 10 or tau1.decayMode == 11:
-                tau1Prongs = 3
-            if tau2.decayMode >= 0 and tau2.decayMode <= 2:
-                tau2Prongs = 1
-            elif tau2.decayMode == 10 or tau2.decayMode == 11:
-                tau2Prongs = 3
+            if tau2Idx >= 0:
+                if tau1.decayMode >= 0 and tau1.decayMode <= 2:
+                    tau1Prongs = 1
+                elif tau1.decayMode == 10 or tau1.decayMode == 11:
+                    tau1Prongs = 3
+                if tau2.decayMode >= 0 and tau2.decayMode <= 2:
+                    tau2Prongs = 1
+                elif tau2.decayMode == 10 or tau2.decayMode == 11:
+                    tau2Prongs = 3
 
+                tausDR = tau1.DeltaR(tau2)
+                tausDPhi = deltaPhi(tau1.phi, tau2.phi)
+                tauPlusTau = tau1.p4() + tau2.p4()
+                visM = tauPlusTau.M()
 
-            tausDR = tau1.DeltaR(tau2)
-            tausDPhi = deltaPhi(tau1.phi, tau2.phi)
-            tauPlusTau = tau1.p4() + tau2.p4()
-            visM = tauPlusTau.M()
-
-            #Pythia bug means we have to use placeholder SFs for run3
-            if self.era == 2:
-                for i, syst in enumerate(["down", "nom", "up", "down", "nom", "up"]):
-                    if i < 3:
-                        tauESCorr[i] = self.tauSFs["tau_energy_scale"].evaluate(tau1.pt, abs(tau1.eta), tau1.decayMode, tau1.genPartFlav, "DeepTau2017v2p1", syst)
-                        tauVsESF[i] = self.tauSFs["DeepTau2017v2p1VSe"].evaluate(abs(tau1.eta), tau1.decayMode, tau1.genPartFlav, "VVLoose", syst)
-                        tauVsMuSF[i] = self.tauSFs["DeepTau2017v2p1VSmu"].evaluate(abs(tau1.eta), tau1.decayMode, tau1.genPartFlav, "Tight", syst)
-                        tauVsJetSF[i] = self.tauSFs["DeepTau2017v2p1VSjet"].evaluate(abs(tau1.eta), tau1.decayMode, tau1.genPartFlav, "Loose", syst)
-                    else:
-                        tauESCorr[i] = self.tauSFs["tau_energy_scale"].evaluate(tau2.pt, abs(tau2.eta), tau2.decayMode, tau2.genPartFlav, "DeepTau2017v2p1", syst)
-                        tauVsESF[i] = self.tauSFs["DeepTau2017v2p1VSe"].evaluate(abs(tau2.eta), tau2.decayMode, tau2.genPartFlav, "VVLoose", syst)
-                        tauVsMuSF[i] = self.tauSFs["DeepTau2017v2p1VSmu"].evaluate(abs(tau2.eta), tau2.decayMode, tau2.genPartFlav, "Tight", syst)
-                        tauVsJetSF[i] = self.tauSFs["DeepTau2017v2p1VSjet"].evaluate(abs(tau2.eta), tau2.decayMode, tau2.genPartFlav, "Loose", syst)
+                #Pythia bug means we have to use placeholder SFs for run3
+                if self.era == 2:
+                    for i, syst in enumerate(["down", "nom", "up", "down", "nom", "up"]):
+                        if i < 3:
+                            tauESCorr[i] = self.tauSFs["tau_energy_scale"].evaluate(tau1.pt, abs(tau1.eta), tau1.decayMode, tau1.genPartFlav, "DeepTau2017v2p1", syst)
+                            tauVsESF[i] = self.tauSFs["DeepTau2017v2p1VSe"].evaluate(abs(tau1.eta), tau1.genPartFlav, "VVLoose", syst)
+                            tauVsMuSF[i] = self.tauSFs["DeepTau2017v2p1VSmu"].evaluate(abs(tau1.eta), tau1.genPartFlav, "Tight", syst)
+                            tauVsJetSF[i] = self.tauSFs["DeepTau2017v2p1VSjet"].evaluate(tau1.pt, tau1.decayMode, tau1.genPartFlav, "Loose", "VVLoose", syst, "pt")
+                        else:
+                            tauESCorr[i] = self.tauSFs["tau_energy_scale"].evaluate(tau2.pt, abs(tau2.eta), tau2.decayMode, tau2.genPartFlav, "DeepTau2017v2p1", syst)
+                            tauVsESF[i] = self.tauSFs["DeepTau2017v2p1VSe"].evaluate(abs(tau2.eta), tau2.genPartFlav, "VVLoose", syst)
+                            tauVsMuSF[i] = self.tauSFs["DeepTau2017v2p1VSmu"].evaluate(abs(tau2.eta), tau2.genPartFlav, "Tight", syst)
+                            tauVsJetSF[i] = self.tauSFs["DeepTau2017v2p1VSjet"].evaluate(tau2.pt, tau2.decayMode, tau2.genPartFlav, "Loose", "VVLoose", syst, "pt")
 
             #If the event also has a good Z candidate, we can calculate collinear mass
-            if event.Z_dm >= 0 and event.Z_dm <= 2:
+            if havePair and event.Z_dm >= 0 and event.Z_dm <= 2:
                 haveTrip = True
 
                 #collinear approximation 
@@ -200,14 +199,15 @@ class TauTauProducer(Module):
                 cos_nuTau1_MET = cos(deltaPhi(tau1.phi, event.MET_phi))
                 cos_nuTau2_MET = cos(deltaPhi(tau2.phi, event.MET_phi))
                 cos_tau1_tau2 = cos(deltaPhi(tau1.phi, tau2.phi))
+                cos_tau1_tau2_sqrd = cos_tau1_tau2 * cos_tau1_tau2
 
-                if (1.0 - cos_tau1_tau2) < 0.001: #Avoid divide by zero issues if taus have same phi coord
-                    cos_tau1_tau2_div0Safe = 0.999
+                if cos_tau1_tau2_sqrd > 0.999: #Avoid divide by zero issues if taus have same phi coord
+                    cos_tau1_tau2_sqrd_div0Safe = 0.999
                 else:
-                    cos_tau1_tau2_div0Safe = cos_tau1_tau2
+                    cos_tau1_tau2_sqrd_div0Safe = cos_tau1_tau2_sqrd
                     
-                nuTau1_mag = event.MET_pt * (cos_nuTau1_MET - (cos_nuTau2_MET * cos_tau1_tau2_div0Safe)) / (1. - (cos_tau1_tau2_div0Safe**2))
-                nuTau2_mag = ((event.MET_pt * cos_nuTau1_MET) - nuTau1_mag) / cos_tau1_tau2_div0Safe
+                nuTau1_mag = event.MET_pt * (cos_nuTau1_MET - (cos_nuTau2_MET * cos_tau1_tau2)) / (1. - cos_tau1_tau2_sqrd_div0Safe)
+                nuTau2_mag = ((event.MET_pt * cos_nuTau1_MET) - nuTau1_mag) / cos_tau1_tau2
 
                 nuTau1.SetPtEtaPhiM(nuTau1_mag, tau1.eta, tau1.phi, 0.)
                 nuTau2.SetPtEtaPhiM(nuTau2_mag, tau2.eta, tau2.phi, 0.)
@@ -226,21 +226,12 @@ class TauTauProducer(Module):
                 minCollM = min(collM_tau1Z, collM_tau2Z)
                 maxCollM = max(collM_tau1Z, collM_tau2Z)
 
-                #genParts = Collection(event, "GenPart")
-                #if fullTau1Decay.Pt() > fullTau2Decay.Pt() and tau1.genPartIdx >= 0:
-                #    highPtCollM = collM_tau1Z
-                #    prodChain = getProdChain(event.GenVisTau_genPartIdxMother[tau1.genPartIdx], genParts)
-                #    highPtGenMatch = prodChainContains(prodChain, idx=event.Gen_tsTauIdx)
-                #elif tau2.genPartIdx >= 0:
-                #    highPtCollM = collM_tau2Z
-                #    prodChain = getProdChain(event.GenVisTau_genPartIdxMother[tau2.genPartIdx], genParts)
-                #    highPtGenMatch = prodChainContains(prodChain, idx=event.Gen_tsTauIdx)
-                #else:
-                #    pass
-                #    #print("In TauTau tau1 or tau2 .genPartIdx is negative!")
-
+                
                 isCand = haveTrip #A good triplet
-                isCand = isCand and (event.Trig_tau or event.Trig_tauTau)  #Appropriate trigger
+                if self.era == 3:
+                    isCand = isCand and event.Trig_tau  #Appropriate trigger
+                else:
+                    isCand = isCand and event.Trig_MET
                 isCand = isCand and abs(tau2.DeltaR(tau1)) > 0.5 #Separation of two taus
                 isCand = isCand and cos_tau1_tau2**2 < 0.95 #DPhi separation of the two taus
                 isCand = isCand and abs(deltaR(theZ.Eta(), theZ.Phi(), tau1.eta, tau1.phi)) > 0.5 #Separation of the Z and tau1
@@ -266,7 +257,7 @@ class TauTauProducer(Module):
                 #NB: For run2 where the MET trigger is used, no trigger matching can actually be performed. The variable is used for easier run2+run3 combined cuts
                 trigMatchTau = True
 
-            isCand = isCand and trigMatchTau
+        isCand = isCand and trigMatchTau
 
         self.out.fillBranch("TauTau_tau1Idx", tau1Idx)
         self.out.fillBranch("TauTau_tau2Idx", tau2Idx)
