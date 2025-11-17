@@ -250,7 +250,7 @@ class ETauProducer(Module):
                 else:
                     isCand = isCand and event.Trig_MET
                 isCand = isCand and abs(theEl.DeltaR(theTau)) > 0.5 #Separation of e and tau
-                isCand = isCand and cos_tau_el**2 < 0.95 #dphi separation of the e and tau
+                isCand = isCand and cos_tau_el**2 < 0.99 #dphi separation of the e and tau
                 isCand = isCand and abs(deltaR(theZ.Eta(), theZ.Phi(), theTau.eta, theTau.phi)) > 0.5 #Separation of the Z and tau
                 isCand = isCand and abs(deltaR(theZ.Eta(), theZ.Phi(), theEl.eta, theEl.phi)) > 0.5 #Separation of the Z and el
                 isCand = isCand and isBetween(theTau.phi, theEl.phi, event.MET_phi) #MET is in small angle between tau & el
@@ -260,11 +260,10 @@ class ETauProducer(Module):
             trigObjs = Collection(event, "TrigObj")
             tauLeg = False
             eLeg = False
-            for trigObj in trigObjs:
+            for trigObj in trigObjs: #Per TAU twiki, filter bits are incorrect in nanoAODv12-v13 so only use DR matching of trig objs
                 if abs(trigObj.id) == 15:
-                    if trigObj.filterBits & (2**3) and trigObj.filterBits & (2**10) and deltaR(trigObj, theTau) < 0.1:
+                    if deltaR(trigObj, theTau) < 0.5:
                         trigMatchTau = True
-                    elif trigObj.filterBits & (2**3) and trigObj.filterBits & (2**8) and deltaR(trigObj, theTau) < 0.1:
                         tauLeg = True
                 elif abs(trigObj.id) == 11:
                     if trigObj.filterBits & (2**3) and trigObj.filterBits & (2**6) and deltaR(trigObj, theEl) < 0.1:
