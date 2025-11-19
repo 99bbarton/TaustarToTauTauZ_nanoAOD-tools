@@ -46,6 +46,7 @@ class MuTauProducer(Module):
         self.out.branch("MuTau_MuTauDPhi", "F") #"Delta phi between the muon and tau"
         #self.out.branch("MuTau_MuTauCos2DPhi", "F") #"cos^2(tau.phi-mu.phi)"
         self.out.branch("MuTau_visM", "F") #"Visible mass of the mu+tau pair"
+        self.out.branch("MuTau_sign", "I") #"The product of tau.charge and mu.charge"
         self.out.branch("MuTau_haveTrip", "O") #"True if have a good mu, tau, and Z"
         self.out.branch("MuTau_minCollM", "F") #"The smaller collinear mass of e+nu+Z or tau+nu+z. Uses best Z of recl vs reco Z mass"
         self.out.branch("MuTau_maxCollM", "F") #"The larger collinear mass of either mu+nu+Z or tau+nu+Z. Uses best Z of recl vs reco Z mass"
@@ -70,6 +71,7 @@ class MuTauProducer(Module):
         muTauDPhi = -999.99
         cos_tau_mu = -999.99
         visM = -999.99
+        sign = 0
         havePair = False
         haveTrip = False
         maxCollM = -999.99
@@ -172,6 +174,7 @@ class MuTauProducer(Module):
             muTauDPhi = deltaPhi(theTau.phi, theMu.phi)
             muPlusTau = theTau.p4() + theMu.p4()
             visM = muPlusTau.M()
+            sign = theTau.charge * theMu.charge
 
             #Pythia bug means we have to use placeholder SFs for run3
             if self.era == 2:
@@ -259,7 +262,8 @@ class MuTauProducer(Module):
         self.out.fillBranch("MuTau_havePair", havePair)
         self.out.fillBranch("MuTau_MuTauDR", muTauDR)
         self.out.fillBranch("MuTau_MuTauDPhi", muTauDPhi)
-        self.out.fillBranch("MuTau_visM", visM) 
+        self.out.fillBranch("MuTau_visM", visM)
+        self.out.fillBranch("MuTau_sign", sign)
         self.out.fillBranch("MuTau_haveTrip", haveTrip) 
         self.out.fillBranch("MuTau_minCollM", minCollM)
         self.out.fillBranch("MuTau_maxCollM", maxCollM)

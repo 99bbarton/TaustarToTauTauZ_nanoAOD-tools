@@ -51,6 +51,7 @@ class ETauProducer(Module):
         self.out.branch("ETau_ETauDPhi", "F") #"Delta phi between the electron and tau"
         #self.out.branch("ETau_ETauCos2DPhi", "F") #"cos^2(tau.phi-e.phi)"
         self.out.branch("ETau_visM", "F") #"Visible mass of the e+tau pair"
+        self.out.branch("ETau_sign", "I") #"The product of tau.charge and el.charge"
         #self.out.branch("ETau_highPtGenMatch", "O") #"True if the higher pt tau decay matched to the GEN taustar tau"
         #self.out.branch("ETau_highPtCollM", "F") #"Either the min or max coll m, whichever was from the higher pt tau decay"
         
@@ -85,6 +86,7 @@ class ETauProducer(Module):
         highPtGenMatch = False
         highPtCollM = -999.99
         isCand = False
+        sign = 0
 
         trigMatchTau = False
         trigMatchETau = False
@@ -189,6 +191,7 @@ class ETauProducer(Module):
             eTauDPhi = deltaPhi(theTau.phi, theEl.phi)
             ePlusTau = theTau.p4() + theEl.p4()
             visM = ePlusTau.M()
+            sign = theTau.charge * theEl.charge
 
             #Pythia bug means we have to use placeholder SFs for run3
             if self.era == 2:
@@ -280,7 +283,8 @@ class ETauProducer(Module):
         self.out.fillBranch("ETau_havePair", havePair)
         self.out.fillBranch("ETau_ETauDR", eTauDR)
         self.out.fillBranch("ETau_ETauDPhi", eTauDPhi)
-        self.out.fillBranch("ETau_visM", visM) 
+        self.out.fillBranch("ETau_visM", visM)
+        self.out.fillBranch("ETau_sign", sign)
         self.out.fillBranch("ETau_haveTrip", haveTrip) 
         self.out.fillBranch("ETau_minCollM", minCollM)
         self.out.fillBranch("ETau_maxCollM", maxCollM)

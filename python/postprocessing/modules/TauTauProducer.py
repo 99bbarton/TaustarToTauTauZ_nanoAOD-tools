@@ -42,6 +42,7 @@ class TauTauProducer(Module):
         self.out.branch("TauTau_TauTauDPhi", "F") #"Delta phi between the two taus"
         #self.out.branch("TauTau_TauTauCos2DPhi", "F") #"cos^2(tau1.phi-tau2.phi)"
         self.out.branch("TauTau_visM", "F") #"Visible mass of the tau pair"
+        self.out.branch("TauTau_sign", "I") #"The product of tau1.charge and tau2.charge"
         self.out.branch("TauTau_haveTrip", "O") #"True if have two good taus and a Z"
         self.out.branch("TauTau_minCollM", "F") #"The smaller collinear mass of tau1+nu+Z or tau2+nu+Z. Uses best Z of recl vs reco Z mass"
         self.out.branch("TauTau_maxCollM", "F") #"The larger collinear mass of either tau1+nu+Z or tau2+nu+Z. Uses best Z of recl vs reco Z mass"
@@ -66,6 +67,7 @@ class TauTauProducer(Module):
         tausDPhi = -999.99
         cos_tau1_tau2 = -999.99
         visM = -999.99
+        sign = 0
         havePair = False
         haveTrip = False
         maxCollM = -999.99
@@ -174,6 +176,7 @@ class TauTauProducer(Module):
                 tausDPhi = deltaPhi(tau1.phi, tau2.phi)
                 tauPlusTau = tau1.p4() + tau2.p4()
                 visM = tauPlusTau.M()
+                sign = tau1.charge * tau2.charge
 
                 #Pythia bug means we have to use placeholder SFs for run3
                 if self.era == 2:
@@ -267,6 +270,7 @@ class TauTauProducer(Module):
         self.out.fillBranch("TauTau_TauTauDR", tausDR)
         self.out.fillBranch("TauTau_TauTauDPhi", tausDPhi)
         self.out.fillBranch("TauTau_visM", visM)
+        self.out.fillBranch("TauTau_sign", sign)
         self.out.fillBranch("TauTau_haveTrip", haveTrip)
         self.out.fillBranch("TauTau_minCollM", minCollM)
         self.out.fillBranch("TauTau_maxCollM", maxCollM)
