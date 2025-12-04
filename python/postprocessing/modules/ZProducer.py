@@ -18,26 +18,29 @@ class ZProducer(Module):
 
         if year in ["2016", "2016post", "2017", "2018"]:
             self.era = 2
-        elif year in ["2022", "2022post", "2023", "2023post"]:
+        elif year in ["2022", "2022post", "2023", "2023post", "2024"]:
             self.era = 3
         else:
             print("ERROR: Unrecognized year passed to ETauProducer!")  
             exit(1)
-
-        sfFileName = getSFFile(year=year, pog="JME", typ="VETO")
+        if year == "2024": #For now, use latest veto maps since 2024 not yet available
+            sfFileName = getSFFile(year="2023post", pog="JME", typ="VETO")
+        else:
+            sfFileName = getSFFile(year=year, pog="JME", typ="VETO")
         with gzip.open(sfFileName,'rt') as fil:
             unzipped = fil.read().strip()
         self.jetVetoMap = corrLib.CorrectionSet.from_string(unzipped)
 
-        sfFileName = getSFFile(year=year, pog="EGM")
-        with gzip.open(sfFileName,'rt') as fil:
-            unzipped = fil.read().strip()
-        self.egmSFs = corrLib.CorrectionSet.from_string(unzipped)
+        if year != "2024":
+            sfFileName = getSFFile(year=year, pog="EGM")
+            with gzip.open(sfFileName,'rt') as fil:
+                unzipped = fil.read().strip()
+            self.egmSFs = corrLib.CorrectionSet.from_string(unzipped)
 
-        sfFileName = getSFFile(year=year, pog="MUO")
-        with gzip.open(sfFileName,'rt') as fil:
-            unzipped = fil.read().strip()
-        self.muSFs = corrLib.CorrectionSet.from_string(unzipped)
+            sfFileName = getSFFile(year=year, pog="MUO")
+            with gzip.open(sfFileName,'rt') as fil:
+                unzipped = fil.read().strip()
+            self.muSFs = corrLib.CorrectionSet.from_string(unzipped)
         
         #self.writeHistFile = True
 
@@ -183,7 +186,10 @@ class ZProducer(Module):
                     phiAdj -= 2*pi
                 elif phiAdj < -pi:
                     phiAdj += 2*pi
-                jetID = jetID and self.jetVetoMap[yearToJetVeto[self.year]].evaluate("jetvetomap", jet.eta, phiAdj) == 0
+                if self.year == "2024": #2024 not yet available so use the most recent veto maps
+                    jetID = jetID and self.jetVetoMap[yearToJetVeto["2023post"]].evaluate("jetvetomap", jet.eta, phiAdj) == 0
+                else:
+                    jetID = jetID and self.jetVetoMap[yearToJetVeto[self.year]].evaluate("jetvetomap", jet.eta, phiAdj) == 0
                 
                 
                 if jetID:
@@ -271,17 +277,19 @@ class ZProducer(Module):
                     else:
                         if self.year == "2022" or self.year == "2022post":
                             Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "Medium", electrons[Z_d1Idx].eta + electrons[Z_d1Idx].deltaEtaSC, electrons[Z_d1Idx].pt)
-                        else: #2023 has phi-dependent SFs
+                        elif self.year == "2023" or self.year == "2023post": #2023 has phi-dependent SFs
                             Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "Medium", electrons[Z_d1Idx].eta + electrons[Z_d1Idx].deltaEtaSC, electrons[Z_d1Idx].pt, electrons[Z_d1Idx].phi)
+                    #2024 SFs not yet available
                 else:
                     if self.era == 2:
                         Z_eIDSFs[i] = self.egmSFs["UL-Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp90noiso", electrons[Z_d2Idx].eta + electrons[Z_d2Idx].deltaEtaSC, electrons[Z_d2Idx].pt)
                     else:
                         if self.year == "2022" or self.year == "2022post":
                             Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "Medium", electrons[Z_d2Idx].eta + electrons[Z_d2Idx].deltaEtaSC, electrons[Z_d2Idx].pt)
-                        else:
+                        elif self.year == "2023" or self.year == "2023post":
                             Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "Medium", electrons[Z_d2Idx].eta + electrons[Z_d2Idx].deltaEtaSC, electrons[Z_d2Idx].pt, electrons[Z_d1Idx].phi)
-        elif Z_dm == 2:
+                        #2024 SFs not yet available
+        elif Z_dm == 2 and self.year != "2024":
             for i, syst in enumerate(["systdown", "nominal", "systup", "systdown", "nominal", "systup"]):
                 if i < 3:
                     Z_muIDSFs[i] = self.muSFs["NUM_MediumID_DEN_TrackerMuons"].evaluate(abs(muons[Z_d1Idx].eta), muons[Z_d1Idx].pt, syst)

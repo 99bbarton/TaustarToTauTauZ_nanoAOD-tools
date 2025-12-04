@@ -19,21 +19,22 @@ class MuTauProducer(Module):
         self.year = year
         if year in ["2016", "2016post", "2017", "2018"]:
             self.era = 2
-        elif year in ["2022", "2022post", "2023", "2023post"]:
+        elif year in ["2022", "2022post", "2023", "2023post", "2024"]:
             self.era = 3
         else:
             print("ERROR: Unrecognized year passed to MuTauProducer!")  
             exit(1)
 
-        sfFileName = getSFFile(year=year, pog="MUO")
-        with gzip.open(sfFileName,'rt') as fil:
-            unzipped = fil.read().strip()
-        self.muSFs = corrLib.CorrectionSet.from_string(unzipped)
+        if self.year != "2024":
+            sfFileName = getSFFile(year=year, pog="MUO")
+            with gzip.open(sfFileName,'rt') as fil:
+                unzipped = fil.read().strip()
+            self.muSFs = corrLib.CorrectionSet.from_string(unzipped)
 
-        sfFileName = getSFFile(year=year, pog="TAU")
-        with gzip.open(sfFileName,'rt') as fil:
-            unzipped = fil.read().strip()
-        self.tauSFs = corrLib.CorrectionSet.from_string(unzipped)
+            sfFileName = getSFFile(year=year, pog="TAU")
+            with gzip.open(sfFileName,'rt') as fil:
+                unzipped = fil.read().strip()
+            self.tauSFs = corrLib.CorrectionSet.from_string(unzipped)
         
 
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):

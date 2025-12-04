@@ -21,7 +21,7 @@ class TauTauProducer(Module):
         self.year = year
         if year in ["2016", "2016post", "2017", "2018"]:
             self.era = 2
-        elif year in ["2022", "2022post", "2023", "2023post"]:
+        elif year in ["2022", "2022post", "2023", "2023post", "2024"]:
             self.era = 3
         else:
             print("ERROR: Unrecognized year passed to TauTauProducer!")  

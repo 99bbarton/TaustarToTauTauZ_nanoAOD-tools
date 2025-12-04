@@ -79,7 +79,7 @@ class TrigProducer(Module):
             Trig_MET = event.HLT_PFMET200_BeamHaloCleaned #NOTE: No official trig recommendation from JetMET as of 6Jan2025
             Trig_eIso = event.HLT_Ele30_WPTight_Gsf
             Trig_muIso = event.HLT_IsoMu24
-        elif self.year == "2023" or self.year == "2023post":
+        elif self.year == "2023" or self.year == "2023post" or self.year=="2024":
             Trig_eTau = event.HLT_Ele24_eta2p1_WPTight_Gsf_LooseDeepTauPFTauHPS30_eta2p1_CrossL1
             Trig_muTau = event.HLT_IsoMu20_eta2p1_LooseDeepTauPFTauHPS27_eta2p1_CrossL1
             Trig_tauTau = event.HLT_DoubleMediumDeepTauPFTauHPS35_L2NN_eta2p1

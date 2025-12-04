@@ -21,22 +21,22 @@ class ETauProducer(Module):
         self.year = year
         if year in ["2016", "2016post", "2017", "2018"]:
             self.era = 2
-        elif year in ["2022", "2022post", "2023", "2023post"]:
+        elif year in ["2022", "2022post", "2023", "2023post", "2024"]:
             self.era = 3
         else:
             print("ERROR: Unrecognized year passed to ETauProducer!")  
             exit(1)
         
-        sfFileName = getSFFile(year=year, pog="EGM")
-        with gzip.open(sfFileName,'rt') as fil:
-            unzipped = fil.read().strip()
-        self.egmSFs = corrLib.CorrectionSet.from_string(unzipped)
+        if self.year != "2024":
+            sfFileName = getSFFile(year=year, pog="EGM")
+            with gzip.open(sfFileName,'rt') as fil:
+                unzipped = fil.read().strip()
+            self.egmSFs = corrLib.CorrectionSet.from_string(unzipped)
 
-        
-        sfFileName = getSFFile(year=year, pog="TAU")
-        with gzip.open(sfFileName,'rt') as fil:
-            unzipped = fil.read().strip()
-        self.tauSFs = corrLib.CorrectionSet.from_string(unzipped)
+            sfFileName = getSFFile(year=year, pog="TAU")
+            with gzip.open(sfFileName,'rt') as fil:
+                unzipped = fil.read().strip()
+            self.tauSFs = corrLib.CorrectionSet.from_string(unzipped)
         
 
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
@@ -200,13 +200,14 @@ class ETauProducer(Module):
                     tauVsESF[i] = self.tauSFs["DeepTau2017v2p1VSe"].evaluate(abs(theTau.eta), theTau.genPartFlav, "VVLoose", syst)
                     tauVsMuSF[i] = self.tauSFs["DeepTau2017v2p1VSmu"].evaluate(abs(theTau.eta), theTau.genPartFlav, "Tight", syst)
                     tauVsJetSF[i] = self.tauSFs["DeepTau2017v2p1VSjet"].evaluate(theTau.pt, theTau.decayMode, theTau.genPartFlav, "Loose", "VVLoose", syst, "pt")
-            for i, syst in enumerate(["sfdown", "sf", "sfup"]):
-                if self.year == "2023" or self.year == "2023post": #2023 has phi-dependent SFs
-                    eIDSF[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp90iso", theEl.eta + theEl.deltaEtaSC, theEl.pt, theEl.phi)
-                elif self.era == 3:
-                    eIDSF[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp90iso", theEl.eta + theEl.deltaEtaSC, theEl.pt)
-                else:
-                    eIDSF[i] = self.egmSFs["UL-Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp90iso", theEl.eta + theEl.deltaEtaSC, theEl.pt)
+            elif self.year != "2024":
+                for i, syst in enumerate(["sfdown", "sf", "sfup"]): #2024 not available yet
+                    if self.year == "2023" or self.year == "2023post": #2023 has phi-dependent SFs
+                        eIDSF[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp90iso", theEl.eta + theEl.deltaEtaSC, theEl.pt, theEl.phi)
+                    elif self.year == "2022" or self.year == "2022post":
+                        eIDSF[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp90iso", theEl.eta + theEl.deltaEtaSC, theEl.pt)
+                    else:
+                        eIDSF[i] = self.egmSFs["UL-Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp90iso", theEl.eta + theEl.deltaEtaSC, theEl.pt)
             
 
             #If the event also has a good Z candidate, we can calculate collinear mass
