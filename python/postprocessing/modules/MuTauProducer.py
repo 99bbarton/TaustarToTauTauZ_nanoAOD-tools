@@ -45,6 +45,8 @@ class MuTauProducer(Module):
         self.out.branch("MuTau_havePair", "O") #"True if have a good mu and tau"
         self.out.branch("MuTau_MuTauDR", "F") #"DeltaR betwenn mu and tau"
         self.out.branch("MuTau_MuTauDPhi", "F") #"Delta phi between the muon and tau"
+        self.out.branch("MuTau_tau1ZDPhi", "F") #"Delta phi between the tau and the Z. Using 'tau1' here for convenient multichannel plotting"
+        self.out.branch("MuTau_tau2ZDPhi", "F") #"Delta phi between the mu and the Z. Using 'tau2' here for convenient multichannel plotting" 
         #self.out.branch("MuTau_MuTauCos2DPhi", "F") #"cos^2(tau.phi-mu.phi)"
         self.out.branch("MuTau_visM", "F") #"Visible mass of the mu+tau pair"
         self.out.branch("MuTau_sign", "I") #"The product of tau.charge and mu.charge"
@@ -70,6 +72,8 @@ class MuTauProducer(Module):
         tauProngs = -1
         muTauDR = -999.99
         muTauDPhi = -999.99
+        tauZDPhi = - 999.99
+        muZDPhi = - 999.99
         cos_tau_mu = -999.99
         visM = -999.99
         sign = 0
@@ -224,6 +228,8 @@ class MuTauProducer(Module):
                 minCollM = min(collM_tauZ, collM_muZ)
                 maxCollM = max(collM_tauZ, collM_muZ)
 
+                tauZDPhi = deltaPhi(theTau.phi, theZ.Phi())
+                muZDPhi = deltaPhi(theMu.phi, theZ.Phi())
                 
                 isCand = haveTrip #A good triplet
                 if self.era == 2: #Appropriate trigger
@@ -263,6 +269,8 @@ class MuTauProducer(Module):
         self.out.fillBranch("MuTau_havePair", havePair)
         self.out.fillBranch("MuTau_MuTauDR", muTauDR)
         self.out.fillBranch("MuTau_MuTauDPhi", muTauDPhi)
+        self.out.fillBranch("MuTau_tau1ZDPhi", tauZDPhi)
+        self.out.fillBranch("MuTau_tau2ZDPhi", muZDPhi)
         self.out.fillBranch("MuTau_visM", visM)
         self.out.fillBranch("MuTau_sign", sign)
         self.out.fillBranch("MuTau_haveTrip", haveTrip) 

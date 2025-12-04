@@ -49,6 +49,8 @@ class ETauProducer(Module):
         self.out.branch("ETau_havePair", "O") #"True if have a good e and tau"
         self.out.branch("ETau_ETauDR", "F") #"Delta R between electron and tau"
         self.out.branch("ETau_ETauDPhi", "F") #"Delta phi between the electron and tau"
+        self.out.branch("ETau_tau1ZDPhi", "F") #"Delta phi between the tau and the Z. Using 'tau1' here for convenient multichannel plotting"
+        self.out.branch("ETau_tau2ZDPhi", "F") #"Delta phi between the el and the Z. Using 'tau2' here for convenient multichannel plotting" 
         #self.out.branch("ETau_ETauCos2DPhi", "F") #"cos^2(tau.phi-e.phi)"
         self.out.branch("ETau_visM", "F") #"Visible mass of the e+tau pair"
         self.out.branch("ETau_sign", "I") #"The product of tau.charge and el.charge"
@@ -77,6 +79,8 @@ class ETauProducer(Module):
         tauProngs = -1
         eTauDR = -999.99
         eTauDPhi = -999.99
+        tauZDPhi = - 999.99
+        eZDPhi = - 999.99
         cos_tau_el = -999.99
         visM = -999.99
         havePair = False
@@ -247,6 +251,8 @@ class ETauProducer(Module):
                 minCollM = min(collM_tauZ, collM_elZ)
                 maxCollM = max(collM_tauZ, collM_elZ)
 
+                tauZDPhi = deltaPhi(theTau.phi, theZ.Phi())
+                eZDPhi = deltaPhi(theEl.phi, theZ.Phi())
                 
                 isCand = haveTrip #A good triplet
                 if self.era == 3:
@@ -284,6 +290,8 @@ class ETauProducer(Module):
         self.out.fillBranch("ETau_havePair", havePair)
         self.out.fillBranch("ETau_ETauDR", eTauDR)
         self.out.fillBranch("ETau_ETauDPhi", eTauDPhi)
+        self.out.fillBranch("ETau_tau1ZDPhi", tauZDPhi)
+        self.out.fillBranch("ETau_tau2ZDPhi", eZDPhi)
         self.out.fillBranch("ETau_visM", visM)
         self.out.fillBranch("ETau_sign", sign)
         self.out.fillBranch("ETau_haveTrip", haveTrip) 

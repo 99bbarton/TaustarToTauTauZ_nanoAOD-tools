@@ -40,6 +40,8 @@ class TauTauProducer(Module):
         self.out.branch("TauTau_havePair", "O") #"True if have two good taus"
         self.out.branch("TauTau_TauTauDR", "F") #"DeltaR between the two taus"
         self.out.branch("TauTau_TauTauDPhi", "F") #"Delta phi between the two taus"
+        self.out.branch("TauTau_tau1ZDPhi", "F") #"Delta phi between tau1 and the Z"
+        self.out.branch("TauTau_tau2ZDPhi", "F") #"Delta phi between tau2 and the Z"
         #self.out.branch("TauTau_TauTauCos2DPhi", "F") #"cos^2(tau1.phi-tau2.phi)"
         self.out.branch("TauTau_visM", "F") #"Visible mass of the tau pair"
         self.out.branch("TauTau_sign", "I") #"The product of tau1.charge and tau2.charge"
@@ -65,6 +67,8 @@ class TauTauProducer(Module):
         tau2Prongs = -1
         tausDR = -999.99
         tausDPhi = -999.99
+        tau1ZDPhi = - 999.99
+        tau2ZDPhi = - 999.99
         cos_tau1_tau2 = -999.99
         visM = -999.99
         sign = 0
@@ -224,6 +228,9 @@ class TauTauProducer(Module):
                 else:
                     theZ.SetPtEtaPhiM(event.Z_pt, event.Z_eta, event.Z_phi, event.Z_mass)
 
+                tau1ZDPhi = deltaPhi(tau1.phi, theZ.Phi())
+                tau2ZDPhi = deltaPhi(tau2.phi, theZ.Phi())
+
                 collM_tau1Z = (tau1.p4() + nuTau1 + theZ).M() 
                 collM_tau2Z= (tau2.p4() + nuTau2 + theZ).M()
                 minCollM = min(collM_tau1Z, collM_tau2Z)
@@ -269,6 +276,8 @@ class TauTauProducer(Module):
         self.out.fillBranch("TauTau_havePair", havePair)
         self.out.fillBranch("TauTau_TauTauDR", tausDR)
         self.out.fillBranch("TauTau_TauTauDPhi", tausDPhi)
+        self.out.fillBranch("TauTau_tau1ZDPhi", tau1ZDPhi)
+        self.out.fillBranch("TauTau_tau2ZDPhi", tau2ZDPhi)
         self.out.fillBranch("TauTau_visM", visM)
         self.out.fillBranch("TauTau_sign", sign)
         self.out.fillBranch("TauTau_haveTrip", haveTrip)
