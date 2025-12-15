@@ -48,7 +48,7 @@ class ETauProducer(Module):
         #e+tau 
         self.out.branch("ETau_havePair", "O", 3) #"True if have a good e and tau. Entries correspond to [down, nom, up] tau ES scale" 
         self.out.branch("ETau_visM", "F", 3) #"Visible mass of the e+tau pair. Entries correspond to [down, nom, up] tau ES scale"
-        self.out.branch("ETau_sign", "I", 3) #"The product of tau.charge and el.charge"
+        self.out.branch("ETau_sign", "I") #"The product of tau.charge and el.charge"
         self.out.branch("ETau_ETauDR", "F") #"Delta R between electron and tau"
         self.out.branch("ETau_ETauDPhi", "F") #"Delta phi between the electron and tau"
         self.out.branch("ETau_tau1ZDPhi", "F") #"Delta phi between the tau and the Z. Using 'tau1' here for convenient multichannel plotting"
@@ -241,10 +241,10 @@ class ETauProducer(Module):
                 theTau.mass = theTau.mass * esCorr[i]
                 theTau.pt = theTau.pt * esCorr[i]
 
-                if i == 1 or (i == 2 and eTauDR < 0): # Non tau-ES dependent
-                    eTauDR = theEl.DeltaR(theTau)
-                    eTauDPhi = deltaPhi(theTau.phi, theEl.phi)
-                    sign = theTau.charge * theEl.charge
+                #if i == 0 or (i == 1 and eTauDR < 0): # Non tau-ES dependent
+                eTauDR = theEl.DeltaR(theTau)
+                eTauDPhi = deltaPhi(theTau.phi, theEl.phi)
+                sign = theTau.charge * theEl.charge
 
                 ePlusTau = theTau.p4() + theEl.p4()
                 visM[i] = ePlusTau.M()
@@ -256,32 +256,31 @@ class ETauProducer(Module):
                     #collinear approximation 
                     nuTau = TLorentzVector()
                     nuEl = TLorentzVector()
-
-                    if i == 0: #Only need to do this once since not ES scale dependent
-                        cos_nuTau_MET = cos(deltaPhi(theTau.phi, event.MET_phi))
-                        cos_nuEl_MET = cos(deltaPhi(theEl.phi, event.MET_phi))
-                        cos_tau_el = cos(deltaPhi(theTau.phi, theEl.phi))
-                        cos_tau_el_sqrd = cos_tau_el * cos_tau_el
+                    theZ = TLorentzVector()
                     
-                        if cos_tau_el_sqrd > 0.999: #Avoid divide by zero issues if tau and el have same phi coord
-                            cos_tau_el_sqrd_div0Safe = 0.999
-                        else:
-                            cos_tau_el_sqrd_div0Safe = cos_tau_el_sqrd
+                    cos_nuTau_MET = cos(deltaPhi(theTau.phi, event.MET_phi))
+                    cos_nuEl_MET = cos(deltaPhi(theEl.phi, event.MET_phi))
+                    cos_tau_el = cos(deltaPhi(theTau.phi, theEl.phi))
+                    cos_tau_el_sqrd = cos_tau_el * cos_tau_el
+                    
+                    if cos_tau_el_sqrd > 0.999: #Avoid divide by zero issues if tau and el have same phi coord
+                        cos_tau_el_sqrd_div0Safe = 0.999
+                    else:
+                        cos_tau_el_sqrd_div0Safe = cos_tau_el_sqrd
 
-                        nuTau_mag = event.MET_pt * (cos_nuTau_MET - (cos_nuEl_MET * cos_tau_el)) / (1. - cos_tau_el_sqrd_div0Safe)
-                        nuEl_mag = ((event.MET_pt * cos_nuTau_MET) - nuTau_mag) / cos_tau_el
+                    nuTau_mag = event.MET_pt * (cos_nuTau_MET - (cos_nuEl_MET * cos_tau_el)) / (1. - cos_tau_el_sqrd_div0Safe)
+                    nuEl_mag = ((event.MET_pt * cos_nuTau_MET) - nuTau_mag) / cos_tau_el
 
-                        nuTau.SetPtEtaPhiM(nuTau_mag, theTau.eta, theTau.phi, 0.)
-                        nuEl.SetPtEtaPhiM(nuEl_mag, theEl.eta, theEl.phi, 0.)
+                    nuTau.SetPtEtaPhiM(nuTau_mag, theTau.eta, theTau.phi, 0.)
+                    nuEl.SetPtEtaPhiM(nuEl_mag, theEl.eta, theEl.phi, 0.)
 
-                        theZ = TLorentzVector()
-                        if abs(event.ZReClJ_mass - 91.19) < abs(event.Z_mass - 91.19) and event.Z_dm == 0: #By default, choose closest mass (reclustered vs reco) to nominal
-                            theZ.SetPtEtaPhiM(event.ZReClJ_pt, event.ZReClJ_eta, event.ZReClJ_phi, event.ZReClJ_mass)
-                        else:
-                            theZ.SetPtEtaPhiM(event.Z_pt, event.Z_eta, event.Z_phi, event.Z_mass)
+                    if abs(event.ZReClJ_mass - 91.19) < abs(event.Z_mass - 91.19) and event.Z_dm == 0: #By default, choose closest mass (reclustered vs reco) to nominal
+                        theZ.SetPtEtaPhiM(event.ZReClJ_pt, event.ZReClJ_eta, event.ZReClJ_phi, event.ZReClJ_mass)
+                    else:
+                        theZ.SetPtEtaPhiM(event.Z_pt, event.Z_eta, event.Z_phi, event.Z_mass)
 
-                        tauZDPhi = deltaPhi(theTau.phi, theZ.Phi())
-                        eZDPhi = deltaPhi(theEl.phi, theZ.Phi())
+                    tauZDPhi = deltaPhi(theTau.phi, theZ.Phi())
+                    eZDPhi = deltaPhi(theEl.phi, theZ.Phi())
 
                     fullElDecay = theEl.p4() + nuEl
                     fullTauDecay = theTau.p4() + nuTau
