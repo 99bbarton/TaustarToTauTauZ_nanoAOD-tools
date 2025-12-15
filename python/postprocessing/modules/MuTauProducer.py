@@ -188,8 +188,9 @@ class MuTauProducer(Module):
                     tauVsESF[i] = self.tauSFs["DeepTau2017v2p1VSe"].evaluate(abs(theTau.eta), theTau.genPartFlav, "VVLoose", syst)
                     tauVsMuSF[i] = self.tauSFs["DeepTau2017v2p1VSmu"].evaluate(abs(theTau.eta), theTau.genPartFlav, "Tight", syst)
                     tauVsJetSF[i] = self.tauSFs["DeepTau2017v2p1VSjet"].evaluate(theTau.pt, theTau.decayMode, theTau.genPartFlav, "Loose", "VVLoose", syst, "pt")
-            for i, syst in enumerate(["systdown", "nominal", "systup"]):
-                muIDSF[i] = self.muSFs["NUM_MediumID_DEN_TrackerMuons"].evaluate(abs(theMu.eta), theMu.pt, syst)
+            if self.year != "2024":
+                for i, syst in enumerate(["systdown", "nominal", "systup"]):
+                    muIDSF[i] = self.muSFs["NUM_MediumID_DEN_TrackerMuons"].evaluate(abs(theMu.eta), theMu.pt, syst)
 
             #If the event also has a good Z candidate, we can calculate collinear mass
             if event.Z_dm >= 0 and event.Z_dm <= 2:

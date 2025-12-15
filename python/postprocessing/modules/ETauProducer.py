@@ -46,21 +46,21 @@ class ETauProducer(Module):
         self.out.branch("ETau_tauProngs", "I") #"Number of prongs of tau (1 or 3) "
         
         #e+tau 
-        self.out.branch("ETau_havePair", "O") #"True if have a good e and tau"
+        self.out.branch("ETau_havePair", "O", 3) #"True if have a good e and tau. Entries correspond to [down, nom, up] tau ES scale" 
+        self.out.branch("ETau_visM", "F", 3) #"Visible mass of the e+tau pair. Entries correspond to [down, nom, up] tau ES scale"
+        self.out.branch("ETau_sign", "I", 3) #"The product of tau.charge and el.charge"
         self.out.branch("ETau_ETauDR", "F") #"Delta R between electron and tau"
         self.out.branch("ETau_ETauDPhi", "F") #"Delta phi between the electron and tau"
         self.out.branch("ETau_tau1ZDPhi", "F") #"Delta phi between the tau and the Z. Using 'tau1' here for convenient multichannel plotting"
-        self.out.branch("ETau_tau2ZDPhi", "F") #"Delta phi between the el and the Z. Using 'tau2' here for convenient multichannel plotting" 
-        #self.out.branch("ETau_ETauCos2DPhi", "F") #"cos^2(tau.phi-e.phi)"
-        self.out.branch("ETau_visM", "F") #"Visible mass of the e+tau pair"
-        self.out.branch("ETau_sign", "I") #"The product of tau.charge and el.charge"
+        self.out.branch("ETau_tau2ZDPhi", "F") #"Delta phi between the el and the Z. Using 'tau2' here for convenient multichannel plotting"
         #self.out.branch("ETau_highPtGenMatch", "O") #"True if the higher pt tau decay matched to the GEN taustar tau"
         #self.out.branch("ETau_highPtCollM", "F") #"Either the min or max coll m, whichever was from the higher pt tau decay"
-        
+        #self.out.branch("ETau_ETauCos2DPhi", "F") #"cos^2(tau.phi-e.phi)"
+
         #e+tau+Z
-        self.out.branch("ETau_haveTrip", "O") #"True if have a good e, tau, and Z"
-        self.out.branch("ETau_minCollM", "F") #"The smaller collinear mass of either e+nu+Z or tau+nu+Z. Uses best Z of recl vs reco Z mass"
-        self.out.branch("ETau_maxCollM", "F") #"The larger collinear mass of either e+nu+Z or tau+nu+Z. Uses best Z of recl vs reco Z mass"
+        self.out.branch("ETau_haveTrip", "O", 3) #"True if have a good e, tau, and Z. Entries correspond to [down, nom, up] tau ES scale"
+        self.out.branch("ETau_minCollM", "F", 3) #"The smaller collinear mass of either e+nu+Z or tau+nu+Z. Uses best Z of recl vs reco Z mass. Entries correspond to [down, nom, up] tau ES scale"
+        self.out.branch("ETau_maxCollM", "F", 3) #"The larger collinear mass of either e+nu+Z or tau+nu+Z. Uses best Z of recl vs reco Z mass. Entries correspond to [down, nom, up] tau ES scale"
 
         #Scale factors
         self.out.branch("ETau_tauESCorr" , "F", 3) #"The energy scale correction applied to the tau [down, nom, up]"
@@ -71,7 +71,7 @@ class ETauProducer(Module):
 
         self.out.branch("ETau_trigMatchTau", "O") #"True if the tau matches the single-tau trigger obj"
         self.out.branch("ETau_trigMatchETau", "O") #"True if the reco el and tau fired the e-tau cross trigger"
-        self.out.branch("ETau_isCand", "O") #"True if the event is good e+tau+Z event"
+        self.out.branch("ETau_isCand", "O", 3) #"True if the event is good e+tau+Z event. Entries correspond to [down, nom, up] tau ES scale"
         
     def analyze(self, event):
         eIdx = -1
@@ -82,14 +82,14 @@ class ETauProducer(Module):
         tauZDPhi = - 999.99
         eZDPhi = - 999.99
         cos_tau_el = -999.99
-        visM = -999.99
-        havePair = False
-        haveTrip = False
-        maxCollM = -999.99
-        minCollM = -999.99
+        visM = [-999.99, -999.99, -999.99]#All 3 entry lists correspond to [down, nom, up] of tau ES
+        havePair = [False, False, False]
+        haveTrip = [False, False, False]
+        maxCollM = [-999.99, -999.99, -999.99]
+        minCollM = [-999.99, -999.99, -999.99]
         highPtGenMatch = False
         highPtCollM = -999.99
-        isCand = False
+        isCand = [False, False, False]
         sign = 0
 
         trigMatchTau = False
@@ -118,10 +118,16 @@ class ETauProducer(Module):
             if self.era == 2:
                 if tau.decayMode == 5 or tau.decayMode == 6:
                     continue
-                esCorr = self.tauSFs["tau_energy_scale"].evaluate(tau.pt, abs(tau.eta), tau.decayMode, tau.genPartFlav, "DeepTau2017v2p1", "nom")
+                esCorr = [] * 3
+                esCorr[0] = self.tauSFs["tau_energy_scale"].evaluate(tau.pt, abs(tau.eta), tau.decayMode, tau.genPartFlav, "DeepTau2017v2p1", "down")
+                esCorr[0] = self.tauSFs["tau_energy_scale"].evaluate(tau.pt, abs(tau.eta), tau.decayMode, tau.genPartFlav, "DeepTau2017v2p1", "nom")
+                esCorr[0] = self.tauSFs["tau_energy_scale"].evaluate(tau.pt, abs(tau.eta), tau.decayMode, tau.genPartFlav, "DeepTau2017v2p1", "up")
                         
-                tauCorrPt = tau.pt * esCorr 
-                tauID = tauCorrPt> 20 and abs(tau.eta) < 2.3 and abs(tau.dz) < 0.2 
+                tauCorrPt = tau.pt * esCorr[1]
+                # Use the nominal for most ID checks but keep pT cut info for use later in determining candidacy 
+                passTauPtCut = [(tau.pt * esCorr[0]) > 20.0 ,(tau.pt * esCorr[1]) > 20.0, (tau.pt * esCorr[2]) > 20.0 ]
+                tauID = passTauPtCut[1] and abs(tau.eta) < 2.3 and abs(tau.dz) < 0.2 
+                
                 #WPs chosen to match run3 choices which were based on existing tau pog SFs
                 tauID = tauID and (tau.idDeepTau2017v2p1VSjet & 8) #8= loose
                 tauID = tauID and (tau.idDeepTau2017v2p1VSmu & 8) #8= tight
@@ -134,16 +140,18 @@ class ETauProducer(Module):
                     tauIdx = tauI
                     theTau = tau
                     theTau.pt = tauCorrPt
-                    theTau.mass = theTau.mass * esCorr
+                    theTau.mass = theTau.mass * esCorr[1]
                     currTauPt = tauCorrPt
                     currTauVsJet = tau.idDeepTau2017v2p1VSjet
 
             elif self.era == 3:
                 #Tau POG recommendations https://twiki.cern.ch/twiki/bin/view/CMS/TauIDRecommendationForRun3
-                esCorr = 1.00
+                esCorr = [0.97, 1.00, 1.03]
                 #esCorr = self.tauSFs["tau_energy_scale"].evaluate(tau.pt, abs(tau.eta), tau.decayMode, tau.genPartFlav, "Loose", "VVLoose", "nom")
-                tauCorrPt = tau.pt * esCorr 
-                tauID = tauCorrPt > 20 and abs(tau.eta) < 2.5 and abs(tau.dz) < 0.2 
+
+                tauCorrPt = tau.pt * esCorr[1] # Use the nominal for most ID checks but keep pT cut info for use later in determining candidacy 
+                passTauPtCut = [(tau.pt * esCorr[0]) > 20.0 ,(tau.pt * esCorr[1]) > 20.0, (tau.pt * esCorr[2]) > 20.0 ]
+                tauID = passTauPtCut[1] and abs(tau.eta) < 2.5 and abs(tau.dz) < 0.2 
 
                 #WPs chosen based on existing tau pog SFs
                 tauID = tauID and tau.idDeepTau2018v2p5VSjet >= 4 #4= loose
@@ -160,7 +168,7 @@ class ETauProducer(Module):
                     tauIdx = tauI
                     theTau = tau
                     theTau.pt = tauCorrPt
-                    theTau.mass = theTau.mass * esCorr
+                    theTau.mass = theTau.mass * esCorr[1]
                     currTauPt = tauCorrPt
                     currTauVsJet = tau.idDeepTau2018v2p5VSjet
         
@@ -189,14 +197,7 @@ class ETauProducer(Module):
                 currElPt = el.pt
 
         if theTau != None and theEl != None: #If we have an e+tau pair, calculate relevant quantities
-            havePair = True
-
-            eTauDR = theEl.DeltaR(theTau)
-            eTauDPhi = deltaPhi(theTau.phi, theEl.phi)
-            ePlusTau = theTau.p4() + theEl.p4()
-            visM = ePlusTau.M()
-            sign = theTau.charge * theEl.charge
-
+        
             #Pythia bug means we have to use placeholder SFs for run3
             if self.era == 2:
                 for i, syst in enumerate(["down", "nom", "up"]):
@@ -204,7 +205,8 @@ class ETauProducer(Module):
                     tauVsESF[i] = self.tauSFs["DeepTau2017v2p1VSe"].evaluate(abs(theTau.eta), theTau.genPartFlav, "VVLoose", syst)
                     tauVsMuSF[i] = self.tauSFs["DeepTau2017v2p1VSmu"].evaluate(abs(theTau.eta), theTau.genPartFlav, "Tight", syst)
                     tauVsJetSF[i] = self.tauSFs["DeepTau2017v2p1VSjet"].evaluate(theTau.pt, theTau.decayMode, theTau.genPartFlav, "Loose", "VVLoose", syst, "pt")
-            elif self.year != "2024":
+            
+            if self.year != "2024":
                 for i, syst in enumerate(["sfdown", "sf", "sfup"]): #2024 not available yet
                     if self.year == "2023" or self.year == "2023post": #2023 has phi-dependent SFs
                         eIDSF[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp90iso", theEl.eta + theEl.deltaEtaSC, theEl.pt, theEl.phi)
@@ -212,77 +214,95 @@ class ETauProducer(Module):
                         eIDSF[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp90iso", theEl.eta + theEl.deltaEtaSC, theEl.pt)
                     else:
                         eIDSF[i] = self.egmSFs["UL-Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp90iso", theEl.eta + theEl.deltaEtaSC, theEl.pt)
-            
+        
+            if self.era == 3:
+                trigObjs = Collection(event, "TrigObj")
+                tauLeg = False
+                eLeg = False
+                for trigObj in trigObjs: #Per TAU twiki, filter bits are incorrect in nanoAODv12-v13 so only use DR matching of trig objs
+                    if abs(trigObj.id) == 15:
+                        if deltaR(trigObj, theTau) < 0.5:
+                            trigMatchTau = True
+                            tauLeg = True
+                    elif abs(trigObj.id) == 11:
+                        if trigObj.filterBits & (2**3) and trigObj.filterBits & (2**6) and deltaR(trigObj, theEl) < 0.1:
+                            eLeg  = True
+            else:
+                #NB: For run2 where the MET trigger is used, no trigger matching can actually be performed. The variable is used for easier run2+run3 combined cuts
+                trigMatchTau = True
 
-            #If the event also has a good Z candidate, we can calculate collinear mass
-            if event.Z_dm >= 0 and event.Z_dm <= 2:
-                haveTrip = True
+            havePair = [passTauPtCut[0], passTauPtCut[1], passTauPtCut[2]] #We only considered nom tauES scale above
 
-                #collinear approximation 
-                nuTau = TLorentzVector()
-                nuEl = TLorentzVector()
-                cos_nuTau_MET = cos(deltaPhi(theTau.phi, event.MET_phi))
-                cos_nuEl_MET = cos(deltaPhi(theEl.phi, event.MET_phi))
-                cos_tau_el = cos(deltaPhi(theTau.phi, theEl.phi))
-                cos_tau_el_sqrd = cos_tau_el * cos_tau_el
+            for i in range(3):
+                if not havePair[i]:
+                    continue
                 
-                if cos_tau_el_sqrd > 0.999: #Avoid divide by zero issues if tau and el have same phi coord
-                    cos_tau_el_sqrd_div0Safe = 0.999
-                else:
-                    cos_tau_el_sqrd_div0Safe = cos_tau_el_sqrd
+                theTau = taus[tauIdx]
+                theTau.mass = theTau.mass * esCorr[i]
+                theTau.pt = theTau.pt * esCorr[i]
 
-                nuTau_mag = event.MET_pt * (cos_nuTau_MET - (cos_nuEl_MET * cos_tau_el)) / (1. - cos_tau_el_sqrd_div0Safe)
-                nuEl_mag = ((event.MET_pt * cos_nuTau_MET) - nuTau_mag) / cos_tau_el
+                if i == 1 or (i == 2 and eTauDR < 0): # Non tau-ES dependent
+                    eTauDR = theEl.DeltaR(theTau)
+                    eTauDPhi = deltaPhi(theTau.phi, theEl.phi)
+                    sign = theTau.charge * theEl.charge
 
-                nuTau.SetPtEtaPhiM(nuTau_mag, theTau.eta, theTau.phi, 0.)
-                nuEl.SetPtEtaPhiM(nuEl_mag, theEl.eta, theEl.phi, 0.)
-
-                fullElDecay = theEl.p4() + nuEl
-                fullTauDecay = theTau.p4() + nuTau
-
-                theZ = TLorentzVector()
-                if abs(event.ZReClJ_mass - 91.19) < abs(event.Z_mass - 91.19) and event.Z_dm == 0: #By default, choose closest mass (reclustered vs reco) to nominal
-                    theZ.SetPtEtaPhiM(event.ZReClJ_pt, event.ZReClJ_eta, event.ZReClJ_phi, event.ZReClJ_mass)
-                else:
-                    theZ.SetPtEtaPhiM(event.Z_pt, event.Z_eta, event.Z_phi, event.Z_mass)
-
-                collM_tauZ = (theTau.p4() + nuTau + theZ).M() 
-                collM_elZ = (theEl.p4() + nuEl + theZ).M()
-                minCollM = min(collM_tauZ, collM_elZ)
-                maxCollM = max(collM_tauZ, collM_elZ)
-
-                tauZDPhi = deltaPhi(theTau.phi, theZ.Phi())
-                eZDPhi = deltaPhi(theEl.phi, theZ.Phi())
+                ePlusTau = theTau.p4() + theEl.p4()
+                visM[i] = ePlusTau.M()
                 
-                isCand = haveTrip #A good triplet
-                if self.era == 3:
-                    isCand = isCand and event.Trig_tau  #Appropriate trigger
-                else:
-                    isCand = isCand and event.Trig_MET
-                isCand = isCand and abs(theEl.DeltaR(theTau)) > 0.5 #Separation of e and tau
-                isCand = isCand and cos_tau_el**2 < 0.99 #dphi separation of the e and tau
-                isCand = isCand and abs(deltaR(theZ.Eta(), theZ.Phi(), theTau.eta, theTau.phi)) > 0.5 #Separation of the Z and tau
-                isCand = isCand and abs(deltaR(theZ.Eta(), theZ.Phi(), theEl.eta, theEl.phi)) > 0.5 #Separation of the Z and el
-                isCand = isCand and isBetween(theTau.phi, theEl.phi, event.MET_phi) #MET is in small angle between tau & el
-                isCand = isCand and minCollM > visM # Collinear mass should be greater than visible mass
+                #If the event also has a good Z candidate, we can calculate collinear mass
+                if event.Z_dm >= 0 and event.Z_dm <= 2:
+                    haveTrip[i] = True
 
-        if isCand and self.era == 3:
-            trigObjs = Collection(event, "TrigObj")
-            tauLeg = False
-            eLeg = False
-            for trigObj in trigObjs: #Per TAU twiki, filter bits are incorrect in nanoAODv12-v13 so only use DR matching of trig objs
-                if abs(trigObj.id) == 15:
-                    if deltaR(trigObj, theTau) < 0.5:
-                        trigMatchTau = True
-                        tauLeg = True
-                elif abs(trigObj.id) == 11:
-                    if trigObj.filterBits & (2**3) and trigObj.filterBits & (2**6) and deltaR(trigObj, theEl) < 0.1:
-                        eLeg  = True
-        elif isCand and self.era == 2:
-            #NB: For run2 where the MET trigger is used, no trigger matching can actually be performed. The variable is used for easier run2+run3 combined cuts
-            trigMatchTau = True
-                
-        isCand = isCand and trigMatchTau
+                    #collinear approximation 
+                    nuTau = TLorentzVector()
+                    nuEl = TLorentzVector()
+
+                    if i == 0: #Only need to do this once since not ES scale dependent
+                        cos_nuTau_MET = cos(deltaPhi(theTau.phi, event.MET_phi))
+                        cos_nuEl_MET = cos(deltaPhi(theEl.phi, event.MET_phi))
+                        cos_tau_el = cos(deltaPhi(theTau.phi, theEl.phi))
+                        cos_tau_el_sqrd = cos_tau_el * cos_tau_el
+                    
+                        if cos_tau_el_sqrd > 0.999: #Avoid divide by zero issues if tau and el have same phi coord
+                            cos_tau_el_sqrd_div0Safe = 0.999
+                        else:
+                            cos_tau_el_sqrd_div0Safe = cos_tau_el_sqrd
+
+                        nuTau_mag = event.MET_pt * (cos_nuTau_MET - (cos_nuEl_MET * cos_tau_el)) / (1. - cos_tau_el_sqrd_div0Safe)
+                        nuEl_mag = ((event.MET_pt * cos_nuTau_MET) - nuTau_mag) / cos_tau_el
+
+                        nuTau.SetPtEtaPhiM(nuTau_mag, theTau.eta, theTau.phi, 0.)
+                        nuEl.SetPtEtaPhiM(nuEl_mag, theEl.eta, theEl.phi, 0.)
+
+                        theZ = TLorentzVector()
+                        if abs(event.ZReClJ_mass - 91.19) < abs(event.Z_mass - 91.19) and event.Z_dm == 0: #By default, choose closest mass (reclustered vs reco) to nominal
+                            theZ.SetPtEtaPhiM(event.ZReClJ_pt, event.ZReClJ_eta, event.ZReClJ_phi, event.ZReClJ_mass)
+                        else:
+                            theZ.SetPtEtaPhiM(event.Z_pt, event.Z_eta, event.Z_phi, event.Z_mass)
+
+                        tauZDPhi = deltaPhi(theTau.phi, theZ.Phi())
+                        eZDPhi = deltaPhi(theEl.phi, theZ.Phi())
+
+                    fullElDecay = theEl.p4() + nuEl
+                    fullTauDecay = theTau.p4() + nuTau
+
+                    collM_tauZ = (theTau.p4() + nuTau + theZ).M() 
+                    collM_elZ = (theEl.p4() + nuEl + theZ).M()
+                    minCollM[i] = min(collM_tauZ, collM_elZ)
+                    maxCollM[i] = max(collM_tauZ, collM_elZ)
+
+                    isCand[i] = haveTrip[i] #A good triplet
+                    if self.era == 3:
+                        isCand[i] = isCand[i] and event.Trig_tau  #Appropriate trigger
+                    else:
+                        isCand[i] = isCand[i] and event.Trig_MET
+                    isCand[i] = isCand[i] and abs(theEl.DeltaR(theTau)) > 0.5 #Separation of e and tau
+                    isCand[i] = isCand[i] and cos_tau_el**2 < 0.99 #dphi separation of the e and tau
+                    isCand[i] = isCand[i] and abs(deltaR(theZ.Eta(), theZ.Phi(), theTau.eta, theTau.phi)) > 0.5 #Separation of the Z and tau
+                    isCand[i] = isCand[i] and abs(deltaR(theZ.Eta(), theZ.Phi(), theEl.eta, theEl.phi)) > 0.5 #Separation of the Z and el
+                    isCand[i] = isCand[i] and isBetween(theTau.phi, theEl.phi, event.MET_phi) #MET is in small angle between tau & el
+                    isCand[i] = isCand[i] and minCollM[i] > visM[i] # Collinear mass should be greater than visible mass
+                    isCand[i] = isCand[i] and trigMatchTau
             
         self.out.fillBranch("ETau_eIdx", eIdx) 
         self.out.fillBranch("ETau_tauIdx", tauIdx)
