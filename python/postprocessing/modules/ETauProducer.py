@@ -70,7 +70,7 @@ class ETauProducer(Module):
         self.out.branch("ETau_eIDSF", "F", 3) #"Electron ID SFs [down, nom, up]"
 
         self.out.branch("ETau_trigMatchTau", "O", 3) #"True if the tau matches the single-tau trigger obj"
-        self.out.branch("ETau_trigMatchETau", "O", 3) #"True if the reco el and tau fired the e-tau cross trigger"
+        #self.out.branch("ETau_trigMatchETau", "O", 3) #"True if the reco el and tau fired the e-tau cross trigger"
         self.out.branch("ETau_isCand", "O", 3) #"True if the event is good e+tau+Z event. Entries correspond to [down, nom, up] tau ES scale"
         
     def analyze(self, event):
@@ -80,7 +80,7 @@ class ETauProducer(Module):
         eTauDR = [-999.99, -999.99, -999.99]
         eTauDPhi = [-999.99, -999.99, -999.99]
         tauZDPhi = [-999.99, -999.99, -999.99]
-        eZDPhi = [-999.99, -999.99, -999.99]
+        eZDPhi = -999.99
         cos_tau_el = [-999.99, -999.99, -999.99]
         visM = [-999.99, -999.99, -999.99]#All 3 entry lists correspond to [down, nom, up] of tau ES
         havePair = [False, False, False]
@@ -90,7 +90,7 @@ class ETauProducer(Module):
         isCand = [False, False, False]
         sign = [0, 0, 0]
 
-        trigMatchTau = False
+        trigMatchTau = [False, False, False]
         trigMatchETau = False
 
         if self.era == 3:
@@ -115,9 +115,9 @@ class ETauProducer(Module):
         if self.era == 3:
             esCorr = [0.97, 1.00, 1.03]
         else:
-            esCorr = [] * 3
+            esCorr = [1, 1, 1]
         esScaleVars = ["down", "nom", "up"]
-        passTauPtCut = []
+        passTauPtCut = [False, False, False]
         for i in range(3):
             for tauI, tau in enumerate(taus):
 
@@ -129,7 +129,7 @@ class ETauProducer(Module):
                     tauCorrPt = tau.pt * esCorr[i]
                     # Use the nominal for most ID checks but keep pT cut info for use later in determining candidacy 
                     passTauPtCut[i] = tauCorrPt > 20.0
-                    tauID = passTauPtCut[1] and abs(tau.eta) < 2.3 and abs(tau.dz) < 0.2 
+                    tauID = passTauPtCut[i] and abs(tau.eta) < 2.3 and abs(tau.dz) < 0.2 
                     
                     #WPs chosen to match run3 choices which were based on existing tau pog SFs
                     tauID = tauID and (tau.idDeepTau2017v2p1VSjet & 8) #8= loose
@@ -153,7 +153,7 @@ class ETauProducer(Module):
                     #esCorr = self.tauSFs["tau_energy_scale"].evaluate(tau.pt, abs(tau.eta), tau.decayMode, tau.genPartFlav, "Loose", "VVLoose", "nom")
 
                     tauCorrPt = tau.pt * esCorr[i] # Use the nominal for most ID checks but keep pT cut info for use later in determining candidacy 
-                    passTauPtCut = tauCorrPt > 20.0 
+                    passTauPtCut[i] = tauCorrPt > 20.0 
                     tauID = passTauPtCut[i] and abs(tau.eta) < 2.5 and abs(tau.dz) < 0.2 
 
                     #WPs chosen based on existing tau pog SFs
@@ -330,9 +330,7 @@ class ETauProducer(Module):
         self.out.fillBranch("ETau_tauVsJetSF", tauVsJetSF)
         self.out.fillBranch("ETau_eIDSF", eIDSF)
         self.out.fillBranch("ETau_trigMatchTau", trigMatchTau)
-        self.out.fillBranch("ETau_trigMatchETau", trigMatchETau)
-        self.out.fillBranch("ETau_trigMatchTau", trigMatchTau)
-        self.out.fillBranch("ETau_trigMatchETau", trigMatchETau)
+        #self.out.fillBranch("ETau_trigMatchETau", trigMatchETau)
         self.out.fillBranch("ETau_isCand", isCand) 
 
         return True
