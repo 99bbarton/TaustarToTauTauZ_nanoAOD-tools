@@ -52,7 +52,7 @@ class ETauProducer(Module):
         self.out.branch("ETau_ETauDR", "F", 3) #"Delta R between electron and tau"
         self.out.branch("ETau_ETauDPhi", "F", 3) #"Delta phi between the electron and tau"
         self.out.branch("ETau_tau1ZDPhi", "F", 3) #"Delta phi between the tau and the Z. Using 'tau1' here for convenient multichannel plotting"
-        self.out.branch("ETau_tau2ZDPhi", "F") #"Delta phi between the el and the Z. Using 'tau2' here for convenient multichannel plotting"
+        self.out.branch("ETau_tau2ZDPhi", "F", 3) #"Delta phi between the el and the Z. Using 'tau2' here for convenient multichannel plotting.All entries are equal"
         #self.out.branch("ETau_highPtGenMatch", "O") #"True if the higher pt tau decay matched to the GEN taustar tau"
         #self.out.branch("ETau_highPtCollM", "F") #"Either the min or max coll m, whichever was from the higher pt tau decay"
         #self.out.branch("ETau_ETauCos2DPhi", "F") #"cos^2(tau.phi-e.phi)"
@@ -80,8 +80,8 @@ class ETauProducer(Module):
         eTauDR = [-999.99, -999.99, -999.99]
         eTauDPhi = [-999.99, -999.99, -999.99]
         tauZDPhi = [-999.99, -999.99, -999.99]
-        eZDPhi = -999.99
-        cos_tau_el = [-999.99, -999.99, -999.99]
+        eZDPhi = [-999.99, -999.99, -999.99]
+        cos_tau_el = -999.99
         visM = [-999.99, -999.99, -999.99]#All 3 entry lists correspond to [down, nom, up] of tau ES
         havePair = [False, False, False]
         haveTrip = [False, False, False]
@@ -115,7 +115,7 @@ class ETauProducer(Module):
         if self.era == 3:
             esCorr = [0.97, 1.00, 1.03]
         else:
-            esCorr = [1, 1, 1]
+            esCorr = [-1, -1, -1]
         esScaleVars = ["down", "nom", "up"]
         passTauPtCut = [False, False, False]
         for i in range(3):
@@ -221,7 +221,7 @@ class ETauProducer(Module):
                         eIDSF[i] = self.egmSFs["UL-Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp90iso", theEl.eta + theEl.deltaEtaSC, theEl.pt)
     
 
-            havePair = [passTauPtCut[0], passTauPtCut[1], passTauPtCut[2]] #We only considered nom tauES scale above
+            havePair = [passTauPtCut[0] and tauIdx[0]>=0, passTauPtCut[1] and tauIdx[1]>=0, passTauPtCut[2] and tauIdx[2]>=0] #We only considered nom tauES scale above
 
             for i in range(3):
                 if not havePair[i]:
@@ -269,7 +269,7 @@ class ETauProducer(Module):
                         theZ.SetPtEtaPhiM(event.Z_pt, event.Z_eta, event.Z_phi, event.Z_mass)
 
                     tauZDPhi[i] = deltaPhi(theTau.phi, theZ.Phi())
-                    eZDPhi = deltaPhi(theEl.phi, theZ.Phi())
+                    eZDPhi[i] = deltaPhi(theEl.phi, theZ.Phi()) # This doesn't actually change but to make plotting easier, stored in 3 indices anyway
 
                     fullElDecay = theEl.p4() + nuEl
                     fullTauDecay = theTau.p4() + nuTau

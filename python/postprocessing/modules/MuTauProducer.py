@@ -40,19 +40,19 @@ class MuTauProducer(Module):
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.out = wrappedOutputTree
         self.out.branch("MuTau_muIdx", "I") #"Index to Muons of muon"
-        self.out.branch("MuTau_tauIdx", "I") #"Index to Taus of hadronic tau"
-        self.out.branch("MuTau_tauProngs", "I") #"Number if prongs of tau (1 or 3)"
-        self.out.branch("MuTau_havePair", "O") #"True if have a good mu and tau"
-        self.out.branch("MuTau_MuTauDR", "F") #"DeltaR betwenn mu and tau"
-        self.out.branch("MuTau_MuTauDPhi", "F") #"Delta phi between the muon and tau"
-        self.out.branch("MuTau_tau1ZDPhi", "F") #"Delta phi between the tau and the Z. Using 'tau1' here for convenient multichannel plotting"
-        self.out.branch("MuTau_tau2ZDPhi", "F") #"Delta phi between the mu and the Z. Using 'tau2' here for convenient multichannel plotting" 
+        self.out.branch("MuTau_tauIdx", "I", 3) #"Index to Taus of hadronic tau. Entries correspond to [down, nom, up] tau ES scale"
+        self.out.branch("MuTau_tauProngs", "I", 3) #"Number if prongs of tau (1 or 3). Entries correspond to [down, nom, up] tau ES scale"
+        self.out.branch("MuTau_havePair", "O",3) #"True if have a good mu and tau"
+        self.out.branch("MuTau_MuTauDR", "F", 3) #"DeltaR betwenn mu and tau"
+        self.out.branch("MuTau_MuTauDPhi", "F", 3) #"Delta phi between the muon and tau"
+        self.out.branch("MuTau_tau1ZDPhi", "F", 3) #"Delta phi between the tau and the Z. Using 'tau1' here for convenient multichannel plotting"
+        self.out.branch("MuTau_tau2ZDPhi", "F", 3) #"Delta phi between the mu and the Z. Using 'tau2' here for convenient multichannel plotting" 
         #self.out.branch("MuTau_MuTauCos2DPhi", "F") #"cos^2(tau.phi-mu.phi)"
-        self.out.branch("MuTau_visM", "F") #"Visible mass of the mu+tau pair"
-        self.out.branch("MuTau_sign", "I") #"The product of tau.charge and mu.charge"
-        self.out.branch("MuTau_haveTrip", "O") #"True if have a good mu, tau, and Z"
-        self.out.branch("MuTau_minCollM", "F") #"The smaller collinear mass of e+nu+Z or tau+nu+z. Uses best Z of recl vs reco Z mass"
-        self.out.branch("MuTau_maxCollM", "F") #"The larger collinear mass of either mu+nu+Z or tau+nu+Z. Uses best Z of recl vs reco Z mass"
+        self.out.branch("MuTau_visM", "F", 3) #"Visible mass of the mu+tau pair"
+        self.out.branch("MuTau_sign", "I", 3) #"The product of tau.charge and mu.charge"
+        self.out.branch("MuTau_haveTrip", "O", 3) #"True if have a good mu, tau, and Z"
+        self.out.branch("MuTau_minCollM", "F", 3) #"The smaller collinear mass of e+nu+Z or tau+nu+z. Uses best Z of recl vs reco Z mass"
+        self.out.branch("MuTau_maxCollM", "F", 3) #"The larger collinear mass of either mu+nu+Z or tau+nu+Z. Uses best Z of recl vs reco Z mass"
         #self.out.branch("MuTau_highPtGenMatch", "O") #"True if the higher pt tau decay matched to the GEN taustar tau"
         #self.out.branch("MuTau_highPtCollM", "F") #"Either the min or max coll m, whichever was from the higher pt tau decay"
         #Scale factors
@@ -62,30 +62,29 @@ class MuTauProducer(Module):
         self.out.branch("MuTau_tauVsJetSF", "F", 3) #"DeepTau tau vs jet SFs [down, nom, up]"
         self.out.branch("MuTau_muIDSF", "F", 3) #"Muon ID SFs [down, nom, up]"
         #Trigger matching
-        self.out.branch("MuTau_trigMatchTau", "O") #"True if the tau matches the single-tau trigger obj"
-        self.out.branch("MuTau_trigMatchMuTau", "O") #"True if the reco mu and tau fired the mu-tau cross trigger"
-        self.out.branch("MuTau_isCand", "O") #"True if the event is good mu+tau+Z event"
+        self.out.branch("MuTau_trigMatchTau", "O", 3) #"True if the tau matches the single-tau trigger obj"
+        #self.out.branch("MuTau_trigMatchMuTau", "O") #"True if the reco mu and tau fired the mu-tau cross trigger"
+        self.out.branch("MuTau_isCand", "O", 3) #"True if the event is good mu+tau+Z event"
 
     def analyze(self, event):
         muIdx = -1
-        tauIdx = -1
-        tauProngs = -1
-        muTauDR = -999.99
-        muTauDPhi = -999.99
-        tauZDPhi = - 999.99
-        muZDPhi = - 999.99
+        tauIdx = [-1, -1, -1]
+        tauProngs = [-1, -1, -1]
+        muTauDR = [-999.99, -999.99, -999.99]
+        muTauDPhi = [-999.99, -999.99, -999.99]
+        tauZDPhi = [-999.99, -999.99, -999.99]
+        muZDPhi = [-999.99, -999.99, -999.99]
         cos_tau_mu = -999.99
-        visM = -999.99
-        sign = 0
-        havePair = False
-        haveTrip = False
-        maxCollM = -999.99
-        minCollM = -999.99
-        highPtGenMatch = False
-        highPtCollM = -999.99
-        isCand = False
-        trigMatchTau = False
-        trigMatchMuTau = False
+        visM = [-999.99, -999.99, -999.99]
+        sign = [0, 0, 0]
+        havePair = [False, False, False]
+        haveTrip = [False, False, False]
+        maxCollM = [-999.99, -999.99, -999.99]
+        minCollM = [-999.99, -999.99, -999.99]
+        #highPtGenMatch = False
+        #highPtCollM = -999.99
+        isCand = [False, False, False]
+        trigMatchTau = [False, False, False]
 
         if self.era == 3:
             tauESCorr = [0.97, 1, 1.03]
@@ -105,59 +104,68 @@ class MuTauProducer(Module):
         currTauVsJet = 0
         currTauPt = 0
         theTau = None
-        for tauI, tau in enumerate(taus):
-            if self.era == 2:
-                if tau.decayMode == 5 or tau.decayMode == 6:
-                    continue
-                esCorr = self.tauSFs["tau_energy_scale"].evaluate(tau.pt, abs(tau.eta), tau.decayMode, tau.genPartFlav, "DeepTau2017v2p1", "nom")
-                tauCorrPt = tau.pt * esCorr 
-                tauID = tauCorrPt> 20 and abs(tau.eta) < 2.3 and abs(tau.dz) < 0.2 
-                #WPs chosen to match run3 choices which were based on existing tau pog SFs
-                tauID = tauID and (tau.idDeepTau2017v2p1VSjet & 8) #8= loose
-                tauID = tauID and (tau.idDeepTau2017v2p1VSmu & 8) #8= tight
-                tauID = tauID and (tau.idDeepTau2017v2p1VSe & 2) #2= VVLoose
+        if self.era == 3:
+            esCorr = [0.97, 1.00, 1.03]
+        else:
+            esCorr = [-1, -1, -1]
+        esScaleVars = ["down", "nom", "up"]
+        passTauPtCut = [False, False, False]
+        for i, esScaleVar in enumerate(esScaleVars):
+            for tauI, tau in enumerate(taus):
+                if self.era == 2:
+                    if tau.decayMode == 5 or tau.decayMode == 6:
+                        continue
+                    esCorr[i] = self.tauSFs["tau_energy_scale"].evaluate(tau.pt, abs(tau.eta), tau.decayMode, tau.genPartFlav, "DeepTau2017v2p1", esScaleVar)
+                    tauCorrPt = tau.pt * esCorr[i] 
+                    passTauPtCut[i] = tauCorrPt> 20.0
+                    tauID = passTauPtCut[i] and abs(tau.eta) < 2.3 and abs(tau.dz) < 0.2 
+                    #WPs chosen to match run3 choices which were based on existing tau pog SFs
+                    tauID = tauID and (tau.idDeepTau2017v2p1VSjet & 8) #8= loose
+                    tauID = tauID and (tau.idDeepTau2017v2p1VSmu & 8) #8= tight
+                    tauID = tauID and (tau.idDeepTau2017v2p1VSe & 2) #2= VVLoose
 
-                if tauID and tau.idDeepTau2017v2p1VSjet >= currTauVsJet:
-                    if tau.idDeepTau2017v2p1VSjet == currTauVsJet:
-                        if tauCorrPt < currTauPt:
-                            continue
-                    tauIdx = tauI
-                    theTau = tau
-                    theTau.pt = tauCorrPt
-                    theTau.mass = theTau.mass * esCorr
-                    currTauPt = tauCorrPt
-                    currTauVsJet = tau.idDeepTau2017v2p1VSjet
-            elif self.era == 3:
-                #Tau POG recommendations https://twiki.cern.ch/twiki/bin/view/CMS/TauIDRecommendationForRun3
-                esCorr = 1.00
-                #esCorr = self.tauSFs["tau_energy_scale"].evaluate(tau.pt, abs(tau.eta), tau.decayMode, tau.genPartFlav, "Loose", "VVLoose", "nom")
-                tauCorrPt = tau.pt * esCorr
-                tauID = tauCorrPt > 20 and abs(tau.eta) < 2.5 and abs(tau.dz) < 0.2 
-                #WPs chosen based on existing tau pog SFs
-                tauID = tauID and tau.idDeepTau2018v2p5VSjet >= 4 #4= loose
-                tauID = tauID and tau.idDeepTau2018v2p5VSmu >= 4 #4= tight
-                tauID = tauID and tau.idDeepTau2018v2p5VSe >= 2 #2= VVLoose
+                    if tauID and tau.idDeepTau2017v2p1VSjet >= currTauVsJet:
+                        if tau.idDeepTau2017v2p1VSjet == currTauVsJet:
+                            if tauCorrPt < currTauPt:
+                                continue
+                        tauIdx[i] = tauI
+                        theTau = tau
+                        theTau.pt = tauCorrPt
+                        theTau.mass = theTau.mass * esCorr[i]
+                        currTauPt = tauCorrPt
+                        currTauVsJet = tau.idDeepTau2017v2p1VSjet
+                elif self.era == 3:
+                    #Tau POG recommendations https://twiki.cern.ch/twiki/bin/view/CMS/TauIDRecommendationForRun3
+                    #esCorr = self.tauSFs["tau_energy_scale"].evaluate(tau.pt, abs(tau.eta), tau.decayMode, tau.genPartFlav, "Loose", "VVLoose", "nom")
+                    tauCorrPt = tau.pt * esCorr[i]
+                    passTauPtCut[i] = tauCorrPt> 20.0
+                    tauID = passTauPtCut[i] and abs(tau.eta) < 2.5 and abs(tau.dz) < 0.2 
+                    #WPs chosen based on existing tau pog SFs
+                    tauID = tauID and tau.idDeepTau2018v2p5VSjet >= 4 #4= loose
+                    tauID = tauID and tau.idDeepTau2018v2p5VSmu >= 4 #4= tight
+                    tauID = tauID and tau.idDeepTau2018v2p5VSe >= 2 #2= VVLoose
 
-                #I believe this is already applied but included here anyway for safety
-                tauID = tauID and tau.decayMode != 5 and tau.decayMode != 6 
+                    #I believe this is already applied but included here anyway for safety
+                    tauID = tauID and tau.decayMode != 5 and tau.decayMode != 6 
 
-                if tauID and tau.idDeepTau2018v2p5VSjet >= currTauVsJet:
-                    if tau.idDeepTau2018v2p5VSjet == currTauVsJet:
-                        if tauCorrPt < currTauPt:
-                            continue
-                    tauIdx = tauI
-                    theTau = tau
-                    theTau.pt = tauCorrPt
-                    theTau.mass = theTau.mass * esCorr
-                    currTauPt = tauCorrPt
-                    currTauVsJet = tau.idDeepTau2018v2p5VSjet
-        
-        if theTau != None:
-            if theTau.decayMode >= 0 and theTau.decayMode <= 2:
-                tauProngs = 1
-            elif theTau.decayMode == 10 or theTau.decayMode == 11:
-                tauProngs = 3
-        
+                    if tauID and tau.idDeepTau2018v2p5VSjet >= currTauVsJet:
+                        if tau.idDeepTau2018v2p5VSjet == currTauVsJet:
+                            if tauCorrPt < currTauPt:
+                                continue
+                        tauIdx[i] = tauI
+                        theTau = tau
+                        theTau.pt = tauCorrPt
+                        theTau.mass = theTau.mass * esCorr[i]
+                        currTauPt = tauCorrPt
+                        currTauVsJet = tau.idDeepTau2018v2p5VSjet
+            
+            if tauIdx[i] >= 0:
+                theTau = taus[tauIdx[i]]
+                if theTau.decayMode >= 0 and theTau.decayMode <= 2:
+                    tauProngs[i] = 1
+                elif theTau.decayMode == 10 or theTau.decayMode == 11:
+                    tauProngs[i] = 3
+            
         currMuPt = 0
         theMu = None
         for muI, mu in enumerate(muons):
@@ -172,15 +180,8 @@ class MuTauProducer(Module):
                 theMu = mu
                 currMuPt = mu.pt
 
-        if theTau != None and theMu != None: #If we have an mu+tau pair, calculate relevant quantities
-            havePair = True
-
-            muTauDR = theMu.DeltaR(theTau)
-            muTauDPhi = deltaPhi(theTau.phi, theMu.phi)
-            muPlusTau = theTau.p4() + theMu.p4()
-            visM = muPlusTau.M()
-            sign = theTau.charge * theMu.charge
-
+        if theMu != None and (tauIdx[0]>=0 or tauIdx[1]>=0 or tauIdx[2]>=0): #If we have an mu+tau pair, calculate relevant quantities
+            
             #Pythia bug means we have to use placeholder SFs for run3
             if self.era == 2:
                 for i, syst in enumerate(["down", "nom", "up"]):
@@ -192,77 +193,94 @@ class MuTauProducer(Module):
                 for i, syst in enumerate(["systdown", "nominal", "systup"]):
                     muIDSF[i] = self.muSFs["NUM_MediumID_DEN_TrackerMuons"].evaluate(abs(theMu.eta), theMu.pt, syst)
 
-            #If the event also has a good Z candidate, we can calculate collinear mass
-            if event.Z_dm >= 0 and event.Z_dm <= 2:
-                haveTrip = True
+            havePair = [passTauPtCut[0] and tauIdx[0]>=0, passTauPtCut[1] and tauIdx[1]>=0, passTauPtCut[2] and tauIdx[2]>=0]
 
-                #collinear approximation 
-                nuTau = TLorentzVector()
-                nuMu = TLorentzVector()
-                cos_nuTau_MET = cos(deltaPhi(theTau.phi, event.MET_phi))
-                cos_nuMu_MET = cos(deltaPhi(theMu.phi, event.MET_phi))
-                cos_tau_mu = cos(deltaPhi(theTau.phi, theMu.phi))
-                cos_tau_mu_sqrd = cos_tau_mu * cos_tau_mu
-                
-                if cos_tau_mu_sqrd > 0.999: #Avoid divide by zero issues if tau and mu have same phi coord
-                    cos_tau_mu_sqrd_div0Safe = 0.999
-                else:
-                    cos_tau_mu_sqrd_div0Safe = cos_tau_mu_sqrd
+            for i in range(3):
+                if not havePair[i]:
+                    continue
 
-                nuTau_mag = event.MET_pt * (cos_nuTau_MET - (cos_nuMu_MET * cos_tau_mu)) / (1. - cos_tau_mu_sqrd_div0Safe)
-                nuMu_mag = ((event.MET_pt * cos_nuTau_MET) - nuTau_mag) / cos_tau_mu
+                theTau = taus[tauIdx[i]]
+                theTau.mass = theTau.mass * esCorr[i]
+                theTau.pt = theTau.pt * esCorr[i]
 
-                nuTau.SetPtEtaPhiM(nuTau_mag, theTau.eta, theTau.phi, 0.)
-                nuMu.SetPtEtaPhiM(nuMu_mag, theMu.eta, theMu.phi, 0.)
+                muTauDR[i] = theMu.DeltaR(theTau)
+                muTauDPhi[i] = deltaPhi(theTau.phi, theMu.phi)
+                muPlusTau = theTau.p4() + theMu.p4()
+                visM[i] = muPlusTau.M()
+                sign[i] = theTau.charge * theMu.charge
 
-                fullMuDecay = theMu.p4() + nuMu
-                fullTauDecay = theTau.p4() + nuTau
+            
 
-                theZ = TLorentzVector()
-                if abs(event.ZReClJ_mass - 91.19) < abs(event.Z_mass - 91.19) and event.Z_dm == 0:
-                    theZ.SetPtEtaPhiM(event.ZReClJ_pt, event.ZReClJ_eta, event.ZReClJ_phi, event.ZReClJ_mass)
-                else:
-                    theZ.SetPtEtaPhiM(event.Z_pt, event.Z_eta, event.Z_phi, event.Z_mass)
+                #If the event also has a good Z candidate, we can calculate collinear mass
+                if event.Z_dm >= 0 and event.Z_dm <= 2:
+                    haveTrip[i] = True
 
-                collM_tauZ = (theTau.p4() + nuTau + theZ).M() 
-                collM_muZ = (theMu.p4() + nuMu + theZ).M()
-                minCollM = min(collM_tauZ, collM_muZ)
-                maxCollM = max(collM_tauZ, collM_muZ)
+                    #collinear approximation 
+                    nuTau = TLorentzVector()
+                    nuMu = TLorentzVector()
+                    cos_nuTau_MET = cos(deltaPhi(theTau.phi, event.MET_phi))
+                    cos_nuMu_MET = cos(deltaPhi(theMu.phi, event.MET_phi))
+                    cos_tau_mu = cos(deltaPhi(theTau.phi, theMu.phi))
+                    cos_tau_mu_sqrd = cos_tau_mu * cos_tau_mu
+                    
+                    if cos_tau_mu_sqrd > 0.999: #Avoid divide by zero issues if tau and mu have same phi coord
+                        cos_tau_mu_sqrd_div0Safe = 0.999
+                    else:
+                        cos_tau_mu_sqrd_div0Safe = cos_tau_mu_sqrd
 
-                tauZDPhi = deltaPhi(theTau.phi, theZ.Phi())
-                muZDPhi = deltaPhi(theMu.phi, theZ.Phi())
-                
-                isCand = haveTrip #A good triplet
-                if self.era == 2: #Appropriate trigger
-                    isCand = isCand and event.Trig_MET
-                elif self.era == 3:
-                    isCand = isCand and event.Trig_tau  
-                isCand = isCand and abs(theMu.DeltaR(theTau)) > 0.5 #Separation of mu and tau
-                isCand = isCand and cos_tau_mu**2 < 0.99 #DPhi separation of the mu and tau
-                isCand = isCand and abs(deltaR(theZ.Eta(), theZ.Phi(), theTau.eta, theTau.phi)) > 0.5 #Separation of the Z and tau
-                isCand = isCand and abs(deltaR(theZ.Eta(), theZ.Phi(), theMu.eta, theMu.phi)) > 0.5 #Separation of the Z and mu
-                isCand = isCand and isBetween(theTau.phi, theMu.phi, event.MET_phi) #MET is in small angle between tau & mu
-                isCand = isCand and minCollM > visM # Collinear mass should be greater than visible mass
-                isCand = isCand and not event.ETau_isCand
+                    nuTau_mag = event.MET_pt * (cos_nuTau_MET - (cos_nuMu_MET * cos_tau_mu)) / (1. - cos_tau_mu_sqrd_div0Safe)
+                    nuMu_mag = ((event.MET_pt * cos_nuTau_MET) - nuTau_mag) / cos_tau_mu
 
-        if isCand and self.era == 3:
-            trigObjs = Collection(event, "TrigObj")
-            tauLeg = False
-            muLeg = False
-            for trigObj in trigObjs:
-                if abs(trigObj.id) == 15: #Per TAU twiki, filter bits are incorrect in nanoAODv12-v13 so only use DR matching of trig objs
-                    if deltaR(trigObj, theTau) < 0.5:
-                        trigMatchTau = True
-                        tauLeg = True
-                elif abs(trigObj.id) == 13: 
-                    if trigObj.filterBits & (2**2) and trigObj.filterBits & (2**6) and deltaR(trigObj, theMu) < 0.1: 
-                        muLeg  = True
-            trigMatchMuTau = tauLeg and muLeg
-        elif isCand and self.era == 2:
-            #NB: For run2 where the MET trigger is used, no trigger matching can actually be performed. The variable is used for easier run2+run3 combined cuts
-            trigMatchTau = True 
+                    nuTau.SetPtEtaPhiM(nuTau_mag, theTau.eta, theTau.phi, 0.)
+                    nuMu.SetPtEtaPhiM(nuMu_mag, theMu.eta, theMu.phi, 0.)
 
-        isCand = isCand and trigMatchTau
+                    fullMuDecay = theMu.p4() + nuMu
+                    fullTauDecay = theTau.p4() + nuTau
+
+                    theZ = TLorentzVector()
+                    if abs(event.ZReClJ_mass - 91.19) < abs(event.Z_mass - 91.19) and event.Z_dm == 0:
+                        theZ.SetPtEtaPhiM(event.ZReClJ_pt, event.ZReClJ_eta, event.ZReClJ_phi, event.ZReClJ_mass)
+                    else:
+                        theZ.SetPtEtaPhiM(event.Z_pt, event.Z_eta, event.Z_phi, event.Z_mass)
+
+                    collM_tauZ = (theTau.p4() + nuTau + theZ).M() 
+                    collM_muZ = (theMu.p4() + nuMu + theZ).M()
+                    minCollM[i] = min(collM_tauZ, collM_muZ)
+                    maxCollM[i] = max(collM_tauZ, collM_muZ)
+
+                    tauZDPhi[i] = deltaPhi(theTau.phi, theZ.Phi())
+                    muZDPhi[i] = deltaPhi(theMu.phi, theZ.Phi())
+
+                    if self.era == 3:
+                        trigObjs = Collection(event, "TrigObj")
+                        #tauLeg = False
+                        #muLeg = False
+                        for trigObj in trigObjs:
+                            if abs(trigObj.id) == 15: #Per TAU twiki, filter bits are incorrect in nanoAODv12-v13 so only use DR matching of trig objs
+                                if deltaR(trigObj, theTau) < 0.5:
+                                    trigMatchTau[i] = True
+                            #        tauLeg = True
+                            #elif abs(trigObj.id) == 13: 
+                            #    if trigObj.filterBits & (2**2) and trigObj.filterBits & (2**6) and deltaR(trigObj, theMu) < 0.1: 
+                            #        muLeg  = True
+                        #trigMatchMuTau = tauLeg and muLeg
+                    else:
+                        #NB: For run2 where the MET trigger is used, no trigger matching can actually be performed. The variable is used for easier run2+run3 combined cuts
+                        trigMatchTau[i] = True 
+                    
+                    isCand[i] = haveTrip[i] #A good triplet
+                    if self.era == 2: #Appropriate trigger
+                        isCand[i] = isCand[i] and event.Trig_MET
+                    elif self.era == 3:
+                        isCand[i] = isCand[i] and event.Trig_tau  
+                    isCand[i] = isCand[i] and abs(theMu.DeltaR(theTau)) > 0.5 #Separation of mu and tau
+                    isCand[i] = isCand[i] and cos_tau_mu**2 < 0.99 #DPhi separation of the mu and tau
+                    isCand[i] = isCand[i] and abs(deltaR(theZ.Eta(), theZ.Phi(), theTau.eta, theTau.phi)) > 0.5 #Separation of the Z and tau
+                    isCand[i] = isCand[i] and abs(deltaR(theZ.Eta(), theZ.Phi(), theMu.eta, theMu.phi)) > 0.5 #Separation of the Z and mu
+                    isCand[i] = isCand[i] and isBetween(theTau.phi, theMu.phi, event.MET_phi) #MET is in small angle between tau & mu
+                    isCand[i] = isCand[i] and minCollM[i] > visM[i] # Collinear mass should be greater than visible mass
+                    isCand[i] = isCand[i] and not event.ETau_isCand[i]
+                    isCand[i] = isCand[i] and trigMatchTau[i]
 
         self.out.fillBranch("MuTau_muIdx", muIdx) 
         self.out.fillBranch("MuTau_tauIdx", tauIdx)
@@ -285,7 +303,7 @@ class MuTauProducer(Module):
         self.out.fillBranch("MuTau_tauVsJetSF", tauVsJetSF)
         self.out.fillBranch("MuTau_muIDSF", muIDSF)
         self.out.fillBranch("MuTau_trigMatchTau", trigMatchTau)
-        self.out.fillBranch("MuTau_trigMatchMuTau", trigMatchMuTau)
+        #self.out.fillBranch("MuTau_trigMatchMuTau", trigMatchMuTau)
         self.out.fillBranch("MuTau_isCand", isCand) 
 
         return True
