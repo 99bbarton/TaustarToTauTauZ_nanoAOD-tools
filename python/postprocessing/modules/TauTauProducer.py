@@ -90,10 +90,10 @@ class TauTauProducer(Module):
             tauVsJetSF = [1, 1, 1, 1, 1, 1]
             tauVsMuSF = [1, 1, 1, 1, 1, 1]
         
-        trigMatchTau = [-999.99, -999.99, -999.99]
-        trigMatchTauTau = [-999.99, -999.99, -999.99]
+        trigMatchTau = [False, False, False]
+        #trigMatchTauTau = [False, False, False]
 
-        isCand = [-999.99, -999.99, -999.99]
+        isCand = [False, False, False]
         
         taus = Collection(event, "Tau")
         if len(taus) < 2:
@@ -158,8 +158,8 @@ class TauTauProducer(Module):
                 tau1.pt = tau1.pt * tau1Corr
                 tau1.mass = tau1.mass * tau1Corr
                 
-                for i in range(1, len(goodTaus)):
-                    tau2 = taus[goodTaus[i][0]]
+                for j in range(1, len(goodTaus)):
+                    tau2 = taus[goodTaus[j][0]]
                     if self.era == 2:
                         tau2Corr =  self.tauSFs["tau_energy_scale"].evaluate(tau2.pt, abs(tau2.eta), tau2.decayMode, tau2.genPartFlav, "DeepTau2017v2p1", esScaleVar)
                     elif self.era == 3:
@@ -169,7 +169,7 @@ class TauTauProducer(Module):
                     tau2.mass = tau2.mass * tau2Corr
                     
                     if abs(tau1.DeltaR(tau2)) > 0.5:
-                        tau2Idx[i] = goodTaus[i][0]
+                        tau2Idx[i] = goodTaus[j][0]
                         break #Since list is sorted, as soon as we find a DR separated tau, we're done
                 if tau2Idx[i] < 0: #No DR separated second tau so this is not a good candidate event
                     havePair[i] = False
