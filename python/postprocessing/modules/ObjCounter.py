@@ -5,8 +5,8 @@ from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collect
 
 class ObjCounter(Module):
 
-    def __init__(self):
-        pass
+    def __init__(self, era):
+        self.era = era
     
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.out = wrappedOutputTree
@@ -69,11 +69,19 @@ class ObjCounter(Module):
         self.out.fillBranch("ObjCnt_nElMatch", nExp_el == nEl)
         self.out.fillBranch("ObjCnt_nMuMatch", nExp_mu == nMu)
         self.out.fillBranch("ObjCnt_nJetsMatch", nJetsMatch)
-        
-        return True
+
+        if self.era == 2: #RUN2 file sizes were massive so keep only events good for final analysis steps. Keep more run3 events for use for studies
+            if event.Z_isCand and (event.ETau_isCand or event.MuTau_isCand or Event.TauTau_isCand):
+                return True
+            else:
+                return False
+        else:
+            return True
+
+
     
 
-objCounterConstr = lambda: ObjCounter()
+objCounterConstr = lambda era: ObjCounter(era = era)
 
 #from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import PostProcessor
 #from PhysicsTools.NanoAODTools.postprocessing.modules.ObjCounter import objCounterConstr

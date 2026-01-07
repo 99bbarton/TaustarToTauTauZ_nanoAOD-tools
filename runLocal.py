@@ -41,8 +41,9 @@ elif era == 3:
 
 preSelection = "(" + cut_Z + "&&(" + cut_tautau + "||" + cut_etau + "||" + cut_mutau + "))"
 
-modules = [genProducerConstr(era), trigProducerConstr(year), zProducerConstr(year), zJetReclusterProducerConstr(),  eTauProducerConstr(year), muTauProducerConstr(year), tauTauProducerConstr(year), objCounterConstr()]
+modules = [genProducerConstr(era), trigProducerConstr(year), zProducerConstr(year), zJetReclusterProducerConstr(),  eTauProducerConstr(year), muTauProducerConstr(year), tauTauProducerConstr(year), objCounterConstr(era)]
 #modules = [genProducerConstr(era), trigProducerConstr(year), zProducerConstr(year)]
+#modules = [trigProducerConstr(year), zProducerConstr(year), zJetReclusterProducerConstr(),  eTauProducerConstr(year)]
 
 p = PostProcessor("data", testFiles, cut=preSelection, branchsel="keep_and_drop.txt", postfix="", modules=modules)#, histFileName="hists.root", histDirName="Hists")
 p.run()
