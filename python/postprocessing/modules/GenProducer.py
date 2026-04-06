@@ -395,8 +395,8 @@ class GenProducer(Module):
 
                 break #Since we've found all interesting particles and done all calculations
         
-        if not foundAll:
-            print("WARNING: In GenProducer: All interesting gen particles were not found!")
+        #if not foundAll:
+        #    print("WARNING: In GenProducer: All interesting gen particles were not found!")
 
         #Write output to tree
         self.out.fillBranch("Gen_tsIdx", tsIdx)
