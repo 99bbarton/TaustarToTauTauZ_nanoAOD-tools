@@ -17,7 +17,6 @@ drop GenDressedLepton*
 drop GenIsolatedPhoton*
 drop GenProton*
 drop GenVtx*
-drop Generator*
 drop HLTriggerFinalPath*
 drop HLTriggerFirstPath*
 drop nIsoTrack*
