@@ -28,6 +28,21 @@ if year in ["2016", "2016post", "2017", "2018"]:
 elif year in ["2022", "2022post", "2023", "2023post", "2024"]:
     era = 3
 
+goldenJSON = "./data/GoldenJSONs/"
+yrToGoldenJSON = {
+    "2016": "Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt",
+    "2016post" : "Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt",
+    "2017" : "Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt",
+    "2018" : "Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt",
+    "2022" : "Cert_Collisions2022_355100_362760_Golden.json",
+    "2022post" : "Cert_Collisions2022_355100_362760_Golden.json",
+    "2023" : "Cert_Collisions2023_366442_370790_Golden.json",
+    "2023post" : "Cert_Collisions2023_366442_370790_Golden.json",
+    "2024" : "Cert_Collisions2024_378981_386951_Golden.json"
+}
+if isData:
+    goldenJSON += yrToGoldenJSON[year]
+
 if era == 2:
     cut_etau = "(Sum$(TMath::Abs(Electron_eta)<2.5 && Electron_pt>=24. && Electron_mvaFall17V2Iso_WP90 && (TMath::Abs(Electron_eta+Electron_deltaEtaSC)>=1.566||TMath::Abs(Electron_eta+Electron_deltaEtaSC)<1.444))>0 && Sum$(Tau_pt>20. && TMath::Abs(Tau_eta)<2.3 && TMath::Abs(Tau_dz)<0.2 && Tau_decayMode!=5 && Tau_decayMode!=6 && Tau_decayMode!=7 && (1&Tau_idDeepTau2017v2p1VSjet) && (8&Tau_idDeepTau2017v2p1VSmu) && (2&Tau_idDeepTau2017v2p1VSe))>0)"
     cut_mutau = "(Sum$(TMath::Abs(Muon_eta)<2.4 && Muon_pt>=20. && Muon_mediumId)>0 && Sum$(Tau_pt>20. && TMath::Abs(Tau_eta)<2.3 && TMath::Abs(Tau_dz)<0.2 && Tau_decayMode!=5 && Tau_decayMode!=6 && Tau_decayMode!=7 && (1&Tau_idDeepTau2017v2p1VSjet) && (8&Tau_idDeepTau2017v2p1VSmu) && (2&Tau_idDeepTau2017v2p1VSe))>0)"
@@ -41,12 +56,13 @@ elif era == 3:
 
 preSelection = "(" + cut_Z + "&&(" + cut_tautau + "||" + cut_etau + "||" + cut_mutau + "))"
 
+p = None
 if isData:
     modules = [trigProducerConstr(year), zProducerConstr(year), zJetReclusterProducerConstr(),  eTauProducerConstr(year), muTauProducerConstr(year), tauTauProducerConstr(year), objCounterConstr(era)]
+    p = PostProcessor("data", testFiles, cut=preSelection, branchsel="keep_and_drop.txt", postfix="", modules=modules, jsonInput=goldenJSON)
 else:
     modules = [genProducerConstr(era), trigProducerConstr(year), zProducerConstr(year), zJetReclusterProducerConstr(),  eTauProducerConstr(year), muTauProducerConstr(year), tauTauProducerConstr(year), objCounterConstr(era)]
-#modules = [genProducerConstr(era), trigProducerConstr(year), zProducerConstr(year)]
-#modules = [trigProducerConstr(year), zProducerConstr(year), zJetReclusterProducerConstr(),  eTauProducerConstr(year)]
+    p = PostProcessor("data", testFiles, cut=preSelection, branchsel="keep_and_drop.txt", postfix="", modules=modules)
 
-p = PostProcessor("data", testFiles, cut=preSelection, branchsel="keep_and_drop.txt", postfix="", modules=modules)#, histFileName="hists.root", histDirName="Hists")
+#p = PostProcessor("data", testFiles, cut=preSelection, branchsel="keep_and_drop.txt", postfix="", modules=modules)#, histFileName="hists.root", histDirName="Hists")
 p.run()

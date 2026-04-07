@@ -23,6 +23,21 @@ if year in ["2016", "2016post", "2017", "2018"]:
 elif year in ["2022", "2022post", "2023", "2023post", "2024"]:
     era = 3
 
+goldenJSON = "../data/GoldenJSONs/"
+yrToGoldenJSON = {
+    "2016": "Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt",
+    "2016post" : "Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt",
+    "2017" : "Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt",
+    "2018" : "Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt",
+    "2022" : "Cert_Collisions2022_355100_362760_Golden.json",
+    "2022post" : "Cert_Collisions2022_355100_362760_Golden.json",
+    "2023" : "Cert_Collisions2023_366442_370790_Golden.json",
+    "2023post" : "Cert_Collisions2023_366442_370790_Golden.json",
+    "2024" : "Cert_Collisions2024_378981_386951_Golden.json"
+}
+if isData:
+    goldenJSON += yrToGoldenJSON[year]
+
 inputFiles = []
 files = os.listdir("./")
 for fN, inpFile in enumerate(files):
@@ -50,6 +65,8 @@ elif era == 3:
 
 preSelection = "(" + cut_Z + "&&(" + cut_tautau + "||" + cut_etau + "||" + cut_mutau + "))"
 
-
-p = PostProcessor("outputs", inputFiles, cut=preSelection, branchsel="../keep_and_drop.txt", postfix="output", modules=modules, fwkJobReport=True)
+if isData:
+    p = PostProcessor("outputs", inputFiles, cut=preSelection, branchsel="../keep_and_drop.txt", postfix="output", modules=modules, fwkJobReport=True, jsonInput=goldenJSON)
+else:
+    p = PostProcessor("outputs", inputFiles, cut=preSelection, branchsel="../keep_and_drop.txt", postfix="output", modules=modules, fwkJobReport=True)
 p.run()
