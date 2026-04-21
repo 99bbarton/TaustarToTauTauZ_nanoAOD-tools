@@ -15,7 +15,10 @@ from PhysicsTools.NanoAODTools.postprocessing.modules.TauTauProducer import tauT
 from PhysicsTools.NanoAODTools.postprocessing.modules.ObjCounter import objCounterConstr
 
 year = sys.argv[1]
-isData = sys.argv[2].upper() == "TRUE"
+if len(sys.argv) > 2:
+    isData = sys.argv[2].upper() == "TRUE"
+else:
+    isData = False
 
 era = 0
 if year in ["2016", "2016post", "2017", "2018"]:
