@@ -25,12 +25,11 @@ class MuTauProducer(Module):
             print("ERROR: Unrecognized year passed to MuTauProducer!")  
             exit(1)
 
-        if self.year != "2024":
-            sfFileName = getSFFile(year=year, pog="MUO")
-            with gzip.open(sfFileName,'rt') as fil:
-                unzipped = fil.read().strip()
-            self.muSFs = corrLib.CorrectionSet.from_string(unzipped)
-
+        sfFileName = getSFFile(year=year, pog="MUO")
+        with gzip.open(sfFileName,'rt') as fil:
+            unzipped = fil.read().strip()
+        self.muSFs = corrLib.CorrectionSet.from_string(unzipped)
+        if self.year != "2024": 
             sfFileName = getSFFile(year=year, pog="TAU")
             with gzip.open(sfFileName,'rt') as fil:
                 unzipped = fil.read().strip()
@@ -189,9 +188,9 @@ class MuTauProducer(Module):
                     tauVsESF[i] = self.tauSFs["DeepTau2017v2p1VSe"].evaluate(abs(theTau.eta), theTau.genPartFlav, "VVLoose", syst)
                     tauVsMuSF[i] = self.tauSFs["DeepTau2017v2p1VSmu"].evaluate(abs(theTau.eta), theTau.genPartFlav, "Tight", syst)
                     tauVsJetSF[i] = self.tauSFs["DeepTau2017v2p1VSjet"].evaluate(theTau.pt, theTau.decayMode, theTau.genPartFlav, "Loose", "VVLoose", syst, "pt")
-            if self.year != "2024":
-                for i, syst in enumerate(["systdown", "nominal", "systup"]):
-                    muIDSF[i] = self.muSFs["NUM_MediumID_DEN_TrackerMuons"].evaluate(abs(theMu.eta), theMu.pt, syst)
+            
+            for i, syst in enumerate(["systdown", "nominal", "systup"]):
+                muIDSF[i] = self.muSFs["NUM_MediumID_DEN_TrackerMuons"].evaluate(abs(theMu.eta), theMu.pt, syst)
 
             havePair = [passTauPtCut[0] and tauIdx[0]>=0, passTauPtCut[1] and tauIdx[1]>=0, passTauPtCut[2] and tauIdx[2]>=0]
 

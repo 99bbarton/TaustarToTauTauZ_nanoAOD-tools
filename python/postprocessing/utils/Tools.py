@@ -99,6 +99,8 @@ def getSFFile(year, pog, typ=""):
         filename += "2023_Summer23/"
     elif year == "2023post":
         filename += "2023_Summer23BPix/"
+    elif year == "2024":
+        filename += "2024_Summer24/"
     else:
         print("ERROR: Unrecognized YEAR was provided to getSFFile")
         exit(2)
@@ -136,6 +138,8 @@ def getSFFile(year, pog, typ=""):
                 filename += 'tau_DeepTau2018v2p5_2023_preBPix.json.gz'
             elif year == "2023post":
                 filename += 'tau_DeepTau2018v2p5_2023_postBPix.json.gz'
+            elif year == "2024":
+                print("WARNING: Tau SFs are not available for 2024!")
     else:
         print("ERROR: Unrecognized POG was provided to getSFFile")
         exit(2)
@@ -152,7 +156,8 @@ yearToEGMSfYr = {
     "2022" : "2022Re-recoBCD",
     "2022post" : "2022Re-recoE+PromptFG",
     "2023" : "2023PromptC",
-    "2023post" : "2023PromptD"
+    "2023post" : "2023PromptD",
+    "2024" : "2024Prompt"
 }
 
 yearToJetVeto = {
@@ -163,5 +168,6 @@ yearToJetVeto = {
     "2022" : "Summer22_23Sep2023_RunCD_V1",
     "2022post" : "Summer22EE_23Sep2023_RunEFG_V1",
     "2023" : "Summer23Prompt23_RunC_V1",
-    "2023post" : "Summer23BPixPrompt23_RunD_V1"
+    "2023post" : "Summer23BPixPrompt23_RunD_V1",
+    "2024" : "Summer24Prompt24_RunBCDEFGHI_V1"
 }

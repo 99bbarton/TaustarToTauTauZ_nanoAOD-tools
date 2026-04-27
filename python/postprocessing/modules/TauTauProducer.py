@@ -27,9 +27,10 @@ class TauTauProducer(Module):
             print("ERROR: Unrecognized year passed to TauTauProducer!")  
             exit(1)
 
-        with gzip.open(getSFFile(year=year, pog="TAU"),'rt') as fil:
-            unzipped = fil.read().strip()
-        self.tauSFs = corrLib.CorrectionSet.from_string(unzipped)
+        if self.year != "2024":
+            with gzip.open(getSFFile(year=year, pog="TAU"),'rt') as fil:
+                unzipped = fil.read().strip()
+            self.tauSFs = corrLib.CorrectionSet.from_string(unzipped)
 
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.out = wrappedOutputTree

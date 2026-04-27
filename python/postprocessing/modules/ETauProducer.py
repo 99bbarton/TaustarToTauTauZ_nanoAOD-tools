@@ -26,13 +26,12 @@ class ETauProducer(Module):
         else:
             print("ERROR: Unrecognized year passed to ETauProducer!")  
             exit(1)
-        
-        if self.year != "2024":
-            sfFileName = getSFFile(year=year, pog="EGM")
-            with gzip.open(sfFileName,'rt') as fil:
-                unzipped = fil.read().strip()
-            self.egmSFs = corrLib.CorrectionSet.from_string(unzipped)
 
+        sfFileName = getSFFile(year=year, pog="EGM")
+        with gzip.open(sfFileName,'rt') as fil:
+            unzipped = fil.read().strip()
+        self.egmSFs = corrLib.CorrectionSet.from_string(unzipped)
+        if self.year != "2024": #No TAU 2024 SFs as of 13Apr2026
             sfFileName = getSFFile(year=year, pog="TAU")
             with gzip.open(sfFileName,'rt') as fil:
                 unzipped = fil.read().strip()
@@ -211,9 +210,9 @@ class ETauProducer(Module):
                     tauVsMuSF[i] = self.tauSFs["DeepTau2017v2p1VSmu"].evaluate(abs(theTau.eta), theTau.genPartFlav, "Tight", syst)
                     tauVsJetSF[i] = self.tauSFs["DeepTau2017v2p1VSjet"].evaluate(theTau.pt, theTau.decayMode, theTau.genPartFlav, "Loose", "VVLoose", syst, "pt")
             
-            if self.year != "2024":
+            if True:
                 for i, syst in enumerate(["sfdown", "sf", "sfup"]): #2024 not available yet
-                    if self.year == "2023" or self.year == "2023post": #2023 has phi-dependent SFs
+                    if self.year == "2023" or self.year == "2023post" or self.year == "2024": #2023 and beyond have phi-dependent SFs
                         eIDSF[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp90iso", theEl.eta + theEl.deltaEtaSC, theEl.pt, theEl.phi)
                     elif self.year == "2022" or self.year == "2022post":
                         eIDSF[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp90iso", theEl.eta + theEl.deltaEtaSC, theEl.pt)
