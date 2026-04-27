@@ -57,11 +57,14 @@ elif era == 3:
 preSelection = "(" + cut_Z + "&&(" + cut_tautau + "||" + cut_etau + "||" + cut_mutau + "))"
 
 p = None
+
+isMC = not isData
+
 if isData:
-    modules = [trigProducerConstr(year), zProducerConstr(year), zJetReclusterProducerConstr(),  eTauProducerConstr(year), muTauProducerConstr(year), tauTauProducerConstr(year), objCounterConstr(era)]
+    modules = [trigProducerConstr(year), zProducerConstr(year, isMC), zJetReclusterProducerConstr(),  eTauProducerConstr(year, isMC), muTauProducerConstr(year, isMC), tauTauProducerConstr(year, isMC), objCounterConstr(era)]
     p = PostProcessor("data", testFiles, cut=preSelection, branchsel="keep_and_drop.txt", postfix="", modules=modules, jsonInput=goldenJSON)
 else:
-    modules = [genProducerConstr(era), trigProducerConstr(year), zProducerConstr(year), zJetReclusterProducerConstr(),  eTauProducerConstr(year), muTauProducerConstr(year), tauTauProducerConstr(year), objCounterConstr(era)]
+    modules = [genProducerConstr(era), trigProducerConstr(year), zProducerConstr(year, isMC), zJetReclusterProducerConstr(),  eTauProducerConstr(year, isMC), muTauProducerConstr(year, isMC), tauTauProducerConstr(year, isMC), objCounterConstr(era)]
     p = PostProcessor("data", testFiles, cut=preSelection, branchsel="keep_and_drop.txt", postfix="", modules=modules)
 
 #p = PostProcessor("data", testFiles, cut=preSelection, branchsel="keep_and_drop.txt", postfix="", modules=modules)#, histFileName="hists.root", histDirName="Hists")

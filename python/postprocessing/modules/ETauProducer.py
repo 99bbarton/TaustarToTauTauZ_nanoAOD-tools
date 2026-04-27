@@ -5,7 +5,7 @@ from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection
 import PhysicsTools.NanoAODTools.postprocessing.framework.datamodel as datamodel
 from PhysicsTools.NanoAODTools.postprocessing.utils.GenTools import prodChainContains, getProdChain
-from PhysicsTools.NanoAODTools.postprocessing.utils.Tools import deltaPhi, deltaR, isBetween, getSFFile, yearToEGMSfYr
+from PhysicsTools.NanoAODTools.postprocessing.utils.Tools import deltaPhi, deltaR, isBetween, getSFFile, yearToEGMSfYr, sfFileDict
 
 from correctionlib import _core as corrLib
 import gzip
@@ -17,8 +17,9 @@ from math import cos
 
 class ETauProducer(Module):
 
-    def __init__(self, year):
+    def __init__(self, year, isMC):
         self.year = year
+        self.isMC = isMC
         if year in ["2016", "2016post", "2017", "2018"]:
             self.era = 2
         elif year in ["2022", "2022post", "2023", "2023post", "2024"]:
@@ -27,12 +28,13 @@ class ETauProducer(Module):
             print("ERROR: Unrecognized year passed to ETauProducer!")  
             exit(1)
 
-        sfFileName = getSFFile(year=year, pog="EGM")
-        with gzip.open(sfFileName,'rt') as fil:
-            unzipped = fil.read().strip()
-        self.egmSFs = corrLib.CorrectionSet.from_string(unzipped)
-        if self.year != "2024": #No TAU 2024 SFs as of 13Apr2026
-            sfFileName = getSFFile(year=year, pog="TAU")
+        if self.isMC:
+            sfFileName = sfFileDict[year]["EGM"]
+            with gzip.open(sfFileName,'rt') as fil:
+                unzipped = fil.read().strip()
+            self.egmSFs = corrLib.CorrectionSet.from_string(unzipped)
+
+            sfFileName = sfFileDict[year]["TAU"]
             with gzip.open(sfFileName,'rt') as fil:
                 unzipped = fil.read().strip()
             self.tauSFs = corrLib.CorrectionSet.from_string(unzipped)
@@ -66,6 +68,7 @@ class ETauProducer(Module):
         self.out.branch("ETau_tauVsESF", "F", 3) #"DeepTau tau vs e SFs [down, nom, up]"
         self.out.branch("ETau_tauVsMuSF", "F", 3) #"DeepTau tau vs mu SFs [down, nom, up]"
         self.out.branch("ETau_tauVsJetSF", "F", 3) #"DeepTau tau vs jet SFs [down, nom, up]"
+        self.out.branch("ETau_tauTrigSF", "F", 3) #"Single-tau trigger SF for run3 MC"
         self.out.branch("ETau_eIDSF", "F", 3) #"Electron ID SFs [down, nom, up]"
 
         self.out.branch("ETau_trigMatchTau", "O", 3) #"True if the tau matches the single-tau trigger obj"
@@ -92,16 +95,12 @@ class ETauProducer(Module):
         trigMatchTau = [False, False, False]
         trigMatchETau = False
 
-        if self.era == 3:
-            tauESCorr = [0.97, 1, 1.03]
-            tauVsESF = [0.94, 1, 1.06] 
-            tauVsJetSF = [0.94, 1, 1.06]
-            tauVsMuSF = [0.94, 1, 1.06]
-        else:
-            tauESCorr = [1, 1, 1]
-            tauVsESF = [1, 1, 1] 
-            tauVsJetSF = [1, 1, 1]
-            tauVsMuSF = [1, 1, 1]
+        
+        tauESCorr = [1, 1, 1]
+        tauVsESF = [1, 1, 1] 
+        tauVsJetSF = [1, 1, 1]
+        tauVsMuSF = [1, 1, 1]
+        tauTrigSF = [1, 1, 1]
         eIDSF = [1, 1, 1]
         
         taus = Collection(event, "Tau")
@@ -111,10 +110,7 @@ class ETauProducer(Module):
         currTauPt = 0
         theTau = None
         
-        if self.era == 3:
-            esCorr = [0.97, 1.00, 1.03]
-        else:
-            esCorr = [-1, -1, -1]
+        esCorr = [1, 1, 1]
         esScaleVars = ["down", "nom", "up"]
         passTauPtCut = [False, False, False]
         for i in range(3):
@@ -123,8 +119,8 @@ class ETauProducer(Module):
                 if self.era == 2:
                     if tau.decayMode == 5 or tau.decayMode == 6:
                         continue
-                    
-                    esCorr[i] = self.tauSFs["tau_energy_scale"].evaluate(tau.pt, abs(tau.eta), tau.decayMode, tau.genPartFlav, "DeepTau2017v2p1", esScaleVars[i])
+                    if self.isMC:
+                        esCorr[i] = self.tauSFs["tau_energy_scale"].evaluate(tau.pt, abs(tau.eta), tau.decayMode, tau.genPartFlav, "DeepTau2017v2p1", esScaleVars[i])
                     tauCorrPt = tau.pt * esCorr[i]
                     # Use the nominal for most ID checks but keep pT cut info for use later in determining candidacy 
                     passTauPtCut[i] = tauCorrPt > 20.0
@@ -148,8 +144,8 @@ class ETauProducer(Module):
 
                 elif self.era == 3:
                     #Tau POG recommendations https://twiki.cern.ch/twiki/bin/view/CMS/TauIDRecommendationForRun3
-                    
-                    #esCorr = self.tauSFs["tau_energy_scale"].evaluate(tau.pt, abs(tau.eta), tau.decayMode, tau.genPartFlav, "Loose", "VVLoose", "nom")
+                    if self.isMC:
+                        esCorr = self.tauSFs["tau_energy_scale"].evaluate(tau.pt, abs(tau.eta), tau.decayMode, tau.genPartFlav, "DeepTau2018v2p5", "Loose", "VVLoose", "nom")
 
                     tauCorrPt = tau.pt * esCorr[i] # Use the nominal for most ID checks but keep pT cut info for use later in determining candidacy 
                     passTauPtCut[i] = tauCorrPt > 20.0 
@@ -202,19 +198,26 @@ class ETauProducer(Module):
 
         if theEl != None and (tauIdx[0]>=0 or tauIdx[1]>=0 or tauIdx[2]>=0): #If we have an e+tau pair, calculate relevant quantities
         
-            #Pythia bug means we have to use placeholder SFs for run3
-            if self.era == 2:
+
+            if self.era == 2 and self.isMC:
                 for i, syst in enumerate(["down", "nom", "up"]):
                     tauESCorr[i] = self.tauSFs["tau_energy_scale"].evaluate(theTau.pt, abs(theTau.eta), theTau.decayMode, theTau.genPartFlav, "DeepTau2017v2p1", syst)
                     tauVsESF[i] = self.tauSFs["DeepTau2017v2p1VSe"].evaluate(abs(theTau.eta), theTau.genPartFlav, "VVLoose", syst)
                     tauVsMuSF[i] = self.tauSFs["DeepTau2017v2p1VSmu"].evaluate(abs(theTau.eta), theTau.genPartFlav, "Tight", syst)
                     tauVsJetSF[i] = self.tauSFs["DeepTau2017v2p1VSjet"].evaluate(theTau.pt, theTau.decayMode, theTau.genPartFlav, "Loose", "VVLoose", syst, "pt")
+            elif self.era == 3 and self.isMC:
+                for i, syst in enumerate(["down", "nom", "up"]):
+                    tauESCorr[i] = self.tauSFs["tau_energy_scale"].evaluate(theTau.pt, abs(theTau.eta), theTau.decayMode, theTau.genPartFlav, "DeepTau2018v2p5", "Loose", "VVLoose", syst)
+                    tauVsESF[i] = self.tauSFs["DeepTau2018v2p5VSe"].evaluate(abs(theTau.eta), theTau.decayMode, theTau.genPartFlav, "VVLoose", syst)
+                    tauVsMuSF[i] = self.tauSFs["DeepTau2018v2p5VSmu"].evaluate(abs(theTau.eta), theTau.genPartFlav, "Tight", syst)
+                    tauVsJetSF[i] = self.tauSFs["DeepTau2018v2p5VSjet"].evaluate(theTau.pt, theTau.decayMode, theTau.genPartFlav, "Loose", "VVLoose", syst, "pt")
+                    tauTrigSF[i] = self.tauSFs["tau_trigger"].evaluate(theTau.pt, theTau.decayMode, "vbftau", "Loose", "sf", syst)
             
-            if True:
-                for i, syst in enumerate(["sfdown", "sf", "sfup"]): #2024 not available yet
-                    if self.year == "2023" or self.year == "2023post" or self.year == "2024": #2023 and beyond have phi-dependent SFs
+            if self.isMC:
+                for i, syst in enumerate(["sfdown", "sf", "sfup"]): 
+                    if self.year == "2023" or self.year == "2023post": 
                         eIDSF[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp90iso", theEl.eta + theEl.deltaEtaSC, theEl.pt, theEl.phi)
-                    elif self.year == "2022" or self.year == "2022post":
+                    elif self.year == "2022" or self.year == "2022post" or self.year == "2024":
                         eIDSF[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp90iso", theEl.eta + theEl.deltaEtaSC, theEl.pt)
                     else:
                         eIDSF[i] = self.egmSFs["UL-Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp90iso", theEl.eta + theEl.deltaEtaSC, theEl.pt)
@@ -327,6 +330,7 @@ class ETauProducer(Module):
         self.out.fillBranch("ETau_tauVsESF",tauVsESF)
         self.out.fillBranch("ETau_tauVsMuSF", tauVsMuSF)
         self.out.fillBranch("ETau_tauVsJetSF", tauVsJetSF)
+        self.out.fillBranch("ETau_tauTrigSF", tauTrigSF)
         self.out.fillBranch("ETau_eIDSF", eIDSF)
         self.out.fillBranch("ETau_trigMatchTau", trigMatchTau)
         #self.out.fillBranch("ETau_trigMatchETau", trigMatchETau)
@@ -336,4 +340,4 @@ class ETauProducer(Module):
     
 # ----------------------------------------------------------------------------------------------------------------------------
     
-eTauProducerConstr = lambda year: ETauProducer(year = year)
+eTauProducerConstr = lambda year, isMC: ETauProducer(year = year, isMC=isMC)

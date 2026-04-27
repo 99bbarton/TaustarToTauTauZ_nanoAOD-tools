@@ -50,10 +50,12 @@ for fN, inpFile in enumerate(files):
 
 print("\n\ncondorScript found the following input ROOT files:", inputFiles)
         
+isMC = not isData
+
 if isData:
-    modules = [trigProducerConstr(year), zProducerConstr(year), zJetReclusterProducerConstr(), eTauProducerConstr(year), muTauProducerConstr(year), tauTauProducerConstr(year), objCounterConstr(era)]
+    modules = [trigProducerConstr(year), zProducerConstr(year, isMC), zJetReclusterProducerConstr(), eTauProducerConstr(year, isMC), muTauProducerConstr(year, isMC), tauTauProducerConstr(year, isMC), objCounterConstr(era)]
 else:
-    modules = [genProducerConstr(era), trigProducerConstr(year), zProducerConstr(year), zJetReclusterProducerConstr(), eTauProducerConstr(year), muTauProducerConstr(year), tauTauProducerConstr(year), objCounterConstr(era)]
+    modules = [genProducerConstr(era), trigProducerConstr(year), zProducerConstr(year, isMC), zJetReclusterProducerConstr(), eTauProducerConstr(year, isMC), muTauProducerConstr(year, isMC), tauTauProducerConstr(year, isMC), objCounterConstr(era)]
 
 if era ==2:
     cut_etau = "(Sum$(TMath::Abs(Electron_eta)<2.5 && Electron_pt>=24. && Electron_mvaFall17V2Iso_WP90 && (TMath::Abs(Electron_eta+Electron_deltaEtaSC)>=1.566||TMath::Abs(Electron_eta+Electron_deltaEtaSC)<1.444))>0 && Sum$(Tau_pt>20. && TMath::Abs(Tau_eta)<2.3 && TMath::Abs(Tau_dz)<0.2 && Tau_decayMode!=5 && Tau_decayMode!=6 && Tau_decayMode!=7 && (1&Tau_idDeepTau2017v2p1VSjet) && (8&Tau_idDeepTau2017v2p1VSmu) && (2&Tau_idDeepTau2017v2p1VSe))>0)"

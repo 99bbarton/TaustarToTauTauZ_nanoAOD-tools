@@ -1,7 +1,7 @@
 from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection
 import PhysicsTools.NanoAODTools.postprocessing.framework.datamodel as datamodel
-from PhysicsTools.NanoAODTools.postprocessing.utils.Tools import getSFFile, yearToJetVeto, yearToEGMSfYr
+from PhysicsTools.NanoAODTools.postprocessing.utils.Tools import getSFFile, yearToJetVeto, yearToEGMSfYr, sfFileDict
 
 from ROOT import TH1F
 from correctionlib import _core as corrLib
@@ -13,8 +13,9 @@ from math import pi
 
 class ZProducer(Module):
 
-    def __init__(self, year):
+    def __init__(self, year, isMC):
         self.year = year
+        self.isMC = isMC
 
         if year in ["2016", "2016post", "2017", "2018"]:
             self.era = 2
@@ -24,21 +25,21 @@ class ZProducer(Module):
             print("ERROR: Unrecognized year passed to ETauProducer!")  
             exit(1)
         
-        sfFileName = getSFFile(year=year, pog="JME", typ="VETO")
-        with gzip.open(sfFileName,'rt') as fil:
-            unzipped = fil.read().strip()
-        self.jetVetoMap = corrLib.CorrectionSet.from_string(unzipped)
+        if self.isMC:
+            sfFileName = sfFileDict[year]["JME"]
+            with gzip.open(sfFileName,'rt') as fil:
+                unzipped = fil.read().strip()
+            self.jetVetoMap = corrLib.CorrectionSet.from_string(unzipped)
 
-        
-        sfFileName = getSFFile(year=year, pog="EGM")
-        with gzip.open(sfFileName,'rt') as fil:
-            unzipped = fil.read().strip()
-        self.egmSFs = corrLib.CorrectionSet.from_string(unzipped)
+            sfFileName = sfFileDict[year]["EGM"]
+            with gzip.open(sfFileName,'rt') as fil:
+                unzipped = fil.read().strip()
+            self.egmSFs = corrLib.CorrectionSet.from_string(unzipped)
 
-        sfFileName = getSFFile(year=year, pog="MUO")
-        with gzip.open(sfFileName,'rt') as fil:
-            unzipped = fil.read().strip()
-        self.muSFs = corrLib.CorrectionSet.from_string(unzipped)
+            sfFileName = sfFileDict[year]["MUO"]
+            with gzip.open(sfFileName,'rt') as fil:
+                unzipped = fil.read().strip()
+            self.muSFs = corrLib.CorrectionSet.from_string(unzipped)
         
         #self.writeHistFile = True
 
@@ -265,7 +266,7 @@ class ZProducer(Module):
 
 
         #Fill ID SFs for Z daughters
-        if Z_dm == 1:
+        if Z_dm == 1 and self.isMC:
             for i, syst in enumerate(["sfdown", "sf", "sfup", "sfdown", "sf", "sfup"]):
                 if i < 3:
                     if self.era == 2:
@@ -283,7 +284,7 @@ class ZProducer(Module):
                             Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "Medium", electrons[Z_d2Idx].eta + electrons[Z_d2Idx].deltaEtaSC, electrons[Z_d2Idx].pt)
                         elif self.year == "2023" or self.year == "2023post" or self.year=="2024":
                             Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "Medium", electrons[Z_d2Idx].eta + electrons[Z_d2Idx].deltaEtaSC, electrons[Z_d2Idx].pt, electrons[Z_d1Idx].phi)
-        elif Z_dm == 2:
+        elif Z_dm == 2 and self.isMC:
             for i, syst in enumerate(["systdown", "nominal", "systup", "systdown", "nominal", "systup"]):
                 if i < 3:
                     Z_muIDSFs[i] = self.muSFs["NUM_MediumID_DEN_TrackerMuons"].evaluate(abs(muons[Z_d1Idx].eta), muons[Z_d1Idx].pt, syst)
@@ -323,7 +324,7 @@ class ZProducer(Module):
     
     # -----------------------------------------------------------------------------------------------------------------------------
 
-zProducerConstr = lambda year: ZProducer(year = year)
+zProducerConstr = lambda year, isMC: ZProducer(year = year, isMC = isMC)
 
 #from PhysicsTools.NanoAODTools.postprocessing.modules.GenProducerZTau import genProducerZTauConstr
 
