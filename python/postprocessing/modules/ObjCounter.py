@@ -5,8 +5,15 @@ from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collect
 
 class ObjCounter(Module):
 
-    def __init__(self, era):
-        self.era = era
+    def __init__(self, year):
+        if year in ["2016", "2016post", "2017", "2018"]:
+            self.era = 2
+        elif year in ["2022", "2022post", "2023", "2023post", "2024"]:
+            self.era = 3
+        else:
+            print("ERROR: Unrecognized year passed to ObjCounter!")
+            exit(1)
+        self.year = year
     
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.out = wrappedOutputTree
@@ -28,8 +35,9 @@ class ObjCounter(Module):
         for jet in ak8Jets:
             if abs(jet.eta) < 2.5 and jet.pt > 40 and jet.jetId == 6:
                 nJets += 1
-                if jet.btagDeepB > 0.7:
-                    nBTags += 1
+                if self.year != "2024":
+                    if jet.btagDeepB > 0.7:
+                        nBTags += 1
         nExp_jet = 0
         #if event.ETau_isCand or event.MuTau_isCand:
         #    nExp_jet += 1
@@ -70,18 +78,12 @@ class ObjCounter(Module):
         self.out.fillBranch("ObjCnt_nMuMatch", nExp_mu == nMu)
         self.out.fillBranch("ObjCnt_nJetsMatch", nJetsMatch)
 
-        if self.era == 2: #RUN2 file sizes were massive so keep only events good for final analysis steps. Keep more run3 events for use for studies
-            if event.Z_isCand and (event.ETau_isCand or event.MuTau_isCand or Event.TauTau_isCand):
-                return True
-            else:
-                return False
-        else:
-            return True
+        return True
 
 
     
 
-objCounterConstr = lambda era: ObjCounter(era = era)
+objCounterConstr = lambda year: ObjCounter(year = year)
 
 #from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import PostProcessor
 #from PhysicsTools.NanoAODTools.postprocessing.modules.ObjCounter import objCounterConstr

@@ -1,4 +1,4 @@
-#Identify ETau channel events 
+#vbfIdentify ETau channel events 
 
 #from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import PostProcessor
 from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
@@ -144,8 +144,9 @@ class ETauProducer(Module):
 
                 elif self.era == 3:
                     #Tau POG recommendations https://twiki.cern.ch/twiki/bin/view/CMS/TauIDRecommendationForRun3
-                    if self.isMC:
-                        esCorr = self.tauSFs["tau_energy_scale"].evaluate(tau.pt, abs(tau.eta), tau.decayMode, tau.genPartFlav, "DeepTau2018v2p5", "Loose", "VVLoose", "nom")
+                    #Recommended files fail invalid value errors with any decay mode tried so bypassing them since they are not necessary anyway
+                    if False and self.isMC and (tau.decayMode <=2 or tau.decayMode >=10):
+                        esCorr[i] = self.tauSFs["tau_energy_scale"].evaluate(tau.pt, abs(tau.eta), tau.decayMode, tau.genPartFlav, "DeepTau2018v2p5", "Medium", "VVLoose", "nom")
 
                     tauCorrPt = tau.pt * esCorr[i] # Use the nominal for most ID checks but keep pT cut info for use later in determining candidacy 
                     passTauPtCut[i] = tauCorrPt > 20.0 
@@ -207,11 +208,14 @@ class ETauProducer(Module):
                     tauVsJetSF[i] = self.tauSFs["DeepTau2017v2p1VSjet"].evaluate(theTau.pt, theTau.decayMode, theTau.genPartFlav, "Loose", "VVLoose", syst, "pt")
             elif self.era == 3 and self.isMC:
                 for i, syst in enumerate(["down", "nom", "up"]):
-                    tauESCorr[i] = self.tauSFs["tau_energy_scale"].evaluate(theTau.pt, abs(theTau.eta), theTau.decayMode, theTau.genPartFlav, "DeepTau2018v2p5", "Loose", "VVLoose", syst)
+                    #tauESCorr[i] = self.tauSFs["tau_energy_scale"].evaluate(theTau.pt, abs(theTau.eta), theTau.decayMode, theTau.genPartFlav, "DeepTau2018v2p5", "Medium", "VVLoose", syst)
                     tauVsESF[i] = self.tauSFs["DeepTau2018v2p5VSe"].evaluate(abs(theTau.eta), theTau.decayMode, theTau.genPartFlav, "VVLoose", syst)
-                    tauVsMuSF[i] = self.tauSFs["DeepTau2018v2p5VSmu"].evaluate(abs(theTau.eta), theTau.genPartFlav, "Tight", syst)
-                    tauVsJetSF[i] = self.tauSFs["DeepTau2018v2p5VSjet"].evaluate(theTau.pt, theTau.decayMode, theTau.genPartFlav, "Loose", "VVLoose", syst, "pt")
-                    tauTrigSF[i] = self.tauSFs["tau_trigger"].evaluate(theTau.pt, theTau.decayMode, "vbftau", "Loose", "sf", syst)
+                    if self.year == "2024":
+                        tauVsMuSF[i] = self.tauSFs["DeepTau2018v2p5VSmu"].evaluate(abs(theTau.eta), theTau.genPartFlav, "Tight", "VVLoose", "Loose", syst)
+                    else:
+                        tauVsMuSF[i] = self.tauSFs["DeepTau2018v2p5VSmu"].evaluate(abs(theTau.eta), theTau.genPartFlav, "Tight", syst)
+                    tauVsJetSF[i] = self.tauSFs["DeepTau2018v2p5VSjet"].evaluate(theTau.pt, theTau.decayMode, theTau.genPartFlav, "Medium", "VVLoose", syst, "pt")
+                    #tauTrigSF[i] = self.tauSFs["tau_trigger"].evaluate(theTau.pt, theTau.decayMode, "vbftau", "Loose", "sf", syst)
             
             if self.isMC:
                 for i, syst in enumerate(["sfdown", "sf", "sfup"]): 

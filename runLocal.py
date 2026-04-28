@@ -17,10 +17,13 @@ from PhysicsTools.NanoAODTools.postprocessing.modules.ObjCounter import objCount
 #testFiles = ["root://cmsxrootd.fnal.gov//store/mc/Run3Summer23NanoAODv12/TaustarToTauZ_m3000_TuneCP5_13p6TeV_pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2820000/be403352-9d04-41ac-8099-b00fc6304bec.root", "root://cmsxrootd.fnal.gov//store/mc/Run3Summer23NanoAODv12/TaustarToTauZ_m3000_TuneCP5_13p6TeV_pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2820000/242c32f7-a63d-4aaf-99e3-e7ef93be748b.root", "root://cmsxrootd.fnal.gov//store/mc/Run3Summer23NanoAODv12/TaustarToTauZ_m3000_TuneCP5_13p6TeV_pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/120000/fb2e39e2-fc8e-43be-be61-4080b89ffd88.root"]
 #testFiles = ["root://cmsxrootd.fnal.gov//store/mc/Run3Summer23NanoAODv12/TaustarToTauZ_m3000_TuneCP5_13p6TeV_pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/120000/fb2e39e2-fc8e-43be-be61-4080b89ffd88.root"]
 
-#RUN2
-testFiles = ["root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL18NanoAODv9/TaustarToTauZ_m3000_TuneCP5_13TeV_pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v2/2830000/79B9792D-6D5F-2D4E-BDDC-697739B52CF7.root"]
+#2024
+testFiles = ["root://cmsxrootd.fnal.gov//store/mc/Run3Winter24NanoAOD/TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/JMENanoV14_133X_mcRun3_2024_realistic_v10-v2/2830000/0184054c-8711-479e-b4b1-052665f7f006.root"]
 
-year = "2018"
+#RUN2
+#testFiles = ["root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL18NanoAODv9/TaustarToTauZ_m3000_TuneCP5_13TeV_pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v2/2830000/79B9792D-6D5F-2D4E-BDDC-697739B52CF7.root"]
+
+year = "2024"
 isData = False
 
 if year in ["2016", "2016post", "2017", "2018"]:
@@ -61,10 +64,10 @@ p = None
 isMC = not isData
 
 if isData:
-    modules = [trigProducerConstr(year), zProducerConstr(year, isMC), zJetReclusterProducerConstr(),  eTauProducerConstr(year, isMC), muTauProducerConstr(year, isMC), tauTauProducerConstr(year, isMC), objCounterConstr(era)]
+    modules = [trigProducerConstr(year), zProducerConstr(year, isMC), zJetReclusterProducerConstr(),  eTauProducerConstr(year, isMC), muTauProducerConstr(year, isMC), tauTauProducerConstr(year, isMC), objCounterConstr(year)]
     p = PostProcessor("data", testFiles, cut=preSelection, branchsel="keep_and_drop.txt", postfix="", modules=modules, jsonInput=goldenJSON)
 else:
-    modules = [genProducerConstr(era), trigProducerConstr(year), zProducerConstr(year, isMC), zJetReclusterProducerConstr(),  eTauProducerConstr(year, isMC), muTauProducerConstr(year, isMC), tauTauProducerConstr(year, isMC), objCounterConstr(era)]
+    modules = [genProducerConstr(era), trigProducerConstr(year), zProducerConstr(year, isMC), zJetReclusterProducerConstr(),  eTauProducerConstr(year, isMC), muTauProducerConstr(year, isMC), tauTauProducerConstr(year, isMC), objCounterConstr(year)]
     p = PostProcessor("data", testFiles, cut=preSelection, branchsel="keep_and_drop.txt", postfix="", modules=modules)
 
 #p = PostProcessor("data", testFiles, cut=preSelection, branchsel="keep_and_drop.txt", postfix="", modules=modules)#, histFileName="hists.root", histDirName="Hists")

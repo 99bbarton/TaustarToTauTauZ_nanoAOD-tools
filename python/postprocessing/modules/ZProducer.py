@@ -186,7 +186,8 @@ class ZProducer(Module):
                 elif phiAdj < -pi:
                     phiAdj += 2*pi
                 
-                jetID = jetID and self.jetVetoMap[yearToJetVeto[self.year]].evaluate("jetvetomap", jet.eta, phiAdj) == 0
+                if self.isMC:
+                    jetID = jetID and self.jetVetoMap[yearToJetVeto[self.year]].evaluate("jetvetomap", jet.eta, phiAdj) == 0
                 
                 
                 if jetID:
