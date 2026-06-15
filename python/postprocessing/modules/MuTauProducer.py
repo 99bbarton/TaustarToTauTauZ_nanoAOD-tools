@@ -77,6 +77,7 @@ class MuTauProducer(Module):
         tauZDPhi = [-999.99, -999.99, -999.99]
         muZDPhi = [-999.99, -999.99, -999.99]
         cos_tau_mu = -999.99
+        cos_tau_mu_sqrd = 999.99 #Positive so <1 comparisons always work
         visM = [-999.99, -999.99, -999.99]
         sign = [0, 0, 0]
         havePair = [False, False, False]

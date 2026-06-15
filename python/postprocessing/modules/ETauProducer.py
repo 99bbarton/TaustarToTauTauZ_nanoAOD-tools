@@ -84,6 +84,7 @@ class ETauProducer(Module):
         tauZDPhi = [-999.99, -999.99, -999.99]
         eZDPhi = [-999.99, -999.99, -999.99]
         cos_tau_el = -999.99
+        cos_tau_el_sqrd = 999.99 #Positive so <1 comparisons always work
         visM = [-999.99, -999.99, -999.99]#All 3 entry lists correspond to [down, nom, up] of tau ES
         havePair = [False, False, False]
         haveTrip = [False, False, False]

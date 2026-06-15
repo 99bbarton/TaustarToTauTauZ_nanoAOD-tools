@@ -74,6 +74,7 @@ class TauTauProducer(Module):
         tau1ZDPhi = [-999.99, -999.99, -999.99]
         tau2ZDPhi = [-999.99, -999.99, -999.99]
         cos_tau1_tau2 = -999.99
+        cos_tau1_tau2_sqrd = 999.99 #Positive so <1 comparisons always work
         visM = [-999.99, -999.99, -999.99]
         sign = [0, 0, 0]
         havePair = [False, False, False]
