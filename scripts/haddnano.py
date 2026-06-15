@@ -64,11 +64,11 @@ for e in fileHandles[0].GetListOfKeys():
             print("missing: " + str(missingBranches) + "\n Additional: " + str(additionalBranches))
             for br in missingBranches:
                 # fill "Other"
-                zeroFill(otherObj, br, obj.GetListOfBranches().FindObject(br))
+                zeroFill(otherObj, br, obj.GetListOfBranches().FindObject(br), allowNonBool=True) #Allow backfill of non-boolean branches
             for br in additionalBranches:
                 # fill main
                 branchNames.add(br)
-                zeroFill(obj, br, otherObj.GetListOfBranches().FindObject(br))
+                zeroFill(obj, br, otherObj.GetListOfBranches().FindObject(br), allowNonBool=True)
             # merge immediately for trees
         if isTree and obj.GetName() == 'Runs':
             otherObj.SetAutoFlush(0)
