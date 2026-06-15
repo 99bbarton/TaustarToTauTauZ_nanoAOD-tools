@@ -49,7 +49,7 @@ class TrigProducer(Module):
             Trig_tauTau = False #event.HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_Reg
             Trig_tau = False #No single-tau trig for Run2
             Trig_tauOR = Trig_eTau or Trig_muTau or Trig_tauTau
-            Trig_MET = event.HLT_PFMET170_HBHE_BeamHaloCleaned
+            Trig_MET = event.HLT_PFMET170_HBHECleaned
             Trig_eIso = event.HLT_Ele27_WPTight_Gsf or event.HLT_Photon175
             Trig_muIso = event.HLT_IsoMu24 or event.HLT_IsoTkMu24
         elif self.year == "2017":
@@ -58,7 +58,7 @@ class TrigProducer(Module):
             Trig_tauTau = False #event.HLT_DoubleTightChargedIsoPFTau35_Trk1_TightID_eta2p1_Reg or event.HLT_DoubleTightChargedIsoPFTau40_Trk1_eta2p1_Reg or event.HLT_DoubleMediumChargedIsoPFTau40_Trk1_TightID_eta2p1_Reg            
             Trig_tau = False #No single-tau trig for Run2
             Trig_tauOR = Trig_eTau or Trig_muTau or Trig_tauTau
-            Trig_MET = event.HLT_PFMET200_HBHE_BeamHaloCleaned
+            Trig_MET = event.HLT_PFMET250_HBHECleaned
             Trig_eIso = event.HLT_Ele35_WPTight_Gsf or event.HLT_Photon200
             Trig_muIso = event.HLT_IsoMu27
         elif self.year == "2018":#TODO for data, maybe have to add in ORs for earlier runs
