@@ -56,7 +56,7 @@ class ETauProducer(Module):
         self.out.branch("ETau_tau2ZDPhi", "F", 3) #"Delta phi between the el and the Z. Using 'tau2' here for convenient multichannel plotting.All entries are equal"
         #self.out.branch("ETau_highPtGenMatch", "O") #"True if the higher pt tau decay matched to the GEN taustar tau"
         #self.out.branch("ETau_highPtCollM", "F") #"Either the min or max coll m, whichever was from the higher pt tau decay"
-        #self.out.branch("ETau_ETauCos2DPhi", "F") #"cos^2(tau.phi-e.phi)"
+        self.out.branch("ETau_ETauCos2DPhi", "F") #"cos^2(tau.phi-e.phi)"
 
         #e+tau+Z
         self.out.branch("ETau_haveTrip", "O", 3) #"True if have a good e, tau, and Z. Entries correspond to [down, nom, up] tau ES scale"
@@ -302,18 +302,20 @@ class ETauProducer(Module):
                         trigMatchTau[i] = True
 
                     isCand[i] = haveTrip[i] #A good triplet
-                    if self.era == 3:
-                        isCand[i] = isCand[i] and event.Trig_tau  #Appropriate trigger
-                    else:
-                        isCand[i] = isCand[i] and event.Trig_MET
+
+                    #Inclusion of trigger dropped to better handle period-period variations in triggers (e.g. prescaling in run2 particularly)
+                    #if self.era == 3:
+                    #    isCand[i] = isCand[i] and event.Trig_tau  #Appropriate trigger
+                    #else:
+                    #    isCand[i] = isCand[i] and event.Trig_MET
 
                     isCand[i] = isCand[i] and abs(theEl.DeltaR(theTau)) > 0.5 #Separation of e and tau
-                    isCand[i] = isCand[i] and cos_tau_el**2 < 0.99 #dphi separation of the e and tau
+                    isCand[i] = isCand[i] and cos_tau_el_sqrd < 0.99 #dphi separation of the e and tau
                     isCand[i] = isCand[i] and abs(deltaR(theZ.Eta(), theZ.Phi(), theTau.eta, theTau.phi)) > 0.5 #Separation of the Z and tau
                     isCand[i] = isCand[i] and abs(deltaR(theZ.Eta(), theZ.Phi(), theEl.eta, theEl.phi)) > 0.5 #Separation of the Z and el
                     isCand[i] = isCand[i] and isBetween(theTau.phi, theEl.phi, event.MET_phi) #MET is in small angle between tau & el
                     isCand[i] = isCand[i] and minCollM[i] > visM[i] # Collinear mass should be greater than visible mass
-                    isCand[i] = isCand[i] and trigMatchTau[i]
+                    #isCand[i] = isCand[i] and trigMatchTau[i]
             
         self.out.fillBranch("ETau_eIdx", eIdx) 
         self.out.fillBranch("ETau_tauIdx", tauIdx)
@@ -321,6 +323,7 @@ class ETauProducer(Module):
         self.out.fillBranch("ETau_havePair", havePair)
         self.out.fillBranch("ETau_ETauDR", eTauDR)
         self.out.fillBranch("ETau_ETauDPhi", eTauDPhi)
+        self.out.fillBranch("ETau_ETauCos2DPhi", cos_tau_el_sqrd)
         self.out.fillBranch("ETau_tau1ZDPhi", tauZDPhi)
         self.out.fillBranch("ETau_tau2ZDPhi", eZDPhi)
         self.out.fillBranch("ETau_visM", visM)

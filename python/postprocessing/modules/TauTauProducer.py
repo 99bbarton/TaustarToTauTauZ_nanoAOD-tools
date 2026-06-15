@@ -45,7 +45,7 @@ class TauTauProducer(Module):
         self.out.branch("TauTau_TauTauDPhi", "F", 3) #"Delta phi between the two taus"
         self.out.branch("TauTau_tau1ZDPhi", "F", 3) #"Delta phi between tau1 and the Z"
         self.out.branch("TauTau_tau2ZDPhi", "F", 3) #"Delta phi between tau2 and the Z"
-        #self.out.branch("TauTau_TauTauCos2DPhi", "F") #"cos^2(tau1.phi-tau2.phi)"
+        self.out.branch("TauTau_TauTauCos2DPhi", "F") #"cos^2(tau1.phi-tau2.phi)"
         self.out.branch("TauTau_visM", "F", 3) #"Visible mass of the tau pair"
         self.out.branch("TauTau_sign", "I", 3) #"The product of tau1.charge and tau2.charge"
         self.out.branch("TauTau_haveTrip", "O", 3) #"True if have two good taus and a Z"
@@ -149,6 +149,7 @@ class TauTauProducer(Module):
 
                 tau1Idx[i] = goodTaus[0][0]
                 tau1 = taus[tau1Idx[i]]
+                tau1Corr = 1
                 if self.era == 2 and self.isMC:
                     tau1Corr =  self.tauSFs["tau_energy_scale"].evaluate(tau1.pt, abs(tau1.eta), tau1.decayMode, tau1.genPartFlav, "DeepTau2017v2p1", esScaleVar)
                 elif self.era == 3 and self.isMC:
@@ -160,6 +161,7 @@ class TauTauProducer(Module):
                 
                 for j in range(1, len(goodTaus)):
                     tau2 = taus[goodTaus[j][0]]
+                    tau2Corr = 1
                     if self.era == 2 and self.isMC:
                         tau2Corr =  self.tauSFs["tau_energy_scale"].evaluate(tau2.pt, abs(tau2.eta), tau2.decayMode, tau2.genPartFlav, "DeepTau2017v2p1", esScaleVar)
                     elif self.era == 3 and self.isMC:
@@ -279,18 +281,18 @@ class TauTauProducer(Module):
                         trigMatchTau[i] = True
                     
                     isCand[i] = haveTrip[i] #A good triplet
-                    if self.era == 3:
-                        isCand[i] = isCand[i] and event.Trig_tau  #Appropriate trigger
-                    else:
-                        isCand[i] = isCand[i] and event.Trig_MET
+                    #if self.era == 3:
+                    #    isCand[i] = isCand[i] and event.Trig_tau  #Appropriate trigger
+                    #else:
+                    #    isCand[i] = isCand[i] and event.Trig_MET
                     isCand[i] = isCand[i] and abs(tau2.DeltaR(tau1)) > 0.5 #Separation of two taus
-                    isCand[i] = isCand[i] and cos_tau1_tau2**2 < 0.99 #DPhi separation of the two taus
+                    isCand[i] = isCand[i] and cos_tau1_tau2_sqrd < 0.99 #DPhi separation of the two taus
                     isCand[i] = isCand[i] and abs(deltaR(theZ.Eta(), theZ.Phi(), tau1.eta, tau1.phi)) > 0.5 #Separation of the Z and tau1
                     isCand[i] = isCand[i] and abs(deltaR(theZ.Eta(), theZ.Phi(), tau2.eta, tau2.phi)) > 0.5 #Separation of the Z and tau2
                     isCand[i] = isCand[i] and isBetween(tau1.phi, tau2.phi, event.MET_phi) #MET in small angle between taus
                     isCand[i] = isCand[i] and minCollM[i] > visM[i] # Collinear mass should be greater than visible mass
                     isCand[i] = isCand[i] and not (event.ETau_isCand[i] or event.MuTau_isCand[i])
-                    isCand[i] = isCand[i] and trigMatchTau[i]
+                    #isCand[i] = isCand[i] and trigMatchTau[i]
 
         self.out.fillBranch("TauTau_tau1Idx", tau1Idx)
         self.out.fillBranch("TauTau_tau2Idx", tau2Idx)
@@ -299,6 +301,7 @@ class TauTauProducer(Module):
         self.out.fillBranch("TauTau_havePair", havePair)
         self.out.fillBranch("TauTau_TauTauDR", tausDR)
         self.out.fillBranch("TauTau_TauTauDPhi", tausDPhi)
+        self.out.fillBranch("TauTau_TauTauCos2DPhi", cos_tau1_tau2_sqrd)
         self.out.fillBranch("TauTau_tau1ZDPhi", tau1ZDPhi)
         self.out.fillBranch("TauTau_tau2ZDPhi", tau2ZDPhi)
         self.out.fillBranch("TauTau_visM", visM)

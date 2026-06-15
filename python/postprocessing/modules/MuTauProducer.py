@@ -48,7 +48,7 @@ class MuTauProducer(Module):
         self.out.branch("MuTau_MuTauDPhi", "F", 3) #"Delta phi between the muon and tau"
         self.out.branch("MuTau_tau1ZDPhi", "F", 3) #"Delta phi between the tau and the Z. Using 'tau1' here for convenient multichannel plotting"
         self.out.branch("MuTau_tau2ZDPhi", "F", 3) #"Delta phi between the mu and the Z. Using 'tau2' here for convenient multichannel plotting" 
-        #self.out.branch("MuTau_MuTauCos2DPhi", "F") #"cos^2(tau.phi-mu.phi)"
+        self.out.branch("MuTau_MuTauCos2DPhi", "F") #"cos^2(tau.phi-mu.phi)"
         self.out.branch("MuTau_visM", "F", 3) #"Visible mass of the mu+tau pair"
         self.out.branch("MuTau_sign", "I", 3) #"The product of tau.charge and mu.charge"
         self.out.branch("MuTau_haveTrip", "O", 3) #"True if have a good mu, tau, and Z"
@@ -277,18 +277,18 @@ class MuTauProducer(Module):
                         trigMatchTau[i] = True 
                     
                     isCand[i] = haveTrip[i] #A good triplet
-                    if self.era == 2: #Appropriate trigger
-                        isCand[i] = isCand[i] and event.Trig_MET
-                    elif self.era == 3:
-                        isCand[i] = isCand[i] and event.Trig_tau  
+                    #if self.era == 2: #Appropriate trigger
+                    #    isCand[i] = isCand[i] and event.Trig_MET
+                    #elif self.era == 3:
+                    #    isCand[i] = isCand[i] and event.Trig_tau  
                     isCand[i] = isCand[i] and abs(theMu.DeltaR(theTau)) > 0.5 #Separation of mu and tau
-                    isCand[i] = isCand[i] and cos_tau_mu**2 < 0.99 #DPhi separation of the mu and tau
+                    isCand[i] = isCand[i] and cos_tau_mu_sqrd < 0.99 #DPhi separation of the mu and tau
                     isCand[i] = isCand[i] and abs(deltaR(theZ.Eta(), theZ.Phi(), theTau.eta, theTau.phi)) > 0.5 #Separation of the Z and tau
                     isCand[i] = isCand[i] and abs(deltaR(theZ.Eta(), theZ.Phi(), theMu.eta, theMu.phi)) > 0.5 #Separation of the Z and mu
                     isCand[i] = isCand[i] and isBetween(theTau.phi, theMu.phi, event.MET_phi) #MET is in small angle between tau & mu
                     isCand[i] = isCand[i] and minCollM[i] > visM[i] # Collinear mass should be greater than visible mass
                     isCand[i] = isCand[i] and not event.ETau_isCand[i]
-                    isCand[i] = isCand[i] and trigMatchTau[i]
+                    #isCand[i] = isCand[i] and trigMatchTau[i]
 
         self.out.fillBranch("MuTau_muIdx", muIdx) 
         self.out.fillBranch("MuTau_tauIdx", tauIdx)
@@ -296,6 +296,7 @@ class MuTauProducer(Module):
         self.out.fillBranch("MuTau_havePair", havePair)
         self.out.fillBranch("MuTau_MuTauDR", muTauDR)
         self.out.fillBranch("MuTau_MuTauDPhi", muTauDPhi)
+        self.out.fillBranch("MuTau_MuTauCos2DPhi", cos_tau_mu_sqrd)
         self.out.fillBranch("MuTau_tau1ZDPhi", tauZDPhi)
         self.out.fillBranch("MuTau_tau2ZDPhi", muZDPhi)
         self.out.fillBranch("MuTau_visM", visM)

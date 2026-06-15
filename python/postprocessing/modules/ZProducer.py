@@ -25,12 +25,13 @@ class ZProducer(Module):
             print("ERROR: Unrecognized year passed to ETauProducer!")  
             exit(1)
         
-        if self.isMC:
-            sfFileName = sfFileDict[year]["JME"]
-            with gzip.open(sfFileName,'rt') as fil:
-                unzipped = fil.read().strip()
-            self.jetVetoMap = corrLib.CorrectionSet.from_string(unzipped)
+        
+        sfFileName = sfFileDict[year]["JME"]
+        with gzip.open(sfFileName,'rt') as fil:
+            unzipped = fil.read().strip()
+        self.jetVetoMap = corrLib.CorrectionSet.from_string(unzipped)
 
+        if self.isMC:
             sfFileName = sfFileDict[year]["EGM"]
             with gzip.open(sfFileName,'rt') as fil:
                 unzipped = fil.read().strip()
@@ -186,8 +187,8 @@ class ZProducer(Module):
                 elif phiAdj < -pi:
                     phiAdj += 2*pi
                 
-                if self.isMC:
-                    jetID = jetID and self.jetVetoMap[yearToJetVeto[self.year]].evaluate("jetvetomap", jet.eta, phiAdj) == 0
+                
+                jetID = jetID and self.jetVetoMap[yearToJetVeto[self.year]].evaluate("jetvetomap", jet.eta, phiAdj) == 0
                 
                 
                 if jetID:
