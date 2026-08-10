@@ -42,12 +42,16 @@ yrToGoldenJSON = {
 if isData:
     goldenJSON += yrToGoldenJSON[year]
 
+
 inputFiles = []
-files = os.listdir("./")
-for fN, inpFile in enumerate(files):
-    print(inpFile)
-    if inpFile.endswith(".root"):
-        inputFiles.append(inpFile)
+if len(sys.argv[1]) > 3: #If starting from nanoAOD (not mini->pfnano), file list is passed as an argument
+    inputFiles = sys.argv[3]
+else:
+    files = os.listdir("./")
+    for fN, inpFile in enumerate(files):
+        print(inpFile)
+        if inpFile.endswith(".root"):
+            inputFiles.append(inpFile)
 
 print("\n\ncondorScript found the following input ROOT files:", inputFiles)
         
