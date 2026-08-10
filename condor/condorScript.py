@@ -13,6 +13,7 @@ from PhysicsTools.NanoAODTools.postprocessing.modules.ETauProducer import eTauPr
 from PhysicsTools.NanoAODTools.postprocessing.modules.MuTauProducer import muTauProducerConstr
 from PhysicsTools.NanoAODTools.postprocessing.modules.TauTauProducer import tauTauProducerConstr
 from PhysicsTools.NanoAODTools.postprocessing.modules.ObjCounter import objCounterConstr
+from PhysicsTools.NanoAODTools.postprocessing.modules.SDCMProducer import sDCMProducerConstr
 
 year = sys.argv[1]
 if len(sys.argv) > 2:
@@ -53,9 +54,12 @@ print("\n\ncondorScript found the following input ROOT files:", inputFiles)
 isMC = not isData
 
 if isData:
-    modules = [trigProducerConstr(year), zProducerConstr(year, isMC), zJetReclusterProducerConstr(), eTauProducerConstr(year, isMC), muTauProducerConstr(year, isMC), tauTauProducerConstr(year, isMC), objCounterConstr(year)]
+    #modules = [trigProducerConstr(year), zProducerConstr(year, isMC), zJetReclusterProducerConstr(), eTauProducerConstr(year, isMC), muTauProducerConstr(year, isMC), tauTauProducerConstr(year, isMC), objCounterConstr(year)]
+    modules = [trigProducerConstr(year), zProducerConstr(year, isMC), eTauProducerConstr(year, isMC), muTauProducerConstr(year, isMC), tauTauProducerConstr(year, isMC), objCounterConstr(year), sDCMProducerConstr()]
+
 else:
-    modules = [genProducerConstr(era), trigProducerConstr(year), zProducerConstr(year, isMC), zJetReclusterProducerConstr(), eTauProducerConstr(year, isMC), muTauProducerConstr(year, isMC), tauTauProducerConstr(year, isMC), objCounterConstr(year)]
+    #modules = [genProducerConstr(era), trigProducerConstr(year), zProducerConstr(year, isMC), zJetReclusterProducerConstr(), eTauProducerConstr(year, isMC), muTauProducerConstr(year, isMC), tauTauProducerConstr(year, isMC), objCounterConstr(year)]
+    modules = [genProducerConstr(era), trigProducerConstr(year), zProducerConstr(year, isMC), eTauProducerConstr(year, isMC), muTauProducerConstr(year, isMC), tauTauProducerConstr(year, isMC), objCounterConstr(year), sDCMProducerConstr()]
 
 if era ==2:
     cut_etau = "(Sum$(TMath::Abs(Electron_eta)<2.5 && Electron_pt>=24. && Electron_mvaFall17V2Iso_WP90 && (TMath::Abs(Electron_eta+Electron_deltaEtaSC)>=1.566||TMath::Abs(Electron_eta+Electron_deltaEtaSC)<1.444))>0 && Sum$(Tau_pt>20. && TMath::Abs(Tau_eta)<2.3 && TMath::Abs(Tau_dz)<0.2 && Tau_decayMode!=5 && Tau_decayMode!=6 && Tau_decayMode!=7 && (1&Tau_idDeepTau2017v2p1VSjet) && (8&Tau_idDeepTau2017v2p1VSmu) && (2&Tau_idDeepTau2017v2p1VSe))>0)"

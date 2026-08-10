@@ -270,8 +270,8 @@ class ETauProducer(Module):
                     nuTau.SetPtEtaPhiM(nuTau_mag, theTau.eta, theTau.phi, 0.)
                     nuEl.SetPtEtaPhiM(nuEl_mag, theEl.eta, theEl.phi, 0.)
 
-                    if abs(event.ZReClJ_mass - 91.19) < abs(event.Z_mass - 91.19) and event.Z_dm == 0: #By default, choose closest mass (reclustered vs reco) to nominal
-                        theZ.SetPtEtaPhiM(event.ZReClJ_pt, event.ZReClJ_eta, event.ZReClJ_phi, event.ZReClJ_mass)
+                    if event.Z_dm == 0: #Previously selected best of reclustered vs reco jet mass. Now uses soft drop
+                        theZ.SetPtEtaPhiM(event.ZReClJ_pt, event.ZReClJ_eta, event.ZReClJ_phi, event.Z_mSD)
                     else:
                         theZ.SetPtEtaPhiM(event.Z_pt, event.Z_eta, event.Z_phi, event.Z_mass)
 
@@ -285,6 +285,8 @@ class ETauProducer(Module):
                     collM_elZ = (theEl.p4() + nuEl + theZ).M()
                     minCollM[i] = min(collM_tauZ, collM_elZ)
                     maxCollM[i] = max(collM_tauZ, collM_elZ)
+                    
+                    
 
                     if self.era == 3:
                         trigObjs = Collection(event, "TrigObj")
@@ -317,7 +319,8 @@ class ETauProducer(Module):
                     isCand[i] = isCand[i] and isBetween(theTau.phi, theEl.phi, event.MET_phi) #MET is in small angle between tau & el
                     isCand[i] = isCand[i] and minCollM[i] > visM[i] # Collinear mass should be greater than visible mass
                     #isCand[i] = isCand[i] and trigMatchTau[i]
-            
+
+
         self.out.fillBranch("ETau_eIdx", eIdx) 
         self.out.fillBranch("ETau_tauIdx", tauIdx)
         self.out.fillBranch("ETau_tauProngs", tauProngs)

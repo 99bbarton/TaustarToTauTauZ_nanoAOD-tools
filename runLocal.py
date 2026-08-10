@@ -8,6 +8,7 @@ from PhysicsTools.NanoAODTools.postprocessing.modules.ETauProducer import eTauPr
 from PhysicsTools.NanoAODTools.postprocessing.modules.MuTauProducer import muTauProducerConstr
 from PhysicsTools.NanoAODTools.postprocessing.modules.TauTauProducer import tauTauProducerConstr
 from PhysicsTools.NanoAODTools.postprocessing.modules.ObjCounter import objCounterConstr
+from PhysicsTools.NanoAODTools.postprocessing.modules.SDCMProducer import sDCMProducerConstr
 
 
 #testFiles = ["root://cmsxrootd.fnal.gov//store/user/bbarton/TaustarToTauTauZ/SignalMC/SigPFNano/2023/taustarToTauZ_m3000_2023.root"]
@@ -64,10 +65,12 @@ p = None
 isMC = not isData
 
 if isData:
-    modules = [trigProducerConstr(year), zProducerConstr(year, isMC), zJetReclusterProducerConstr(),  eTauProducerConstr(year, isMC), muTauProducerConstr(year, isMC), tauTauProducerConstr(year, isMC), objCounterConstr(year)]
+    #modules = [trigProducerConstr(year), zProducerConstr(year, isMC), zJetReclusterProducerConstr(),  eTauProducerConstr(year, isMC), muTauProducerConstr(year, isMC), tauTauProducerConstr(year, isMC), objCounterConstr(year)]
+    modules = [trigProducerConstr(year), zProducerConstr(year, isMC), eTauProducerConstr(year, isMC), muTauProducerConstr(year, isMC), tauTauProducerConstr(year, isMC), objCounterConstr(year), sDCMProducerConstr()]
     p = PostProcessor("data", testFiles, cut=preSelection, branchsel="keep_and_drop.txt", postfix="", modules=modules, jsonInput=goldenJSON)
 else:
-    modules = [genProducerConstr(era), trigProducerConstr(year), zProducerConstr(year, isMC), zJetReclusterProducerConstr(),  eTauProducerConstr(year, isMC), muTauProducerConstr(year, isMC), tauTauProducerConstr(year, isMC), objCounterConstr(year)]
+    #modules = [genProducerConstr(era), trigProducerConstr(year), zProducerConstr(year, isMC), zJetReclusterProducerConstr(),  eTauProducerConstr(year, isMC), muTauProducerConstr(year, isMC), tauTauProducerConstr(year, isMC), objCounterConstr(year)]
+    modules = [genProducerConstr(era), trigProducerConstr(year), zProducerConstr(year, isMC), eTauProducerConstr(year, isMC), muTauProducerConstr(year, isMC), tauTauProducerConstr(year, isMC), objCounterConstr(year), sDCMProducerConstr()]
     p = PostProcessor("data", testFiles, cut=preSelection, branchsel="keep_and_drop.txt", postfix="", modules=modules)
 
 #p = PostProcessor("data", testFiles, cut=preSelection, branchsel="keep_and_drop.txt", postfix="", modules=modules)#, histFileName="hists.root", histDirName="Hists")

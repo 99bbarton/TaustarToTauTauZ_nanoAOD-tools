@@ -63,6 +63,7 @@ class ZProducer(Module):
         self.out.branch("Z_dauID", "O") #"For Z_dm=1 or 2, True if both Z daughter candidates pass the appropriate ID" 
         self.out.branch("Z_dauDR", "F") #"DeltaR(zDau1, zDau2). 0 default"
         self.out.branch("Z_mass", "F") #"Mass of ee or mumu pair if either Z_dm == 1 or Z_dm == 2 or jet if Z_dm =0. 0 default"
+        self.out.branch("Z_mSD", "F") #"Soft drop mass for Z->AK8 jet events"
         self.out.branch("Z_mCorr" , "F") #"For Z->jet events, mass plus a pt-based linear correction to adjust for bias. Equal to mass for ee,mumu Z's"
         self.out.branch("Z_pt", "F") #"Pt of ee or mumu pair or jet. 0 default"
         self.out.branch("Z_eta", "F") #"Eta of the overall Z candidate"
@@ -83,9 +84,10 @@ class ZProducer(Module):
         Z_dm = -1
         Z_d1Idx = -1
         Z_d2Idx = -1
-        Z_mass = 0
+        Z_mass = -999.99
+        Z_mSD = -999.99
         Z_mCorr = 0
-        Z_pt = 0
+        Z_pt = -999.99
         Z_eta = -999.99
         Z_phi = -999.99
         Z_dauDR = 0
@@ -195,6 +197,7 @@ class ZProducer(Module):
                     Z_nJetCands += 1
                     if abs(jet.mass - 91.18) < abs(Z_mass - 91.18):
                         Z_mass = jet.mass 
+                        Z_mSD = jet.msoftdrop
                         Z_jetIdxAK8 = jetIdx
                         Z_jetR = 8
                         Z_dm = 0
@@ -304,6 +307,7 @@ class ZProducer(Module):
         self.out.fillBranch("Z_d1Idx", Z_d1Idx)
         self.out.fillBranch("Z_d2Idx", Z_d2Idx)
         self.out.fillBranch("Z_mass", Z_mass)
+        self.out.fillBranch("Z_mSD", Z_mSD)
         self.out.fillBranch("Z_mCorr", Z_mCorr)
         self.out.fillBranch("Z_pt", Z_pt)
         self.out.fillBranch("Z_eta", Z_eta)

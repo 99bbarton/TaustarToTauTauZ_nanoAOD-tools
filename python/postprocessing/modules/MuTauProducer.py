@@ -247,8 +247,8 @@ class MuTauProducer(Module):
                     fullTauDecay = theTau.p4() + nuTau
 
                     theZ = TLorentzVector()
-                    if abs(event.ZReClJ_mass - 91.19) < abs(event.Z_mass - 91.19) and event.Z_dm == 0:
-                        theZ.SetPtEtaPhiM(event.ZReClJ_pt, event.ZReClJ_eta, event.ZReClJ_phi, event.ZReClJ_mass)
+                    if event.Z_dm == 0: #Previously selected best of reclustered vs reco jet mass. Now uses soft drop
+                        theZ.SetPtEtaPhiM(event.ZReClJ_pt, event.ZReClJ_eta, event.ZReClJ_phi, event.Z_mSD)
                     else:
                         theZ.SetPtEtaPhiM(event.Z_pt, event.Z_eta, event.Z_phi, event.Z_mass)
 
@@ -290,6 +290,7 @@ class MuTauProducer(Module):
                     isCand[i] = isCand[i] and minCollM[i] > visM[i] # Collinear mass should be greater than visible mass
                     isCand[i] = isCand[i] and not event.ETau_isCand[i]
                     #isCand[i] = isCand[i] and trigMatchTau[i]
+        
 
         self.out.fillBranch("MuTau_muIdx", muIdx) 
         self.out.fillBranch("MuTau_tauIdx", tauIdx)
