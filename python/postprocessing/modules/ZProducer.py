@@ -78,7 +78,14 @@ class ZProducer(Module):
         self.out.branch("Z_nMuMu", "I") #"Number of candidate mumu pairs found"
         self.out.branch("Z_isCand", "O") #"True if Z is a good candidate (DM, mass, etc)"
         self.out.branch("Z_eIDSFs", "F", 6) #"[down1, nom1, up1, down2, nom2, up2] SFs for Z daughter el ID if DM==1"
-        self.out.branch("Z_muIDSFs", "F", 6) #"[down1, nom1, up1, down2, nom2, up2] SFs for Z daughter mu ID if DM==2"   
+        self.out.branch("Z_muIDSFs", "F", 6) #"[down1, nom1, up1, down2, nom2, up2] SFs for Z daughter mu ID if DM==2"
+
+        #In 2024, no branches under MET_*, instead PFMET. Done here for convenience
+        if self.year == "2024":
+            self.out.branch("MET_pt", "F") #"PFMET pt added for making 2024 variable naming compatible with all other periods"
+            self.out.branch("MET_phi", "F") #"PFMET phi added for making 2024 variable naming compatible with all other periods"
+            
+        
 
     def analyze(self, event):
         Z_dm = -1
@@ -277,17 +284,17 @@ class ZProducer(Module):
                     if self.era == 2:
                         Z_eIDSFs[i] = self.egmSFs["UL-Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp90noiso", electrons[Z_d1Idx].eta + electrons[Z_d1Idx].deltaEtaSC, electrons[Z_d1Idx].pt)
                     else:
-                        if self.year == "2022" or self.year == "2022post":
+                        if self.year == "2022" or self.year == "2022post" or self.year == "2024":
                             Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "Medium", electrons[Z_d1Idx].eta + electrons[Z_d1Idx].deltaEtaSC, electrons[Z_d1Idx].pt)
-                        elif self.year == "2023" or self.year == "2023post" or self.year=="2024": #2023 has phi-dependent SFs
+                        elif self.year == "2023" or self.year == "2023post": #2023 has phi-dependent SFs
                             Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "Medium", electrons[Z_d1Idx].eta + electrons[Z_d1Idx].deltaEtaSC, electrons[Z_d1Idx].pt, electrons[Z_d1Idx].phi)
                 else:
                     if self.era == 2:
                         Z_eIDSFs[i] = self.egmSFs["UL-Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "wp90noiso", electrons[Z_d2Idx].eta + electrons[Z_d2Idx].deltaEtaSC, electrons[Z_d2Idx].pt)
                     else:
-                        if self.year == "2022" or self.year == "2022post":
+                        if self.year == "2022" or self.year == "2022post" or self.year == "2024":
                             Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "Medium", electrons[Z_d2Idx].eta + electrons[Z_d2Idx].deltaEtaSC, electrons[Z_d2Idx].pt)
-                        elif self.year == "2023" or self.year == "2023post" or self.year=="2024":
+                        elif self.year == "2023" or self.year == "2023post":
                             Z_eIDSFs[i] = self.egmSFs["Electron-ID-SF"].evaluate(yearToEGMSfYr[self.year], syst, "Medium", electrons[Z_d2Idx].eta + electrons[Z_d2Idx].deltaEtaSC, electrons[Z_d2Idx].pt, electrons[Z_d1Idx].phi)
         elif Z_dm == 2 and self.isMC:
             for i, syst in enumerate(["systdown", "nominal", "systup", "systdown", "nominal", "systup"]):
@@ -302,6 +309,13 @@ class ZProducer(Module):
         Z_isCand = Z_isCand and (Z_mass > 61 and Z_mass < 151) #Mass range
         Z_isCand = Z_isCand and Z_dauDR < 0.8
 
+        
+        #Nothing to do with the Z, but done here for convenience so tau channel producers can use MET_* branch names for 2024 as well as other years
+        if self.year == "2024":
+            self.out.fillBranch("MET_pt", event.PFMET_pt)
+            self.out.fillBranch("MET_phi", event.PFMET_phi)
+        
+        
 
         self.out.fillBranch("Z_dm", Z_dm)
         self.out.fillBranch("Z_d1Idx", Z_d1Idx)

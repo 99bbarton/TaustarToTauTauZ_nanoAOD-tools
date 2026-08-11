@@ -271,7 +271,7 @@ class ETauProducer(Module):
                     nuEl.SetPtEtaPhiM(nuEl_mag, theEl.eta, theEl.phi, 0.)
 
                     if event.Z_dm == 0: #Previously selected best of reclustered vs reco jet mass. Now uses soft drop
-                        theZ.SetPtEtaPhiM(event.ZReClJ_pt, event.ZReClJ_eta, event.ZReClJ_phi, event.Z_mSD)
+                        theZ.SetPtEtaPhiM(event.Z_pt, event.Z_eta, event.Z_phi, event.Z_mSD)
                     else:
                         theZ.SetPtEtaPhiM(event.Z_pt, event.Z_eta, event.Z_phi, event.Z_mass)
 

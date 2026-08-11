@@ -96,8 +96,6 @@ class TauTauProducer(Module):
         isCand = [False, False, False]
         
         taus = Collection(event, "Tau")
-        if len(taus) < 2:
-            return True
         
         esCorr = [1, 1, 1]
         esScaleVars = ["down", "nom", "up"]
@@ -252,7 +250,7 @@ class TauTauProducer(Module):
 
                     theZ = TLorentzVector()
                     if event.Z_dm == 0: #Previously selected best of reclustered vs reco jet mass. Now uses soft drop
-                        theZ.SetPtEtaPhiM(event.ZReClJ_pt, event.ZReClJ_eta, event.ZReClJ_phi, event.Z_mSD)
+                        theZ.SetPtEtaPhiM(event.Z_pt, event.Z_eta, event.Z_phi, event.Z_mSD)
                     else:
                         theZ.SetPtEtaPhiM(event.Z_pt, event.Z_eta, event.Z_phi, event.Z_mass)
 
@@ -294,7 +292,8 @@ class TauTauProducer(Module):
                     isCand[i] = isCand[i] and minCollM[i] > visM[i] # Collinear mass should be greater than visible mass
                     isCand[i] = isCand[i] and not (event.ETau_isCand[i] or event.MuTau_isCand[i])
                     #isCand[i] = isCand[i] and trigMatchTau[i]
-
+        #print(isCand)
+        self.out.fillBranch("TauTau_isCand", isCand)
         self.out.fillBranch("TauTau_tau1Idx", tau1Idx)
         self.out.fillBranch("TauTau_tau2Idx", tau2Idx)
         self.out.fillBranch("TauTau_tau1Prongs", tau1Prongs)
@@ -319,7 +318,7 @@ class TauTauProducer(Module):
         self.out.fillBranch("TauTau_tauTrigSF", tauTrigSF)
         self.out.fillBranch("TauTau_trigMatchTau", trigMatchTau)
         #self.out.fillBranch("TauTau_trigMatchTauTau", trigMatchTauTau)
-        self.out.fillBranch("TauTau_isCand", isCand) 
+        #self.out.fillBranch("TauTau_isCand", isCand) 
 
         return True
     
