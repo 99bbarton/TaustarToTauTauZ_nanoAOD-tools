@@ -31,6 +31,12 @@ class ZProducer(Module):
             unzipped = fil.read().strip()
         self.jetVetoMap = corrLib.CorrectionSet.from_string(unzipped)
 
+        if self.year == "2024":
+            sfFileName = sfFileDict[year]["JMEID"]
+            with gzip.open(sfFileName,'rt') as fil:
+                unzipped = fil.read().strip()
+            self.jetIdMap = corrLib.CorrectionSet.from_string(unzipped)
+
         if self.isMC:
             sfFileName = sfFileDict[year]["EGM"]
             with gzip.open(sfFileName,'rt') as fil:
@@ -180,7 +186,18 @@ class ZProducer(Module):
             ak8Jets = Collection(event, "FatJet")            
         
             for jetIdx, jet in enumerate(ak8Jets):
-                jetID = jet.jetId == 6 #2 = pass tight ID but fail tight lepton veto, 6 = pass both
+                #jetID = jet.jetId == 6 #2 = pass tight ID but fail tight lepton veto, 6 = pass both
+                #As of 14 Aug 2026, it was revealed that the jetId==6 which had been on the JetMET Twiki as the recommended application is in fact incorrect for 2016 and 2022+
+                if self.era == 2:
+                    jetID = (jet.jetId & 2) != 0 and (jet.jetId & 4) != 0
+                elif self.year == "2024":
+                    exterID = self.jetIdMap["AK8PUPPI_Tight"].evaluate(jet.eta, jet.chHEF, jet.neHEF, jet.neEmEF, jet.chMultiplicity, jet.neMultiplicity, jet.chMultiplicity+jet.neMultiplicity)
+                    jetID = jetID and exterID
+                else:
+                    jetID = (jet.jetId & 2) != 0
+                    if abs(jet.eta) <= 2.7: #We don't use higher etas so this is sufficient
+                        jetID = jetID and jet.muEF < 0.8 and jet.chEmEF < 0.8
+                    
                 jetID = jetID and (jet.mass >= 61.0 and jet.mass <= 181.0) #High range will be tightened later after reclustering
                 jetID = jetID and (abs(jet.eta) < 2.5 and jet.pt > 100)
                 
