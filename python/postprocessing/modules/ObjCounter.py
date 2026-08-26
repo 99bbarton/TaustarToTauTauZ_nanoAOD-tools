@@ -33,7 +33,7 @@ class ObjCounter(Module):
         nJets = 0
         ak8Jets = Collection(event, "FatJet")
         for jet in ak8Jets:
-            if abs(jet.eta) < 2.5 and jet.pt > 40 and jet.jetId == 6:
+            if abs(jet.eta) < 2.5 and jet.pt > 100:
                 nJets += 1
                 if self.year != "2024":
                     if jet.btagDeepB > 0.7:

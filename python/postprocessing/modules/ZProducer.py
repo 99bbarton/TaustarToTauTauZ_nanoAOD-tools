@@ -191,8 +191,7 @@ class ZProducer(Module):
                 if self.era == 2:
                     jetID = (jet.jetId & 2) != 0 and (jet.jetId & 4) != 0
                 elif self.year == "2024":
-                    exterID = self.jetIdMap["AK8PUPPI_Tight"].evaluate(jet.eta, jet.chHEF, jet.neHEF, jet.neEmEF, jet.chMultiplicity, jet.neMultiplicity, jet.chMultiplicity+jet.neMultiplicity)
-                    jetID = jetID and exterID
+                    jetID = self.jetIdMap["AK8PUPPI_TightLeptonVeto"].evaluate(jet.eta, jet.chHEF, jet.neHEF, jet.chEmEF, jet.neEmEF, jet.muEF, jet.chMultiplicity, jet.neMultiplicity, jet.chMultiplicity+jet.neMultiplicity)
                 else:
                     jetID = (jet.jetId & 2) != 0
                     if abs(jet.eta) <= 2.7: #We don't use higher etas so this is sufficient
