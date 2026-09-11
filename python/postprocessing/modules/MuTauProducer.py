@@ -227,8 +227,12 @@ class MuTauProducer(Module):
                     #collinear approximation 
                     nuTau = TLorentzVector()
                     nuMu = TLorentzVector()
-                    cos_nuTau_MET = cos(deltaPhi(theTau.phi, event.MET_phi))
-                    cos_nuMu_MET = cos(deltaPhi(theMu.phi, event.MET_phi))
+                    if self.era == 3:
+                        cos_nuTau_MET = cos(deltaPhi(theTau.phi, event.PuppiMET_phi))
+                        cos_nuMu_MET = cos(deltaPhi(theMu.phi, event.PuppiMET_phi))
+                    else:
+                        cos_nuTau_MET = cos(deltaPhi(theTau.phi, event.MET_phi))
+                        cos_nuMu_MET = cos(deltaPhi(theMu.phi, event.MET_phi))
                     cos_tau_mu = cos(deltaPhi(theTau.phi, theMu.phi))
                     cos_tau_mu_sqrd = cos_tau_mu * cos_tau_mu
                     
@@ -237,8 +241,12 @@ class MuTauProducer(Module):
                     else:
                         cos_tau_mu_sqrd_div0Safe = cos_tau_mu_sqrd
 
-                    nuTau_mag = event.MET_pt * (cos_nuTau_MET - (cos_nuMu_MET * cos_tau_mu)) / (1. - cos_tau_mu_sqrd_div0Safe)
-                    nuMu_mag = ((event.MET_pt * cos_nuTau_MET) - nuTau_mag) / cos_tau_mu
+                    if self.era == 3:
+                        nuTau_mag = event.PuppiMET_pt * (cos_nuTau_MET - (cos_nuMu_MET * cos_tau_mu)) / (1. - cos_tau_mu_sqrd_div0Safe)
+                        nuMu_mag = ((event.PuppiMET_pt * cos_nuTau_MET) - nuTau_mag) / cos_tau_mu
+                    else:
+                        nuTau_mag = event.MET_pt * (cos_nuTau_MET - (cos_nuMu_MET * cos_tau_mu)) / (1. - cos_tau_mu_sqrd_div0Safe)
+                        nuMu_mag = ((event.MET_pt * cos_nuTau_MET) - nuTau_mag) / cos_tau_mu
 
                     nuTau.SetPtEtaPhiM(nuTau_mag, theTau.eta, theTau.phi, 0.)
                     nuMu.SetPtEtaPhiM(nuMu_mag, theMu.eta, theMu.phi, 0.)
@@ -286,7 +294,10 @@ class MuTauProducer(Module):
                     isCand[i] = isCand[i] and cos_tau_mu_sqrd < 0.99 #DPhi separation of the mu and tau
                     isCand[i] = isCand[i] and abs(deltaR(theZ.Eta(), theZ.Phi(), theTau.eta, theTau.phi)) > 0.5 #Separation of the Z and tau
                     isCand[i] = isCand[i] and abs(deltaR(theZ.Eta(), theZ.Phi(), theMu.eta, theMu.phi)) > 0.5 #Separation of the Z and mu
-                    isCand[i] = isCand[i] and isBetween(theTau.phi, theMu.phi, event.MET_phi) #MET is in small angle between tau & mu
+                    if self.era == 3:
+                        isCand[i] = isCand[i] and isBetween(theTau.phi, theMu.phi, event.PuppiMET_phi) #MET is in small angle between tau & mu
+                    else:
+                        isCand[i] = isCand[i] and isBetween(theTau.phi, theMu.phi, event.MET_phi) #MET is in small angle between tau & mu
                     isCand[i] = isCand[i] and minCollM[i] > visM[i] # Collinear mass should be greater than visible mass
                     isCand[i] = isCand[i] and not event.ETau_isCand[i]
                     #isCand[i] = isCand[i] and trigMatchTau[i]

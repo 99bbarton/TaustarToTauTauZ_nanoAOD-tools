@@ -93,6 +93,7 @@ class TauTauProducer(Module):
         trigMatchTau = [False, False, False]
         #trigMatchTauTau = [False, False, False]
 
+
         isCand = [False, False, False]
         
         taus = Collection(event, "Tau")
@@ -229,8 +230,12 @@ class TauTauProducer(Module):
                     #collinear approximation 
                     nuTau1 = TLorentzVector()
                     nuTau2 = TLorentzVector()
-                    cos_nuTau1_MET = cos(deltaPhi(tau1.phi, event.MET_phi))
-                    cos_nuTau2_MET = cos(deltaPhi(tau2.phi, event.MET_phi))
+                    if self.era == 3:
+                        cos_nuTau1_MET = cos(deltaPhi(tau1.phi, event.PuppiMET_phi))
+                        cos_nuTau2_MET = cos(deltaPhi(tau2.phi, event.PuppiMET_phi))
+                    else:
+                        cos_nuTau1_MET = cos(deltaPhi(tau1.phi, event.MET_phi))
+                        cos_nuTau2_MET = cos(deltaPhi(tau2.phi, event.MET_phi))
                     cos_tau1_tau2 = cos(deltaPhi(tau1.phi, tau2.phi))
                     cos_tau1_tau2_sqrd = cos_tau1_tau2 * cos_tau1_tau2
 
@@ -238,9 +243,13 @@ class TauTauProducer(Module):
                         cos_tau1_tau2_sqrd_div0Safe = 0.999
                     else:
                         cos_tau1_tau2_sqrd_div0Safe = cos_tau1_tau2_sqrd
-                        
-                    nuTau1_mag = event.MET_pt * (cos_nuTau1_MET - (cos_nuTau2_MET * cos_tau1_tau2)) / (1. - cos_tau1_tau2_sqrd_div0Safe)
-                    nuTau2_mag = ((event.MET_pt * cos_nuTau1_MET) - nuTau1_mag) / cos_tau1_tau2
+
+                    if self.era == 3:
+                        nuTau1_mag = event.PuppiMET_pt * (cos_nuTau1_MET - (cos_nuTau2_MET * cos_tau1_tau2)) / (1. - cos_tau1_tau2_sqrd_div0Safe)
+                        nuTau2_mag = ((event.PuppiMET_pt * cos_nuTau1_MET) - nuTau1_mag) / cos_tau1_tau2
+                    else:
+                        nuTau1_mag = event.MET_pt * (cos_nuTau1_MET - (cos_nuTau2_MET * cos_tau1_tau2)) / (1. - cos_tau1_tau2_sqrd_div0Safe)
+                        nuTau2_mag = ((event.MET_pt * cos_nuTau1_MET) - nuTau1_mag) / cos_tau1_tau2
 
                     nuTau1.SetPtEtaPhiM(nuTau1_mag, tau1.eta, tau1.phi, 0.)
                     nuTau2.SetPtEtaPhiM(nuTau2_mag, tau2.eta, tau2.phi, 0.)
@@ -278,7 +287,7 @@ class TauTauProducer(Module):
                     else:
                         #NB: For run2 where the MET trigger is used, no trigger matching can actually be performed. The variable is used for easier run2+run3 combined cuts
                         trigMatchTau[i] = True
-                    
+
                     isCand[i] = haveTrip[i] #A good triplet
                     #if self.era == 3:
                     #    isCand[i] = isCand[i] and event.Trig_tau  #Appropriate trigger
@@ -288,7 +297,10 @@ class TauTauProducer(Module):
                     isCand[i] = isCand[i] and cos_tau1_tau2_sqrd < 0.99 #DPhi separation of the two taus
                     isCand[i] = isCand[i] and abs(deltaR(theZ.Eta(), theZ.Phi(), tau1.eta, tau1.phi)) > 0.5 #Separation of the Z and tau1
                     isCand[i] = isCand[i] and abs(deltaR(theZ.Eta(), theZ.Phi(), tau2.eta, tau2.phi)) > 0.5 #Separation of the Z and tau2
-                    isCand[i] = isCand[i] and isBetween(tau1.phi, tau2.phi, event.MET_phi) #MET in small angle between taus
+                    if self.era == 3:
+                        isCand[i] = isCand[i] and isBetween(tau1.phi, tau2.phi, event.MET_phi) #MET in small angle between taus
+                    else:
+                        isCand[i] = isCand[i] and isBetween(tau1.phi, tau2.phi, event.MET_phi) #MET in small angle between taus
                     isCand[i] = isCand[i] and minCollM[i] > visM[i] # Collinear mass should be greater than visible mass
                     isCand[i] = isCand[i] and not (event.ETau_isCand[i] or event.MuTau_isCand[i])
                     #isCand[i] = isCand[i] and trigMatchTau[i]
